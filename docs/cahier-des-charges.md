@@ -2,7 +2,7 @@
 
 *Version 2 du projet « Carnet de Vocabulaire » : un jeu pédagogique pour mémoriser le vocabulaire de néerlandais et d'anglais, avec comptes, données centralisées sur serveur, statistiques pour l'élève et suivi parent.*
 
-Maquette interactive : [`maquette/index.html`](../maquette/index.html) (à ouvrir dans un navigateur ; rôles élève et parent, absence simulée, deux styles d'accueil).
+Maquette interactive : [`maquette/index.html`](../maquette/index.html) (à ouvrir dans un navigateur ; rôles élève et parent, absence simulée, deux styles complets : Jeu et Adulte).
 
 ## 1. Contexte et objectifs
 
@@ -205,7 +205,7 @@ L'élève et le parent partagent les mêmes indicateurs ; le parent y ajoute le 
 - **Ton** : pensé pour une adolescente, jamais infantilisant, rien qui évoque un outil de contrôle.
 - **Fluidité** : transitions de 150 à 250 ms, mouvement réduit si demandé par le système ; thèmes clair et sombre ; contraste AA ; cibles tactiles de 48 px au moins ; polices hébergées sur le serveur.
 
-**Deux directions visuelles à comparer** (maquette, accueil seulement) :
+**Deux directions visuelles à comparer** (maquette complète, bouton « Jeu / Adulte » en haut de page) :
 
 | | Jeu | Adulte |
 | --- | --- | --- |
@@ -320,7 +320,7 @@ Critères d'acceptation du lot 1 :
 
 ## 18. Points à valider
 
-- [ ] **Thème visuel** : « Jeu » ou « Adulte » (comparer l'accueil dans la maquette), ou une version intermédiaire.
+- [ ] **Thème visuel** : « Jeu » ou « Adulte » (maquette complète dans les deux styles), ou une version intermédiaire.
 - [ ] **Rotation** : 3 séances avant verrouillage et 2 autres jeux pour le rouvrir, trop ou trop peu ?
 - [ ] **Gardien** : langue alternée chaque semaine, pénalité de 40 de forme et 20 d'humeur, adaptés ?
 - [ ] **Barème** : gemmes par jeu (1 à 4), bonus et prix des compagnons, à calibrer après une semaine d'usage.

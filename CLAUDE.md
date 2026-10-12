@@ -20,7 +20,7 @@ Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla 
 - Monnaie = **gemmes** ; les jeux difficiles en rapportent davantage (1, 2, 3, 4 par bon mot). Le compagnon ne meurt jamais (il décrépit, un soin le rétablit).
 - **Une seule langue par séance** (néerlandais ou anglais) : jamais de mélange, ni dans les mots, ni dans les distracteurs du QCM ; la langue se choisit avant la portée.
 - L'élève a ses propres statistiques (mêmes indicateurs que le parent, sans le détail des séances).
-- Deux styles d'accueil à comparer dans la maquette (Jeu / Adulte) : décision en attente.
+- Deux styles complets à comparer dans la maquette (Jeu / Adulte, bouton en haut de page) : décision en attente.
 - L'écran de connexion élève ne montre **aucune entrée « parent »** ; le parent a son adresse à part.
 - Points calculés côté serveur depuis les événements ; solde = somme de `point_events`. Décrépitude calculée à la lecture, pas de tâche planifiée.
 - Dépôt public : aucune donnée réelle d'élève, ni `.env`, ni `*.db`.

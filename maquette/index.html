@@ -473,6 +473,39 @@ svg.ic{width:24px;height:24px;flex:none}
 .ad-boss div>span{font-size:13px;color:var(--ink-2);font-weight:600;line-height:1.35;display:block;margin-top:2px}
 .ad-bar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:10px}
 .ad-bar i{display:block;height:100%;background:var(--plum)}
+/* ===== thème adulte : application complète ===== */
+.app.adult{--pet-edge:#1B2430}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .app.adult{--pet-edge:#07090C}}
+:root[data-theme="dark"] .app.adult{--pet-edge:#07090C}
+.app.adult,.app.adult *{font-family:'Plus Jakarta Sans','Nunito',system-ui,sans-serif}
+.app.adult *{border-width:1px;box-shadow:none}
+.app.adult .disp,.app.adult h1,.app.adult h2,.app.adult h3,.app.adult .btn,.app.adult .pill,.app.adult .step,.app.adult .step i,.app.adult .q-word,.app.adult .sec,.app.adult .recap h1,.app.adult .rcell b,.app.adult .lines .row b,.app.adult .kpi b,.app.adult .petname,.app.adult .gcard b,.app.adult .lcard h3,.app.adult .lbtn,.app.adult .lbtn .lt,.app.adult .ptitle h1,.app.adult .pcard h2,.app.adult .fface .w,.app.adult .score,.app.adult .pct,.app.adult .ticket .v,.app.adult .stepper b,.app.adult .dayh,.app.adult .srow .tm,.app.adult .item .price,.app.adult .crow b,.app.adult .langband,.app.adult .combo,.app.adult .xpfloat,.app.adult .slot,.app.adult .tile,.app.adult .opt .k,.app.adult .swhint,.app.adult .ringbox b,.app.adult .fb h3,.app.adult .avatar,.app.adult .sheet h3,.app.adult .dword .rk{font-weight:800;letter-spacing:-.005em}
+.app.adult .btn{letter-spacing:0;font-size:15.5px}
+.app.adult .recap h1,.app.adult .login-top h1{-webkit-text-stroke:0;text-shadow:none;color:var(--ink);font-size:30px}
+.app.adult .xpfloat{-webkit-text-stroke:0;text-shadow:none}
+.app.adult .login-top{background:radial-gradient(110% 90% at 50% 0%,color-mix(in srgb,var(--sun) 22%,transparent),transparent 65%),var(--surface);border-bottom:1px solid var(--edge)}
+.app.adult .login-top p{color:var(--ink-2)}
+.app.adult .fface{box-shadow:0 14px 30px -16px rgba(0,0,0,.45)}
+.app.adult .gcard[aria-pressed=true],.app.adult .lbtn[aria-pressed=true]{outline-width:2px}
+.app.adult .btn:active,.app.adult .opt:active,.app.adult .tile:active,.app.adult .item:active{transform:scale(.98)}
+.app.adult .pet [stroke]:not([stroke="none"]),.app.adult svg.bossart [stroke],.app.adult .item svg [stroke]{stroke:var(--pet-edge)}
+.app.adult .pet [fill="var(--edge)"]{fill:var(--pet-edge)}
+.app.adult .hearts svg{stroke:var(--pet-edge)}
+.app.adult .s-prog i,.app.adult .xpbar i,.app.adult .goalbar i,.app.adult .sb .t i,.app.adult .hpbar i{border-right-width:0}
+.ad-bonus{padding:4px 16px}
+.ad-bn{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.ad-bn:first-child{border-top:0}
+.ad-bn.done{opacity:.55}
+.ad-bi{width:36px;height:36px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;flex:none;color:var(--sun)}
+.ad-bi svg{width:20px;height:20px}
+.ad-bt{flex:1;min-width:0}
+.ad-bt b{display:block;font-size:14.5px;font-weight:800}
+.ad-bt span{display:block;font-size:12.5px;color:var(--ink-2);font-weight:600;margin-top:2px}
+.ad-bt span.ok{color:var(--grass);font-weight:800}
+.ad-bv{display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:14px}
+.ad-bv svg{width:16px;height:16px}
+.ad-claim{display:inline-flex;align-items:center;gap:4px;border:0;border-radius:12px;background:var(--sun);color:var(--on-sun);font:800 13px 'Plus Jakarta Sans',sans-serif;padding:9px 12px;cursor:pointer;flex:none}
+.ad-claim svg{width:15px;height:15px}
 .ad-lang{font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--acc-soft);color:var(--ink);margin-right:6px}
 
 </style>
@@ -485,7 +518,7 @@ svg.ic{width:24px;height:24px;flex:none}
       <div class="seg" id="roleSeg"><button data-role="student" aria-pressed="false">Élève</button><button data-role="parent" aria-pressed="false">Parent</button></div>
       <span class="hlab">Absence simulée</span>
       <div class="seg" id="skipSeg"><button data-skip="0" aria-pressed="true">0 j</button><button data-skip="2" aria-pressed="false">2 j</button><button data-skip="4" aria-pressed="false">4 j</button><button data-skip="7" aria-pressed="false">7 j</button></div>
-      <div class="seg" id="themeSeg"><button data-th="game" aria-pressed="true">Jeu</button><button data-th="adult" aria-pressed="false">Adulte · accueil</button></div>
+      <div class="seg" id="themeSeg"><button data-th="game" aria-pressed="true">Jeu</button><button data-th="adult" aria-pressed="false">Adulte</button></div>
       <div class="seg" id="devSeg"><button data-dev="phone" aria-pressed="true">Smartphone</button><button data-dev="wide" aria-pressed="false">Ordinateur</button></div>
       <button class="hbtn" id="themeBtn">Thème</button>
       <button class="hbtn" id="resetBtn">Réinitialiser</button>
@@ -900,6 +933,17 @@ function viewHomeAdult(){
   h+='<div class="ad-sec"><h2>Régularité</h2></div><div class="ad-card"><div class="ad-week">';
   for(i=6;i>=0;i--){var d=dayStart(i);h+='<div class="ad-day'+(hasSess(i)?' on':'')+(i===0?' today':'')+'"><i></i>'+DINI[d.getDay()]+'</div>';}
   h+='</div><p class="ad-note"><b>Série de '+st+' jour'+(st>1?'s':'')+'.</b> '+(next?'Prochain bon dans '+(next.d-st)+' jour'+(next.d-st>1?'s':'')+' : +'+next.p+' gemmes.':'Tous les bons de palier sont atteints.')+'</p></div>';
+  var dailyDone=S.dailyDay===todayIdx();
+  h+='<div class="ad-sec"><h2>Bonus</h2></div><div class="ad-card ad-bonus">'
+    +'<div class="ad-bn'+(dailyDone?' done':'')+'"><span class="ad-bi">'+ic('gift')+'</span><div class="ad-bt"><b>Bon du jour</b><span>'+(dailyDone?'Encaissé aujourd’hui':'Offert à ta première séance du jour')+'</span></div><span class="ad-bv">'+ic('gem','var(--sky)')+'+10</span></div>';
+  VOUCH.forEach(function(v){
+    if(st<v.d){S.claimed[v.d]=false;}
+    var can=st>=v.d&&!S.claimed[v.d],done=S.claimed[v.d];
+    h+='<div class="ad-bn'+(done?' done':'')+'"><span class="ad-bi">'+ic('gift')+'</span><div class="ad-bt"><b>'+v.d+' jours de suite</b>'
+      +(can?'<span class="ok">Prêt à encaisser</span>':done?'<span>Encaissé</span>':'<div class="ad-bar" style="margin-top:7px"><i style="width:'+Math.round(Math.min(1,st/v.d)*100)+'%;background:var(--sun)"></i></div>')+'</div>'
+      +(can?'<button class="ad-claim" data-act="claim" data-v="'+v.d+'">Encaisser '+ic('gem','var(--on-sun)')+'+'+v.p+'</button>':'<span class="ad-bv">'+ic('gem','var(--sky)')+'+'+v.p+'</span>')+'</div>';
+  });
+  h+='</div>';
   h+='<div class="ad-sec"><h2>Cette semaine</h2><button class="ad-link" style="margin:0" data-act="tab" data-v="stats">Toutes mes stats</button></div><div class="ad-stats">'
     +'<div class="ad-stat"><b class="tnum">'+days+'/7</b><span>jours joués</span></div><div class="ad-stat"><b class="tnum">'+dur(week*60)+'</b><span>de pratique</span></div><div class="ad-stat"><b class="tnum">'+(a7===null?'–':Math.round(a7*100)+' %')+'</b><span>de réussite</span></div></div>';
   return '<div class="view'+(S.enter?' enter':'')+'">'+h+'</div>';
@@ -1382,7 +1426,7 @@ function render(){
   else{h=parentShell();}
   h+=viewSheet();
   if(S.toast){h+='<div class="toast">'+esc(S.toast)+'</div>';}
-  app.className='app'+((S.theme==='adult'&&S.role==='student'&&S.tab==='home'&&!S.sess)?' adult':'');
+  app.className='app'+(S.theme==='adult'?' adult':'');
   app.innerHTML=h;
   S.enter=false;
   document.querySelectorAll('#themeSeg button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.th===S.theme));});
@@ -1523,7 +1567,7 @@ document.getElementById('skipSeg').addEventListener('click',function(e){
 });
 document.getElementById('themeSeg').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b){return;}
-  S.theme=b.dataset.th;S.tab='home';S.sess=null;S.enter=true;if(S.role!=='student'){S.role='student';}render();
+  S.theme=b.dataset.th;S.enter=true;render();
 });
 document.getElementById('devSeg').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b){return;}
