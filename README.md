@@ -14,7 +14,7 @@ Jeu pédagogique pour mémoriser le vocabulaire de néerlandais et d'anglais : s
 
 ## Voir la maquette
 
-Ouvrir `maquette/index.html`. En haut de page : bascule **Élève / Parent**, **absence simulée** (0, 2, 4, 7 jours) pour voir le compagnon dépérir, vue smartphone ou ordinateur, thème clair ou sombre. Les données sont générées sur 8 semaines et rien n'est envoyé nulle part.
+Ouvrir `maquette/index.html`. En haut de page : bascule **Élève / Parent**, **absence simulée** (0, 2, 4, 7 jours) pour voir le compagnon dépérir et le Gardien frapper, style d'accueil **Jeu / Adulte** à comparer, vue smartphone ou ordinateur, thème clair ou sombre. Les données sont générées sur 8 semaines et rien n'est envoyé nulle part.
 
 ## Déploiement prévu
 
