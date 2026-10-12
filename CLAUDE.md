@@ -22,7 +22,7 @@ Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla 
 - L'élève a ses propres statistiques (mêmes indicateurs que le parent, sans le détail des séances).
 - Deux styles complets à comparer dans la maquette (Jeu / Adulte, bouton en haut de page) : décision en attente.
 - L'écran de connexion élève ne montre **aucune entrée « parent »** ; le parent a son adresse à part.
-- Points calculés côté serveur depuis les événements ; solde = somme de `point_events`. Décrépitude calculée à la lecture, pas de tâche planifiée.
+- Gemmes calculées côté serveur depuis les événements ; solde = somme de `gem_events`. Décrépitude calculée à la lecture, pas de tâche planifiée.
 - Dépôt public : aucune donnée réelle d'élève, ni `.env`, ni `*.db`.
 
 ## Commandes
