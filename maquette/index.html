@@ -360,6 +360,9 @@ svg.ic{width:24px;height:24px;flex:none}
 .hm.l4{background:var(--sun);border-color:var(--edge)}
 .hm.fut{opacity:.25}
 .hm.now{outline:3px solid var(--edge);outline-offset:1px}
+.hleg{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:11.5px;font-weight:800;color:var(--ink-2)}
+.hleg span{display:inline-flex;align-items:center;gap:6px}
+.hleg .hm{display:inline-block;width:16px;height:16px;aspect-ratio:auto;border-radius:5px}
 .hlegend{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:8px;font-size:11px;color:var(--ink-2);font-weight:800}
 .hlegend .hm{width:14px}
 .hbar{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;font-weight:800}
@@ -647,9 +650,11 @@ function genHistory(){
       out.push(simSession(lst,mode,dir,start,prog,o));
     }
   }
-  function forceBoss(lst,back,hour,min,want){var d=dayStart(back),rec,t=0;do{rec=simSession(lst,'boss','toTarget',new Date(d.getFullYear(),d.getMonth(),d.getDate(),hour,min),.75,{});t++;}while(rec.win!==want&&t<60);return rec;}
-  out.push(forceBoss(LB.en1,15,18,20,true));
-  out.push(forceBoss(LB.nl1,6,17,40,false));
+  var ws0=weekStartIdx(todayIdx());
+  function forceBoss(lst,idx,hour,min){var d=dayStart(todayIdx()-idx),rec,t=0;do{rec=simSession(lst,'boss','toTarget',new Date(d.getFullYear(),d.getMonth(),d.getDate(),hour,min),.75,{});t++;}while(!rec.win&&t<60);return rec;}
+  out.push(forceBoss(LB.nl1,ws0-7+2,18,20));
+  out.push(forceBoss(LB.nl2,ws0-14+3,17,40));
+  out.push(forceBoss(LB.en1,ws0-21+1,18,5));
   out.sort(function(a,b){return a.start-b.start;});
   return out;
 }
@@ -695,8 +700,10 @@ function sessName(s){return s.label||(LB[s.listId]?LB[s.listId].name:'Séance');
 function dayIdxOf(d){return Math.round(new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()/864e5);}
 function weekStartIdx(idx){return idx-((idx+3)%7);}
 function bossWonIn(ws){return S.sessions.some(function(s){if(s.mode!=='boss'||!s.win){return false;}var i=dayIdxOf(s.start);return i>=ws&&i<=ws+6;});}
-function weekBossLang(ws){return Math.floor((ws+3)/7)%2===0?'nl':'en';}
-function bossStatus(){var t=todayIdx(),ws=weekStartIdx(t);return {ws:ws,lang:weekBossLang(ws),won:bossWonIn(ws),left:ws+6-t};}
+function bossLangOfWeek(ws){var best=null;S.sessions.forEach(function(x){if(x.mode==='boss'&&x.win){var i=dayIdxOf(x.start);if(i>=ws&&i<=ws+6&&(!best||x.start<best.start)){best=x;}}});return best?best.lang:null;}
+function bossBan(ws){var a=bossLangOfWeek(ws-7),b=bossLangOfWeek(ws-14);return a&&a===b?a:null;}
+function otherLang(l){return l==='nl'?'en':'nl';}
+function bossStatus(){var t=todayIdx(),ws=weekStartIdx(t);return {ws:ws,won:bossWonIn(ws),wonLang:bossLangOfWeek(ws),ban:bossBan(ws),left:ws+6-t};}
 function bossHits(anchor){var t=todayIdx(),c=0,ws=weekStartIdx(anchor);for(;ws+6<t;ws+=7){if(ws+6>=anchor&&!bossWonIn(ws)){c++;}}return c;}
 function petNow(id){
   var p=S.pets[id],act=id===S.active,d=act?Math.max(0,todayIdx()-p.anchor):0,o={days:d,hits:0};
@@ -843,7 +850,7 @@ function critter(kind,lvl,size,stg,react){
   return s+'</svg>';
 }
 function bossArt(lang,size){
-  var c=lang==='nl'?'#FF9418':'#2E8CFF';
+  var c=lang==='nl'?'#FF9418':lang==='en'?'#2E8CFF':'#FFC62E';
   return '<svg class="bossart" width="'+size+'" height="'+size+'" viewBox="0 0 120 120" aria-hidden="true">'
    +'<path d="M26 40 14 14l26 14zM94 40l12-26-26 14z" fill="#FFF4CC" stroke="var(--edge)" stroke-width="3.5" stroke-linejoin="round"/>'
    +'<path d="M18 70c0-26 18-42 42-42s42 16 42 42c0 20-14 34-42 34S18 90 18 70z" fill="var(--plum)" stroke="var(--edge)" stroke-width="4"/>'
@@ -884,10 +891,12 @@ function petCard(full){
    +(full?'':'<button class="btn sm alt" data-act="tab" data-v="pet" style="margin-top:6px">'+ic('heart')+' Prendre soin</button>')+'</div>';
 }
 function bossCard(B){
-  var R2=REALM[B.lang],P=PETS[S.active];
-  return '<div class="chunk bosscard '+R2.cls+(B.won?' won':(B.left<=1?' urgent':''))+'"><div class="bc-art">'+bossArt(B.lang,60)+'</div><div style="flex:1;min-width:0"><span class="tag">Gardien de la semaine · '+R2.s+'</span>'
-   +'<b>'+(B.won?P.n+' est sauvé cette semaine !':'Vaincs-le pour sauver '+P.n)+'</b>'
-   +'<span class="m">'+(B.won?'Bravo, un nouveau Gardien arrive lundi.':(B.left===0?'Dernier jour : avant ce soir minuit !':'Encore '+B.left+' jour'+(B.left>1?'s':'')+' · sinon −'+BOSS_PEN.care+' de forme.'))+'</span></div>'
+  var P=PETS[S.active],other=B.ban?otherLang(B.ban):null;
+  var sub=B.won?'Vaincu en '+REALM[B.wonLang].s.toLowerCase()+'. Un nouveau Gardien arrive lundi.'
+    :(B.left===0?'Dernier jour : avant ce soir minuit !':'Encore '+B.left+' jour'+(B.left>1?'s':'')+' · sinon −'+BOSS_PEN.care+' de forme.')
+      +(other?' Cette semaine : '+REALM[other].s.toLowerCase()+' obligatoire (pas 3 semaines de suite en '+REALM[B.ban].s.toLowerCase()+').':' Tu choisis la langue.');
+  return '<div class="chunk bosscard'+(B.won?' won':(B.left<=1?' urgent':''))+'"><div class="bc-art">'+bossArt(B.won?B.wonLang:other,60)+'</div><div style="flex:1;min-width:0"><span class="tag">Gardien de la semaine</span>'
+   +'<b>'+(B.won?P.n+' est sauvé cette semaine !':'Vaincs-le pour sauver '+P.n)+'</b><span class="m">'+sub+'</span></div>'
    +(B.won?'':'<button class="btn sm" data-act="bossweek">Affronter</button>')+'</div>';
 }
 function regularityHTML(){
@@ -916,7 +925,7 @@ function viewHome(){
   return '<div class="view'+(S.enter?' enter':'')+'">'+h+'</div>';
 }
 function viewHomeAdult(){
-  var n=petNow(S.active),P=PETS[S.active],B=bossStatus(),st=streak(),R2=REALM[B.lang],now=NOW();
+  var n=petNow(S.active),P=PETS[S.active],B=bossStatus(),st=streak(),now=NOW();
   var hello=now.getHours()<12?'Bonjour':now.getHours()<18?'Bon après-midi':'Bonsoir',days=0,week=0,i;
   for(i=0;i<7;i++){if(hasSess(i)){days++;}week+=dayMin(i);}
   var a7=acc(6,0);
@@ -928,7 +937,8 @@ function viewHomeAdult(){
     +'<div class="ad-gauges">'+['food','care','joy'].map(function(k){return '<div class="ad-g"><div class="lab"><span>'+STATN[k]+'</span><span class="tnum">'+Math.round(n[k])+'</span></div><div class="tr"><i style="width:'+Math.round(n[k])+'%;background:'+col(n[k])+'"></i></div></div>';}).join('')+'</div>'
     +'<button class="ad-link" data-act="tab" data-v="pet">Prendre soin</button></div>';
   h+='<button class="ad-cta" data-act="tab" data-v="play"><span>Commencer une séance</span><span class="k">≈ 5 min</span></button>';
-  h+='<div class="ad-sec"><h2>Gardien de la semaine</h2></div><div class="ad-card"><div class="ad-boss">'+bossArt(B.lang,54)+'<div style="flex:1;min-width:0"><b><span class="ad-lang '+R2.cls+'">'+R2.tag+'</span>'+(B.won?'Vaincu, '+P.n+' est sauvé':'À vaincre avant dimanche')+'</b><span>'+(B.won?'Un nouveau Gardien arrive lundi.':(B.left===0?'Dernier jour : avant ce soir minuit.':B.left+' jour'+(B.left>1?'s':'')+' restant'+(B.left>1?'s':'')+'. Sans victoire, '+P.n+' perd '+BOSS_PEN.care+' de forme.'))+'</span></div></div>'
+  var bo=B.ban?otherLang(B.ban):null;
+  h+='<div class="ad-sec"><h2>Gardien de la semaine</h2></div><div class="ad-card"><div class="ad-boss">'+bossArt(B.won?B.wonLang:bo,54)+'<div style="flex:1;min-width:0"><b>'+(B.won?'Vaincu en '+REALM[B.wonLang].s.toLowerCase()+' · '+P.n+' est sauvé':'À vaincre avant dimanche')+'</b><span>'+(B.won?'Un nouveau Gardien arrive lundi.':(B.left===0?'Dernier jour : avant ce soir minuit. ':B.left+' jour'+(B.left>1?'s':'')+' restant'+(B.left>1?'s':'')+'. Sans victoire, '+P.n+' perd '+BOSS_PEN.care+' de forme. ')+(bo?'Cette semaine : '+REALM[bo].s.toLowerCase()+' obligatoire (pas 3 semaines de suite en '+REALM[B.ban].s.toLowerCase()+').':'Tu choisis la langue.'))+'</span></div></div>'
     +'<div class="ad-bar"><i style="width:'+Math.round((7-B.left)/7*100)+'%"></i></div></div>';
   h+='<div class="ad-sec"><h2>Régularité</h2></div><div class="ad-card"><div class="ad-week">';
   for(i=6;i>=0;i--){var d=dayStart(i);h+='<div class="ad-day'+(hasSess(i)?' on':'')+(i===0?' today':'')+'"><i></i>'+DINI[d.getDay()]+'</div>';}
@@ -988,7 +998,8 @@ function viewPlay(){
   h+='<div class="step"><i>3</i>Choisis ton jeu</div><div class="games">';
   ORDER.forEach(function(g){
     var G=GAMES[g],r=S.rot[g],lock=!!(r&&r.locked),info='',dots='';
-    if(g==='boss'){info='<span class="rotinfo">Hors rotation : toujours disponible</span>';}
+    var BB=bossStatus();
+    if(g==='boss'){if(!BB.won&&BB.ban===L){lock=true;info='<span class="rotinfo lock">Pas 3 semaines de suite en '+R2.s.toLowerCase()+' : choisis l’autre langue pour le Gardien de la semaine</span>';}else{info='<span class="rotinfo">Hors rotation : '+(BB.won?'Gardien de la semaine déjà vaincu':'Gardien de la semaine à vaincre')+'</span>';}}
     else if(lock){var need=ROT.need-r.seen.length;info='<span class="rotinfo lock">Verrouillé : joue '+need+' autre'+(need>1?'s':'')+' jeu'+(need>1?'x':'')+' différent'+(need>1?'s':'')+' ('+r.seen.length+'/'+ROT.need+')</span>';}
     else{var left=ROT.max-r.n;for(var k=0;k<ROT.max;k++){dots+='<i class="'+(k<r.n?'on':'')+'"></i>';}info='<span class="rotinfo">'+(left===1?'Dernière partie avant verrouillage':left+' parties avant verrouillage')+' <span class="rotdots">'+dots+'</span></span>';}
     h+='<button class="gcard'+(lock?' locked':'')+'" aria-pressed="'+(S.game===g)+'" data-act="game" data-v="'+g+'"><span class="gic" style="background:'+(lock?'var(--lock)':G.col)+'">'+ic(lock?'lock':G.ic)+'</span><span style="flex:1;min-width:0"><b>'+G.n+'</b><span class="d">'+G.d+'</span>'
@@ -997,7 +1008,7 @@ function viewPlay(){
   h+='</div>';
   var fixed=S.game==='scramble'||S.game==='forge'||S.game==='boss';
   h+='<div class="step"><i>4</i>Dans quel sens ?</div><div class="seg" style="display:flex"><button style="flex:1" data-act="dir" data-v="toFr" aria-pressed="'+(S.dir==='toFr'&&!fixed)+'"'+(fixed?' disabled':'')+'>'+R2.tag+' → français</button><button style="flex:1" data-act="dir" data-v="toTarget" aria-pressed="'+(S.dir==='toTarget'||fixed)+'">Français → '+R2.tag+'</button></div>';
-  var nq=Math.min(GAMES[S.game].q,pool.length),locked=S.rot[S.game]&&S.rot[S.game].locked;
+  var BS2=bossStatus(),nq=Math.min(GAMES[S.game].q,pool.length),locked=(S.rot[S.game]&&S.rot[S.game].locked)||(S.game==='boss'&&!BS2.won&&BS2.ban===L);
   h+='<div class="chunk summary">'+ic('clock')+'<span>≈ 5 min · '+nq+' mots · '+esc(scopeLabel(S.scope,S.one,S.pick,L))+'</span></div>';
   h+='<button class="btn wide" data-act="launch"'+(pool.length<2||locked?' disabled':'')+'>'+ic('play','currentColor')+' Lancer la séance</button>';
   if(S.scope==='weak'&&!pool.length){h+='<p class="muted" style="margin-top:10px">Aucun mot difficile en '+R2.s.toLowerCase()+' pour l’instant : bravo !</p>';}
@@ -1105,6 +1116,7 @@ function launch(game,pool,meta){
   var lang=meta.lang;
   pool=pool.filter(function(w){return w.lang===lang;});
   if(S.rot[game]&&S.rot[game].locked){return;}
+  var BSn=bossStatus();if(game==='boss'&&!BSn.won&&BSn.ban===lang){return;}
   var dir=(game==='scramble'||game==='forge'||game==='boss')?'toTarget':S.dir;
   var n=GAMES[game].q,src=pool.slice();
   if(game==='scramble'){var short=src.filter(function(w){return w.term.replace(/\s/g,'').length<=14;});if(short.length>=4){src=short;}}
@@ -1293,7 +1305,7 @@ function heatmap(){
       h+='<span class="'+cls+'"></span>';
     }
   }
-  h+='</div><div class="hlegend">moins <span class="hm"></span><span class="hm l1"></span><span class="hm l2"></span><span class="hm l3"></span><span class="hm l4"></span> plus</div>';
+  h+='</div><div class="hleg"><span><i class="hm"></i>0 min</span><span><i class="hm l1"></i>moins de 3 min</span><span><i class="hm l2"></i>3 à 5 min</span><span><i class="hm l3"></i>6 à 9 min</span><span><i class="hm l4"></i>10 min et +</span><span><i class="hm now"></i>aujourd’hui</span></div>';
   return h;
 }
 function lineChart(){
@@ -1337,12 +1349,12 @@ function pOverview(){
   if(gone>=2){al+='<div class="alert bad">'+ic('alert')+'<span>Aucune séance depuis '+gone+' jours.</span></div>';}
   if(pn.lvl>=2){al+='<div class="alert bad">'+ic('alert')+'<span>L’avatar '+esc(P.n)+' est '+STATE_N[pn.lvl].toLowerCase()+' : il n’a pas eu de soins récemment.</span></div>';}
   if(pn.hits>0){al+='<div class="alert bad">'+ic('alert')+'<span>Le Gardien n’a pas été vaincu la semaine dernière : '+esc(P.n)+' a perdu '+(pn.hits*BOSS_PEN.care)+' de forme.</span></div>';}
-  else if(!B.won&&B.left<=2){al+='<div class="alert">'+ic('clock')+'<span>Gardien de la semaine ('+REALM[B.lang].s+') pas encore vaincu : '+(B.left===0?'dernier jour':B.left+' jour'+(B.left>1?'s':'')+' restant'+(B.left>1?'s':''))+'.</span></div>';}
+  else if(!B.won&&B.left<=2){al+='<div class="alert">'+ic('clock')+'<span>Gardien de la semaine pas encore vaincu : '+(B.left===0?'dernier jour':B.left+' jour'+(B.left>1?'s':'')+' restant'+(B.left>1?'s':''))+'.</span></div>';}
   if(days<S.goalDays){al+='<div class="alert">'+ic('clock')+'<span>'+days+' jour'+(days>1?'s':'')+' joué'+(days>1?'s':'')+' sur 7, pour un objectif de '+S.goalDays+'.</span></div>';}
   if(stuck.length){al+='<div class="alert bad">'+ic('alert')+'<span>'+stuck.length+' mot'+(stuck.length>1?'s':'')+' raté'+(stuck.length>1?'s':'')+' plus de 5 fois sans réussite récente : <b>'+stuck.slice(0,3).map(function(r){return esc(r.term);}).join(', ')+'</b>.</span></div>';}
   if(!al){al='<div class="alert">'+ic('check')+'<span>Rien à signaler cette semaine.</span></div>';}
   h+='<div class="pcard s6"><h2>À surveiller</h2><div class="alerts">'+al+'</div></div>';
-  h+='<div class="pcard s6"><h2>Son compagnon</h2><div class="petrow">'+critter(S.active,pn.lvl,96,stage())+'<div style="flex:1"><b>'+P.n+' · '+P.k+'</b><p class="muted" style="margin-bottom:6px">'+STATE_N[pn.lvl]+(pn.days>0?' · '+pn.days+' jour'+(pn.days>1?'s':'')+' sans soins':'')+'</p>'+bars(pn)+'<p class="muted" style="margin-top:10px;font-size:13px">Gardien de la semaine ('+REALM[B.lang].s+') : <b>'+(B.won?'vaincu':(B.left===0?'à vaincre aujourd’hui':'à vaincre, '+B.left+' j restants'))+'</b></p></div></div></div>';
+  h+='<div class="pcard s6"><h2>Son compagnon</h2><div class="petrow">'+critter(S.active,pn.lvl,96,stage())+'<div style="flex:1"><b>'+P.n+' · '+P.k+'</b><p class="muted" style="margin-bottom:6px">'+STATE_N[pn.lvl]+(pn.days>0?' · '+pn.days+' jour'+(pn.days>1?'s':'')+' sans soins':'')+'</p>'+bars(pn)+'<p class="muted" style="margin-top:10px;font-size:13px">Gardien de la semaine : <b>'+(B.won?'vaincu en '+REALM[B.wonLang].s.toLowerCase():(B.left===0?'à vaincre aujourd’hui':'à vaincre, '+B.left+' j restants'))+'</b></p></div></div></div>';
   h+='<div class="pcard s6"><h2>Minutes par jour</h2>'+barChart()+'</div>';
   h+='<div class="pcard s6"><h2>Taux de réussite par semaine</h2>'+lineChart()+'</div>';
   h+='<div class="pcard s6"><h2>Jours travaillés · 8 semaines</h2>'+heatmap()+'</div>';
@@ -1402,7 +1414,7 @@ function pSettings(){
   h+='</div><div class="pcard s6"><h2>Régularité et récompenses</h2><div class="row"><div>Bon du jour<small>à la première séance du jour</small></div><b class="disp">+10 gemmes</b></div>';
   VOUCH.forEach(function(v){h+='<div class="row"><div>'+v.d+' jours de suite</div><b class="disp">+'+v.p+' gemmes</b></div>';});
   h+='<p class="muted" style="font-size:12.5px;margin-top:8px">Sans séance, le compagnon perd 15 de faim, 8 de forme et 12 d’humeur par jour.</p></div>';
-  h+='<div class="pcard s12"><h2>Règles du jeu</h2><div class="row"><div>Rotation des jeux<small>Un jeu se verrouille après '+ROT.max+' séances ; il se retrouve en jouant '+ROT.need+' autres jeux différents</small></div><b class="disp">'+ROT.max+' / '+ROT.need+'</b></div><div class="row"><div>Gardien hebdomadaire<small>À vaincre chaque semaine ; sinon −'+BOSS_PEN.care+' de forme et −'+BOSS_PEN.joy+' d’humeur</small></div><b class="disp">1 / semaine</b></div><div class="row"><div>Gemmes par bon mot<small>Plus le jeu est difficile, plus il rapporte</small></div><b class="disp">1 à 4</b></div></div>';
+  h+='<div class="pcard s12"><h2>Règles du jeu</h2><div class="row"><div>Rotation des jeux<small>Un jeu se verrouille après '+ROT.max+' séances ; il se retrouve en jouant '+ROT.need+' autres jeux différents</small></div><b class="disp">'+ROT.max+' / '+ROT.need+'</b></div><div class="row"><div>Gardien hebdomadaire<small>À vaincre chaque semaine, langue au choix mais jamais 3 semaines de suite la même ; sinon −'+BOSS_PEN.care+' de forme et −'+BOSS_PEN.joy+' d’humeur</small></div><b class="disp">1 / semaine</b></div><div class="row"><div>Gemmes par bon mot<small>Plus le jeu est difficile, plus il rapporte</small></div><b class="disp">1 à 4</b></div></div>';
   h+='<div class="pcard s12"><h2>Données</h2><p class="muted">Export de toutes les séances et réponses au format CSV, ou suppression complète du compte élève.</p><div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn sm" data-act="toast" data-m="Export CSV préparé (maquette)">'+ic('down')+' Exporter en CSV</button><button class="btn sm alt" data-act="toast" data-m="Suppression simulée : rien n’a été effacé">Supprimer les données</button></div></div></div>';
   h+='<div style="height:16px"></div><button class="btn alt wide" data-act="logout">'+ic('out')+' Se déconnecter</button>';
   return h;
@@ -1480,13 +1492,13 @@ document.getElementById('app').addEventListener('click',function(e){
     case 'sess':S.sub={t:'sess',id:t.dataset.id};S.enter=true;render();break;
     case 'scope':S.scope=v;render();break;
     case 'plang':S.plang=v;S.scope=S.scope;render();break;
-    case 'bossweek':{var BS=bossStatus();S.plang=BS.lang;S.scope='all';S.game='boss';S.tab='play';S.enter=true;render();break;}
+    case 'bossweek':{var BS=bossStatus();if(BS.ban){S.plang=otherLang(BS.ban);}S.scope='all';S.game='boss';S.tab='play';S.enter=true;render();break;}
     case 'playweak':S.plang=t.dataset.lang;S.scope='weak';S.tab='play';S.enter=true;render();break;
     case 'pickl':
       if(S.scope==='one'){S.one=t.dataset.id;}
       else{var ix=S.pick.indexOf(t.dataset.id);if(ix>-1){S.pick.splice(ix,1);}else{S.pick.push(t.dataset.id);}}
       render();break;
-    case 'game':if(S.rot[v]&&S.rot[v].locked){toast('Verrouillé : joue '+(ROT.need-S.rot[v].seen.length)+' autre(s) jeu(x) pour le retrouver.');break;}S.game=v;render();break;
+    case 'game':if(S.rot[v]&&S.rot[v].locked){toast('Verrouillé : joue '+(ROT.need-S.rot[v].seen.length)+' autre(s) jeu(x) pour le retrouver.');break;}if(v==='boss'){var BG=bossStatus();if(!BG.won&&BG.ban===S.plang){toast('Pas 3 semaines de suite dans la même langue : choisis l’autre langue.');break;}}S.game=v;render();break;
     case 'dir':S.dir=v;render();break;
     case 'launch':
       var pool=wordsFor(S.scope,S.one,S.pick,S.plang);

@@ -97,7 +97,8 @@ Un mot raté est re-présenté une fois dans la séance (sauf contre le Gardien)
 ### 4.4 Le Gardien de la semaine
 
 - Chaque semaine (du lundi au dimanche), l'élève doit **vaincre au moins un Gardien** pour sauver son compagnon.
-- La langue du Gardien proposé alterne d'une semaine à l'autre (néerlandais, puis anglais) pour couvrir les deux langues ; n'importe quel Gardien vaincu valide la semaine.
+- **L'élève choisit la langue** du Gardien, avec une règle : jamais la même langue **3 semaines de suite**. Si les deux semaines précédentes ont été validées dans la même langue, l'autre langue est imposée pour la semaine courante.
+- Une fois la semaine validée, d'autres Gardiens restent jouables dans n'importe quelle langue (ils n'ont plus d'effet sur la règle).
 - **Si aucun Gardien n'est vaincu** au passage du lundi : le compagnon perd 40 de forme et 20 d'humeur (« Le Gardien a frappé »).
 - Un Gardien vaincu rapporte 20 gemmes de bonus, plus l'état « sauvé » sur l'accueil.
 - L'accueil affiche le Gardien de la semaine avec les jours restants ; il devient urgent le dernier jour.
@@ -175,7 +176,7 @@ L'élève et le parent partagent les mêmes indicateurs ; le parent y ajoute le 
 
 | Écran | Contenu | Élève | Parent |
 | --- | --- | --- | --- |
-| Aperçu / Mes stats | Jours joués sur 7, temps, réussite et évolution, série, minutes par jour, réussite par semaine, calendrier de 8 semaines | Oui | Oui |
+| Aperçu / Mes stats | Jours joués sur 7, temps, réussite et évolution, série, minutes par jour, réussite par semaine, calendrier de 8 semaines (couleur selon les minutes du jour : 0, moins de 3, 3 à 5, 6 à 9, 10 et plus) | Oui | Oui |
 | Jeux et langues | Séances par jeu sur 30 jours, maîtrise par langue, Gardiens vaincus | Oui | Oui |
 | Mots difficiles | Mots les plus ratés avec essais et taux d'échec ; filtre par langue | Oui | Oui, avec dernière erreur |
 | Séances | Liste filtrable, détail réponse par réponse (mot, réponse donnée, juste ou non, temps, type d'erreur), langue de chaque séance | Non | Oui |
@@ -248,7 +249,7 @@ flowchart LR
 | `gem_events` | id, élève, delta, motif, séance, date | Registre des gemmes ; solde = somme |
 | `user_pets` | élève, espèce, faim, forme, humeur, jour de référence, actif, adopté le | Compagnons |
 | `game_rotation` | élève, jeu, séances depuis déblocage, verrouillé, autres jeux joués | Rotation (recalculable depuis `sessions`) |
-| `weekly_boss` | élève, semaine, langue proposée, vaincu le, pénalité appliquée | Gardien hebdomadaire |
+| `weekly_boss` | élève, semaine, langue choisie, vaincu le, pénalité appliquée | Gardien hebdomadaire |
 | `vouchers` | élève, palier, série, encaissé le | Bons encaissés |
 | `settings` | élève ou global, clé, valeur | Barème, rotation, objectifs, tolérance |
 
@@ -268,7 +269,7 @@ Règles non évidentes :
 | `GET/POST /lists`, `GET/PUT/DELETE /lists/:id` | Listes et mots | Élève, parent |
 | `GET /games` | Jeux, compteurs et verrouillages | Élève |
 | `POST /sessions` (langue, portée, jeu, sens), `POST /sessions/:id/events`, `POST /sessions/:id/end` | Séance par lots ; renvoie gemmes, verrouillages, bons | Élève |
-| `GET /weekly-boss` | Statut du Gardien de la semaine | Élève |
+| `GET /weekly-boss` | Statut du Gardien de la semaine et langue interdite éventuelle | Élève |
 | `GET /wallet`, `GET /shop`, `POST /shop/buy` | Solde, catalogue, achat | Élève |
 | `GET /pets`, `POST /pets/:id/adopt`, `POST /pets/:id/activate` | Compagnons | Élève |
 | `GET /streak`, `POST /vouchers/:palier/claim` | Régularité et bons | Élève |
@@ -311,6 +312,7 @@ Critères d'acceptation du lot 1 :
 - [ ] Les listes se choisissent par langue : une liste, plusieurs listes ou toutes les listes de la langue.
 - [ ] Après 3 séances du même jeu, il est verrouillé ; il se rouvre après 2 séances de 2 autres jeux différents.
 - [ ] Le Gardien de la semaine s'affiche avec ses jours restants ; sans victoire, le compagnon perd 40 de forme au lundi.
+- [ ] La langue du Gardien est au choix, mais après deux semaines de suite dans la même langue, la troisième impose l'autre.
 - [ ] Les gemmes correspondent au barème et un jeu difficile rapporte plus qu'un jeu facile.
 - [ ] Une séance dure en moyenne 5 minutes (4 à 6) avec le nombre de mots prévu.
 - [ ] L'élève consulte ses statistiques ; le parent voit les mêmes chiffres plus le détail des séances.
@@ -322,7 +324,7 @@ Critères d'acceptation du lot 1 :
 
 - [ ] **Thème visuel** : « Jeu » ou « Adulte » (maquette complète dans les deux styles), ou une version intermédiaire.
 - [ ] **Rotation** : 3 séances avant verrouillage et 2 autres jeux pour le rouvrir, trop ou trop peu ?
-- [ ] **Gardien** : langue alternée chaque semaine, pénalité de 40 de forme et 20 d'humeur, adaptés ?
+- [ ] **Gardien** : langue au choix mais jamais 3 semaines de suite la même, pénalité de 40 de forme et 20 d'humeur, adaptées ?
 - [ ] **Barème** : gemmes par jeu (1 à 4), bonus et prix des compagnons, à calibrer après une semaine d'usage.
 - [ ] **Compagnons** : tous décroissent ou seul l'actif ? (recommandé : seul l'actif)
 - [ ] **Hébergement** : version de Node chez Infomaniak (`node:sqlite` demande 22.5 ou plus), emplacement persistant de `data/`.
