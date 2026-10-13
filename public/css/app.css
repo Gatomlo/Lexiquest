@@ -508,3 +508,9 @@ svg.ic{width:24px;height:24px;flex:none}
 .pwtoggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0!important;background:none;color:var(--ink-2);cursor:pointer;display:grid;place-items:center;border-radius:12px;padding:0}
 .pwtoggle[aria-pressed=true]{color:var(--ink)}
 .pwtoggle svg{width:22px;height:22px}
+/* écrans de connexion, d'installation et d'invitation : formulaire de largeur raisonnable, centré, sur tout écran */
+.view.login{align-items:center;justify-content:center;padding-left:16px;padding-right:16px}
+.app.adult .view.login{padding:24px 16px}
+.view.login>.login-top,.view.login>.login-body{width:100%;max-width:400px}
+.view.login>.login-top{border:1px solid var(--edge);border-radius:24px 24px 0 0;border-bottom:0}
+.view.login>.login-body{border:1px solid var(--edge);border-top:0;border-radius:0 0 24px 24px;background:var(--surface)}
