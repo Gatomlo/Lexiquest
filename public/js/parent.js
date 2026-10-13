@@ -30,7 +30,7 @@ function viewSetup() {
    + '<h1>Lexiquest</h1><p>Bienvenue ! Crée le compte parent pour commencer.</p></div>'
    + '<form class="login-body" id="setupForm"><label class="field">Ton nom<input name="name" autocomplete="name" required></label>'
    + '<label class="field">Identifiant<input name="username" autocomplete="username" autocapitalize="none" required></label>'
-   + '<label class="field">Mot de passe (8 caractères minimum)<input name="password" type="password" minlength="8" autocomplete="new-password" required></label>'
+   + '<label class="field">Mot de passe (8 caractères minimum)' + pwInput('name="password" minlength="8" autocomplete="new-password" required') + '</label>'
    + (P.loginErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(P.loginErr) + '</span></div>' : '')
    + '<button class="btn wide" type="submit">Créer le compte parent</button>'
    + '<p class="login-note">Tu ajouteras ensuite le compte de l’élève dans Réglages.</p></form></div>';
@@ -40,7 +40,7 @@ function viewLogin() {
   return '<div class="view login"><div class="login-top">' + critter('phenix', 0, 96, 1, null, null)
    + '<h1>Lexiquest</h1><p>Suivi parent</p></div>'
    + '<form class="login-body" id="loginForm"><label class="field">Identifiant<input name="username" autocomplete="username" autocapitalize="none" required></label>'
-   + '<label class="field">Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>'
+   + '<label class="field">Mot de passe' + pwInput('name="password" autocomplete="current-password" required') + '</label>'
    + (P.loginErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(P.loginErr) + '</span></div>' : '')
    + '<button class="btn wide" type="submit">Se connecter</button></form></div>';
 }
@@ -165,12 +165,12 @@ function viewSheet() {
   if (s.t === 'student') {
     return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="studentForm"><h3>Nouvel élève</h3>'
      + '<label class="field" style="margin:10px 0">Nom affiché<input class="txt" name="name" required></label><label class="field" style="margin-bottom:10px">Identifiant<input class="txt" name="username" autocapitalize="none" required></label>'
-     + '<label class="field" style="margin-bottom:10px">Mot de passe (8 caractères minimum)<input class="txt" name="password" type="password" minlength="8" required></label>'
+     + '<label class="field" style="margin-bottom:10px">Mot de passe (8 caractères minimum)' + pwInput('class="txt" name="password" minlength="8" required') + '</label>'
      + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Créer le compte</button></div></form>';
   }
   if (s.t === 'password') {
     return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="pwForm"><h3>Nouveau mot de passe</h3>'
-     + '<label class="field" style="margin:10px 0">Mot de passe (8 caractères minimum)<input class="txt" name="password" type="password" minlength="8" required></label>'
+     + '<label class="field" style="margin:10px 0">Mot de passe (8 caractères minimum)' + pwInput('class="txt" name="password" minlength="8" required') + '</label>'
      + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Enregistrer</button></div></form>';
   }
   return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="listForm"><h3>Donner une liste</h3><p class="muted" style="margin:4px 0 12px">Un mot par ligne : <b>mot = traduction</b></p>'

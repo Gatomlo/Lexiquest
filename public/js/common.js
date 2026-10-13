@@ -183,3 +183,16 @@ function notifCard(who) {
   }
   return h + '</div>';
 }
+
+/* ---------- champ mot de passe avec bouton « afficher » ---------- */
+function pwInput(attrs) {
+  return '<span class="pw"><input type="password" ' + attrs + '><button type="button" class="pwtoggle" aria-label="Afficher le mot de passe" aria-pressed="false">' + ic('eye') + '</button></span>';
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest ? e.target.closest('.pwtoggle') : null; if (!b) { return; }
+  var input = b.parentNode.querySelector('input'), show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+  b.innerHTML = ic(show ? 'eyeoff' : 'eye');
+  input.focus();
+}, true);

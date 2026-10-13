@@ -502,3 +502,9 @@ svg.ic{width:24px;height:24px;flex:none}
   .app.adult .tabbar{border-top:0;border-right:1px solid var(--edge)}
   .app.adult .tab[aria-current=true]{width:100%}
 }
+
+.pw{position:relative;display:block}
+.pw input{width:100%;padding-right:50px}
+.pwtoggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0!important;background:none;color:var(--ink-2);cursor:pointer;display:grid;place-items:center;border-radius:12px;padding:0}
+.pwtoggle[aria-pressed=true]{color:var(--ink)}
+.pwtoggle svg{width:22px;height:22px}

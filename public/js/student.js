@@ -93,7 +93,7 @@ function viewLogin() {
   return '<div class="view login"><div class="login-top">' + critter('phenix', 0, 104, 1, null, null)
    + '<h1>Lexiquest</h1><p>Révise 5 minutes, prends soin de ton compagnon !</p></div>'
    + '<form class="login-body" id="loginForm"><label class="field">Identifiant<input name="username" autocomplete="username" autocapitalize="none" required></label>'
-   + '<label class="field">Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>'
+   + '<label class="field">Mot de passe' + pwInput('name="password" autocomplete="current-password" required') + '</label>'
    + (S.setupNeeded ? '<div class="alert">' + ic('alert') + '<span>Lexiquest n’est pas encore installé : le parent doit d’abord créer son compte sur la <a href="parent">page Suivi</a>.</span></div>' : '')
    + (S.loginErr || S.bootErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(S.loginErr || S.bootErr) + '</span></div>' : '')
    + '<button class="btn wide" type="submit">Retrouver mon compagnon</button></form></div>';
@@ -107,8 +107,8 @@ function viewInvite() {
   return '<div class="view login"><div class="login-top">' + critter('phenix', 0, 104, 1, null, null)
    + '<h1>Bienvenue ' + esc(inv.name) + ' !</h1><p>Choisis ton identifiant et ton mot de passe.</p></div>'
    + '<form class="login-body" id="inviteForm"><label class="field">Identifiant<input name="username" value="' + esc(sugg) + '" autocomplete="username" autocapitalize="none" required></label>'
-   + '<label class="field">Mot de passe (8 caractères minimum)<input name="password" type="password" minlength="8" autocomplete="new-password" required></label>'
-   + '<label class="field">Mot de passe, encore une fois<input name="password2" type="password" minlength="8" autocomplete="new-password" required></label>'
+   + '<label class="field">Mot de passe (8 caractères minimum)' + pwInput('name="password" minlength="8" autocomplete="new-password" required') + '</label>'
+   + '<label class="field">Mot de passe, encore une fois' + pwInput('name="password2" minlength="8" autocomplete="new-password" required') + '</label>'
    + (inv.formErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(inv.formErr) + '</span></div>' : '')
    + '<button class="btn wide" type="submit">Créer mon compte</button></form></div>';
 }
