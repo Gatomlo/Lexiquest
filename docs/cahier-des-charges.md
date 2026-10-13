@@ -133,22 +133,31 @@ Une séance rapporte environ 20 gemmes en Chasse aux cartes, 35 en Duel, 40 en L
 
 **Compagnons** : Lexi le phénix (offert), Pyro le dragonnet (150), Étoile la licorne (220), Griff le griffon (300), Glouglou le bébé kraken (400).
 
-Équilibre visé : l'entretien quotidien coûte environ 10 gemmes (une balle et une demi-pomme) ; le reste s'épargne pour de nouveaux compagnons.
+Équilibre visé : l'entretien quotidien coûte environ 6 gemmes (une balle presque chaque jour, une pomme tous les deux jours) ; le reste s'épargne pour de nouveaux compagnons.
 
 ## 6. Compagnon (inspiration Tamagotchi)
 
 - Trois jauges de 0 à 100 : **vie**, **énergie** (nourriture), **plaisir** (amusement).
-- **Baisse heure par heure**, jouée ou non :
+- **Baisse heure par heure**, jouée ou non, **nuit comprise**. La nuit (de 20 h à 8 h), le compagnon dort : toutes les baisses sont **divisées par deux**.
 
-| Jauge | Baisse | Remède |
+| Jauge | Jour (8 h – 20 h) | Nuit (20 h – 8 h) | Sur 24 h | Remède |
+| --- | --- | --- | --- | --- |
+| Plaisir | −1 par heure | −0,5 par heure | −18 | Balle magique, bain, festin |
+| Énergie | −0,6 par heure | −0,3 par heure | ≈ −11 | Pomme, gâteau, festin |
+| Vie | −0,5 par heure **tant que l'énergie est sous 20** (faim), et autant **tant que le plaisir est sous 20** (ennui) | moitié | jusqu'à −18 | Potion de soin, bain |
+
+La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans Gardien vaincu (au passage du lundi).
+
+- **Événement aléatoire** tous les 1 à 3 jours (intervalle tiré entre 24 et 72 h, à toute heure), parmi **30 événements**, chacun sur une seule jauge. 15 favorables, 15 défavorables, 10 par jauge. Le dernier s'affiche sous les jauges (« Il y a 5 h : Lexi a trouvé des baies sauvages, +15 énergie ») et dans le suivi parent.
+
+| Jauge | Favorables | Défavorables |
 | --- | --- | --- |
-| Plaisir | −1 par heure (−24 par jour) | Balle magique, bain, festin |
-| Énergie | −0,6 par heure (≈ −14 par jour) | Pomme, gâteau, festin |
-| Vie | Pas de baisse propre ; −0,5 par heure **tant que l'énergie est sous 20** (faim) et −0,5 par heure **tant que le plaisir est sous 20** (ennui), soit jusqu'à −24 par jour ; −40 pour chaque semaine sans Gardien vaincu | Potion de soin, bain |
-
-- **Événement aléatoire** tous les 1 à 3 jours (intervalle tiré entre 24 et 72 h), qui touche une seule jauge, en bien ou en mal : baies sauvages (+15 énergie), luciole (+15 plaisir), source magique (+10 vie), orage (−15 énergie), journée de pluie (−15 plaisir), rhume (−10 vie). Le dernier événement s'affiche sous les jauges (« Il y a 5 h : Lexi a trouvé des baies sauvages, +15 énergie ») et dans le suivi parent.
+| Énergie | baies sauvages +15, ruche abandonnée pleine de miel +20, noisettes partagées par un écureuil +10, pommes tombées avec le vent +15, grande sieste au soleil +10 | orage qui empêche de dormir −15, goûter volé par un corbeau −10, matinée à courir après un papillon −10, cauchemar −10, gelée qui abîme les fruits −15 |
+| Plaisir | jeu avec une luciole +15, double arc-en-ciel +10, visite d'un lutin farceur +20, plume brillante +10, étoile filante +15 | journée de pluie −15, jouet perdu dans la mare −10, moqueries d'un troll grincheux −15, coincé dans le brouillard −10, cache-cache perdu contre un lapin −5 |
+| Vie | source magique +10, aile soignée par une fée +15, nuit sur un lit de mousse +10, tisane d'une gentille sorcière +10, herbe médicinale +5 | rhume −10, buisson de ronces −10, chute d'un arbre −15, piqûre de guêpe −5, champignon douteux −10 |
 - **À terre** : quand la vie atteint 0, le compagnon tombe (gris, couché, « zzz »). Ses jauges sont figées (plus de baisse ni d'événement), les autres articles de la boutique sont refusés et on ne peut pas changer de compagnon actif. Seule la **potion de résurrection** (30 gemmes) le relève, à 50 dans les trois jauges. S'il manque des gemmes, une séance suffit à les gagner.
-- Ordre de grandeur : sans soin, le plaisir passe sous 20 en 2 à 3 jours, l'énergie en 3 à 4 jours ; une absence d'une semaine (avec un Gardien manqué) met le compagnon à terre.
+- Ordre de grandeur : sans soin, le plaisir passe sous 20 en 3 jours environ, l'énergie en 4 à 5 jours ; une absence d'une semaine (avec un Gardien manqué) met le compagnon à terre.
+- Entre 20 h et 8 h, la bulle du compagnon en forme dit qu'il somnole.
 - Cinq états : **radieux** (moyenne 65 et plus), **content** (45 à 64), **fatigué** (25 à 44), **décrépit** (moins de 25), **à terre** (vie à 0, prioritaire).
 - Rendu : radieux = couleurs vives, animé ; fatigué = désaturé, paupières lourdes ; décrépit = gris, poussière, toiles d'araignée, yeux ternes ; à terre = entièrement gris, penché, immobile, « zzz ».
 - Le compagnon exprime son besoin le plus urgent dans une bulle.
@@ -267,7 +276,7 @@ flowchart LR
 
 Règles non évidentes :
 
-- La décrépitude se calcule à la lecture : le serveur rejoue heure par heure depuis l'heure de référence (baisses, faim, ennui, pénalité du lundi, événements), arrête la simulation à 0 de vie, puis fige le résultat et l'heure de référence à chaque achat ou séance. Pas de tâche planifiée.
+- La décrépitude se calcule à la lecture : le serveur rejoue heure par heure depuis l'heure de référence (baisses de jour et de nuit, faim, ennui, pénalité du lundi, événements), arrête la simulation à 0 de vie, puis fige le résultat et l'heure de référence à chaque achat ou séance. Pas de tâche planifiée.
 - Les événements aléatoires sont tirés d'un générateur pseudo-aléatoire initialisé par élève : la même heure donne toujours le même événement, quel que soit le moment de la lecture.
 - Les gemmes sont calculées **côté serveur** à partir des événements reçus ; le client affiche de façon optimiste.
 - Le serveur refuse une séance contenant des mots de deux langues et un jeu verrouillé.
@@ -325,7 +334,7 @@ Critères d'acceptation du lot 1 :
 - [ ] Les listes se choisissent par langue : une liste, plusieurs listes ou toutes les listes de la langue.
 - [ ] Après 3 séances du même jeu, il est verrouillé ; il se rouvre après 2 séances de 2 autres jeux différents.
 - [ ] Le Gardien de la semaine s'affiche avec ses jours restants ; sans victoire, le compagnon perd 40 de vie au lundi ; un Gardien bonus ne change rien.
-- [ ] Le plaisir baisse chaque heure, l'énergie aussi ; la vie baisse quand l'énergie ou le plaisir est sous 20 ; un événement aléatoire survient tous les 1 à 3 jours.
+- [ ] Le plaisir baisse chaque heure, l'énergie aussi, deux fois moins vite de 20 h à 8 h ; la vie baisse quand l'énergie ou le plaisir est sous 20 ; un événement aléatoire (parmi 30) survient tous les 1 à 3 jours.
 - [ ] À 0 de vie, le compagnon est à terre et seule la potion de résurrection le relève.
 - [ ] La langue du Gardien est au choix, mais après deux semaines de suite dans la même langue, la troisième impose l'autre.
 - [ ] Les gemmes correspondent au barème et un jeu difficile rapporte plus qu'un jeu facile.
@@ -340,7 +349,7 @@ Critères d'acceptation du lot 1 :
 - [ ] **Thème visuel** : « Jeu » ou « Adulte » (maquette complète dans les deux styles), ou une version intermédiaire.
 - [ ] **Rotation** : 3 séances avant verrouillage et 2 autres jeux pour le rouvrir, trop ou trop peu ?
 - [ ] **Gardien** : langue au choix mais jamais 3 semaines de suite la même, pénalité de 40 de vie et 20 de plaisir, adaptées ?
-- [ ] **Jauges** : −1 plaisir et −0,6 énergie par heure, −0,5 vie par heure et par jauge sous 20, potion de résurrection à 30 gemmes : trop dur ou trop doux ? Les baisses continuent-elles la nuit ? (recommandé : oui, plus simple et prévisible)
+- [ ] **Jauges** : −1 plaisir et −0,6 énergie par heure, −0,5 vie par heure et par jauge sous 20, potion de résurrection à 30 gemmes : nuit (20 h – 8 h) à mi-vitesse : trop dur ou trop doux ?
 - [ ] **Barème** : gemmes par jeu (1 à 4), bonus et prix des compagnons, à calibrer après une semaine d'usage.
 - [ ] **Compagnons** : tous décroissent ou seul l'actif ? (recommandé : seul l'actif)
 - [ ] **Hébergement** : version de Node chez Infomaniak (`node:sqlite` demande 22.5 ou plus), emplacement persistant de `data/`.

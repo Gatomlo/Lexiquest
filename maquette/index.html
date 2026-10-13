@@ -584,17 +584,46 @@ var ITEMS=[
   {id:'balle',n:'Balle magique',cat:'play',price:4,gain:{joy:25},say:'Youpi, on joue !'},
   {id:'resur',n:'Potion de résurrection',cat:'care',price:RES_PRICE,set:{food:50,care:50,joy:50},ko:true,say:'Je suis de retour ! Merci de ne pas m’avoir abandonné.'}
 ];
-/* par heure : énergie et plaisir baissent toujours ; la vie baisse pour chaque jauge sous LOW (faim, ennui) */
-var RATE={food:.6,care:.5,joy:1},LOW=20;
+/* par heure : énergie et plaisir baissent toujours ; la vie baisse pour chaque jauge sous LOW (faim, ennui) ;
+   la nuit (20 h à 8 h) il dort : toutes les baisses sont multipliées par NIGHT.f */
+var RATE={food:.6,care:.5,joy:1},LOW=20,NIGHT={from:20,to:8,f:.5};
+function isNight(hr){return hr>=NIGHT.from||hr<NIGHT.to;}
 var STATN={food:'Énergie',care:'Vie',joy:'Plaisir'},GAUGES=['care','food','joy'];
 /* événements aléatoires : un tous les 1 à 3 jours, sur une seule jauge */
 var EVTS={
+  /* énergie */
   baies:{t:'a trouvé des baies sauvages',k:'food',v:15},
-  luciole:{t:'a joué avec une luciole',k:'joy',v:15},
-  source:{t:'s’est baigné dans une source magique',k:'care',v:10},
+  ruche:{t:'a déniché une ruche abandonnée pleine de miel',k:'food',v:20},
+  noisettes:{t:'a partagé les noisettes d’un écureuil',k:'food',v:10},
+  pommes:{t:'a ramassé les pommes tombées avec le vent',k:'food',v:15},
+  sieste:{t:'a fait une grande sieste au soleil',k:'food',v:10},
   orage:{t:'n’a pas dormi à cause d’un orage',k:'food',v:-15},
+  corbeau:{t:'s’est fait voler son goûter par un corbeau',k:'food',v:-10},
+  papillon:{t:'a couru après un papillon toute la matinée',k:'food',v:-10},
+  cauchemar:{t:'a fait un cauchemar',k:'food',v:-10},
+  gelee:{t:'a vu la gelée abîmer ses fruits',k:'food',v:-15},
+  /* plaisir */
+  luciole:{t:'a joué avec une luciole',k:'joy',v:15},
+  arcenciel:{t:'a admiré un double arc-en-ciel',k:'joy',v:10},
+  lutin:{t:'a reçu la visite d’un lutin farceur',k:'joy',v:20},
+  plume:{t:'a trouvé une plume brillante',k:'joy',v:10},
+  etoile:{t:'a vu une étoile filante',k:'joy',v:15},
   pluie:{t:'s’est ennuyé toute une journée de pluie',k:'joy',v:-15},
-  rhume:{t:'a attrapé un rhume',k:'care',v:-10}
+  mare:{t:'a perdu son jouet dans la mare',k:'joy',v:-10},
+  troll:{t:'s’est fait moquer par un troll grincheux',k:'joy',v:-15},
+  brouillard:{t:'est resté coincé dans le brouillard',k:'joy',v:-10},
+  cachecache:{t:'a perdu à cache-cache contre un lapin',k:'joy',v:-5},
+  /* vie */
+  source:{t:'s’est baigné dans une source magique',k:'care',v:10},
+  fee:{t:'s’est fait soigner une aile par une fée',k:'care',v:15},
+  mousse:{t:'a dormi sur un lit de mousse',k:'care',v:10},
+  tisane:{t:'a bu la tisane d’une gentille sorcière',k:'care',v:10},
+  herbe:{t:'a mâchonné une herbe médicinale',k:'care',v:5},
+  rhume:{t:'a attrapé un rhume',k:'care',v:-10},
+  ronces:{t:'s’est piqué dans un buisson de ronces',k:'care',v:-10},
+  chute:{t:'est tombé d’un arbre',k:'care',v:-15},
+  guepe:{t:'s’est fait piquer par une guêpe',k:'care',v:-5},
+  champignon:{t:'a goûté un champignon douteux',k:'care',v:-10}
 };
 var EVT_AT={};
 var VOUCH=[{d:3,p:15},{d:7,p:40},{d:14,p:100},{d:30,p:250}];
@@ -728,10 +757,10 @@ function petNow(id){
   if(act&&p.care>0){
     o.hours=Math.max(0,H-p.anchor);
     for(var h=p.anchor+1;h<=H&&o.care>0;h++){
-      o.food=Math.max(0,o.food-RATE.food);o.joy=Math.max(0,o.joy-RATE.joy);
-      if(o.food<LOW){o.care-=RATE.care;o.hunger++;}
-      if(o.joy<LOW){o.care-=RATE.care;o.bored++;}
-      var d=new Date(h*36e5);
+      var d=new Date(h*36e5),f=isNight(new Date((h-1)*36e5).getHours())?NIGHT.f:1;
+      o.food=Math.max(0,o.food-RATE.food*f);o.joy=Math.max(0,o.joy-RATE.joy*f);
+      if(o.food<LOW){o.care-=RATE.care*f;o.hunger++;}
+      if(o.joy<LOW){o.care-=RATE.care*f;o.bored++;}
       if(d.getDay()===1&&d.getHours()===0&&!bossWonIn(dayIdxOf(d)-7)){o.hits++;o.care-=BOSS_PEN.care;o.joy-=BOSS_PEN.joy;}
       var e=EVT_AT[h];
       if(e&&o.care>0){o[EVTS[e].k]+=EVTS[e].v;o.evts.push({h:h,id:e});}
@@ -770,6 +799,7 @@ function petMsg(n){
   if(n.hits>0){return 'Le Gardien m’a frappé la semaine dernière… j’ai besoin de soins !';}
   if(n.lvl===3){return 'Je suis tout délabré… Reviens jouer, et prends soin de moi s’il te plaît.';}
   if(n.lvl===2){return n.low==='food'?'J’ai faim… tu as des gemmes pour un petit repas ?':n.low==='care'?'Je me sens faible… une potion de soin me ferait du bien.':'Je m’ennuie… on joue à la balle ?';}
+  if(n.lvl<=1&&isNight(NOW().getHours())){return 'Je somnole… la nuit je dors, mes jauges baissent moins vite.';}
   if(n.lvl===1){return n.days>0?'Tu m’as manqué ! Une séance de 5 min et je suis ravi.':'Ça va, merci ! On joue encore ?';}
   return 'Je suis en pleine forme grâce à toi !';
 }
@@ -1105,7 +1135,7 @@ function viewPet(){
      +(own?(act?'<span class="state s0">Actif</span>':'<button class="btn sm alt" data-act="choose" data-id="'+id+'">Choisir</button>')
           :'<button class="btn sm" data-act="adopt" data-id="'+id+'"'+(S.points<P.price?' disabled':'')+'>'+ic('gem','var(--sky)')+P.price+'</button>')+'</div>';
   });
-  h+='<p class="muted" style="font-size:12.5px;margin-top:6px">Chaque heure, l’énergie et le plaisir baissent ; la vie baisse quand il a faim ou s’ennuie trop. Seul le compagnon actif est concerné, les autres se reposent.</p>';
+  h+='<p class="muted" style="font-size:12.5px;margin-top:6px">Chaque heure, l’énergie et le plaisir baissent (deux fois moins vite la nuit, de 20 h à 8 h, pendant qu’il dort) ; la vie baisse quand il a faim ou s’ennuie trop. Seul le compagnon actif est concerné, les autres se reposent.</p>';
   return '<div class="view'+(S.enter?' enter':'')+'">'+h+'</div>';
 }
 
@@ -1458,7 +1488,7 @@ function pSettings(){
   LISTS.forEach(function(l){h+='<div class="row"><div>'+esc(l.name)+'<small>'+REALM[l.lang].s+' · '+l.words.length+' mots</small></div>'+(l.by==='parent'?'<span class="tag">Donnée</span>':'<button class="btn sm alt" data-act="toast" data-m="Liste assignée à '+esc(S.name)+' (maquette)">Assigner</button>')+'</div>';});
   h+='</div><div class="pcard s6"><h2>Régularité et récompenses</h2><div class="row"><div>Bon du jour<small>à la première séance du jour</small></div><b class="disp">+10 gemmes</b></div>';
   VOUCH.forEach(function(v){h+='<div class="row"><div>'+v.d+' jours de suite</div><b class="disp">+'+v.p+' gemmes</b></div>';});
-  h+='<p class="muted" style="font-size:12.5px;margin-top:8px">Compagnon : −1 de plaisir et −0,6 d’énergie par heure ; sous '+LOW+', faim et ennui retirent chacun 0,5 de vie par heure. Un événement aléatoire tous les 1 à 3 jours. À 0 de vie, il est à terre jusqu’à une potion de résurrection ('+RES_PRICE+' gemmes).</p></div>';
+  h+='<p class="muted" style="font-size:12.5px;margin-top:8px">Compagnon : −1 de plaisir et −0,6 d’énergie par heure ; sous '+LOW+', faim et ennui retirent chacun 0,5 de vie par heure. La nuit (20 h – 8 h), il dort : tout baisse deux fois moins vite. Un événement aléatoire tous les 1 à 3 jours. À 0 de vie, il est à terre jusqu’à une potion de résurrection ('+RES_PRICE+' gemmes).</p></div>';
   h+='<div class="pcard s12"><h2>Règles du jeu</h2><div class="row"><div>Rotation des jeux<small>Un jeu se verrouille après '+ROT.max+' séances ; il se retrouve en jouant '+ROT.need+' autres jeux différents</small></div><b class="disp">'+ROT.max+' / '+ROT.need+'</b></div><div class="row"><div>Gardien hebdomadaire<small>À vaincre chaque semaine, langue au choix mais jamais 3 semaines de suite la même ; sinon −'+BOSS_PEN.care+' de vie et −'+BOSS_PEN.joy+' de plaisir ; un Gardien bonus ne change rien</small></div><b class="disp">1 / semaine</b></div><div class="row"><div>Gemmes par bon mot<small>Plus le jeu est difficile, plus il rapporte</small></div><b class="disp">1 à 4</b></div></div>';
   h+='<div class="pcard s12"><h2>Données</h2><p class="muted">Export de toutes les séances et réponses au format CSV, ou suppression complète du compte élève.</p><div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn sm" data-act="toast" data-m="Export CSV préparé (maquette)">'+ic('down')+' Exporter en CSV</button><button class="btn sm alt" data-act="toast" data-m="Suppression simulée : rien n’a été effacé">Supprimer les données</button></div></div></div>';
   h+='<div style="height:16px"></div><button class="btn alt wide" data-act="logout">'+ic('out')+' Se déconnecter</button>';
