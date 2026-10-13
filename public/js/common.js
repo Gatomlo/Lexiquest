@@ -170,6 +170,13 @@ function readCsvInto(input, say) {
   r.onerror = function () { say('Lecture du fichier impossible.'); };
   r.readAsText(f, 'utf-8');
 }
+/** texte d'édition d'une liste : « mot = traduction », ou une ligne d'en-têtes puis « mot = forme = forme = traduction » */
+function listText(l) {
+  var rows = l.words.map(function (w) { return [w.term].concat(w.forms || [], [w.fr]).join(' = '); });
+  return (l.headers ? ['# ' + l.headers.join(' = ')] : []).concat(rows).join('\n');
+}
+/** « went · gone » : les formes d'un mot à plusieurs formes */
+function formsText(w) { return w.forms ? w.forms.join(' · ') : ''; }
 /** texte d'un fichier : UTF-8, sinon Windows-1252 (CSV exporté d'Excel) */
 function readFileText(f) {
   return f.arrayBuffer().then(function (buf) {

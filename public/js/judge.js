@@ -21,8 +21,14 @@
     }
     return d[m][n];
   }
-  /** réponse attendue selon le sens : toFr = traduction française, sinon le terme */
-  function expected(word, dir) { return dir === 'toFr' ? word.fr : word.term; }
+  /**
+   * réponse attendue selon le sens : toFr = traduction française, sinon le terme.
+   * Mot à plusieurs formes (verbes irréguliers) : `form` = rang de la forme demandée, ou -1 pour toutes (jointes par « | »).
+   */
+  function expected(word, dir, form) {
+    if (word.forms && word.forms.length && typeof form === 'number') { return form < 0 ? word.forms.join(' | ') : word.forms[form]; }
+    return dir === 'toFr' ? word.fr : word.term;
+  }
   /** vrai si la réponse est juste (QCM : égalité stricte ; écriture : tolérances du parent) */
   function isCorrect(qtype, given, exp, set) {
     if (qtype === 'duel') { return given === exp; }

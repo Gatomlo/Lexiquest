@@ -380,6 +380,8 @@ svg.ic{width:24px;height:24px;flex:none}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:2px solid var(--line)}
 .row:first-of-type{border-top:0}
 .row small{display:block;color:var(--ink-2);font-weight:700}
+.row-actions{display:flex;gap:8px;flex:none;margin-left:auto}
+.row>div:first-child{min-width:0}
 .stepper{display:flex;align-items:center;gap:10px}
 .stepper b{font:400 20px 'Lilita One';min-width:64px;text-align:center}
 .switch{width:52px;height:30px;border-radius:999px;border:2.5px solid var(--edge);background:var(--lock);position:relative;cursor:pointer;flex:none;padding:0}

@@ -104,7 +104,7 @@ function pSessDetail() {
   h += '<div class="kpis" style="margin-bottom:14px"><div class="kpi"><span>Temps actif</span><b class="tnum">' + dur(s.activeSec) + '</b></div><div class="kpi"><span>Réponses</span><b class="tnum">' + s.answers.length + '</b></div><div class="kpi"><span>Justes</span><b class="tnum">' + okn + '</b></div><div class="kpi"><span>Du 1er coup</span><b class="tnum">' + s.first + '/' + s.n + '</b></div></div>';
   h += '<div class="pcard"><h2>Réponse par réponse</h2><table class="adet">';
   s.answers.forEach(function (a) {
-    h += '<tr><td class="okx" style="color:' + (a.ok ? 'var(--grass)' : 'var(--coral)') + '">' + (a.ok ? '✓' : '✗') + '</td><td><b>' + esc(a.term) + '</b><br><span class="muted">' + esc(a.fr) + '</span></td><td>' + (a.ok ? '' : (a.given ? '« ' + esc(a.given) + ' »' : '<span class="muted">pas de réponse</span>') + (a.kind ? '<span class="kind">' + a.kind + '</span>' : '')) + (a.attempt === 2 ? '<span class="kind">2e essai</span>' : '') + (a.hinted ? '<span class="kind">indice</span>' : '') + '</td><td class="tnum muted" style="text-align:right">' + (a.ms / 1000).toFixed(1) + ' s</td></tr>';
+    h += '<tr><td class="okx" style="color:' + (a.ok ? 'var(--grass)' : 'var(--coral)') + '">' + (a.ok ? '✓' : '✗') + '</td><td><b>' + esc(a.term) + '</b><br><span class="muted">' + esc(a.fr) + (a.form_label ? ' · ' + esc(a.form_label.replace(/ \| /g, ' · ')) : '') + '</span></td><td>' + (a.ok ? '' : (a.given ? '« ' + esc(a.given) + ' »' : '<span class="muted">pas de réponse</span>') + (a.exp ? '<br><span class="muted">attendu : ' + esc(a.exp.replace(/ \| /g, ' · ')) + '</span>' : '') + (a.kind ? '<span class="kind">' + a.kind + '</span>' : '')) + (a.attempt === 2 ? '<span class="kind">2e essai</span>' : '') + (a.hinted ? '<span class="kind">indice</span>' : '') + '</td><td class="tnum muted" style="text-align:right">' + (a.ms / 1000).toFixed(1) + ' s</td></tr>';
   });
   return h + '</table></div>';
 }
@@ -136,7 +136,7 @@ function pSettings() {
    + P.invites.map(function (i) { return '<div class="row"><div><b>' + esc(i.name) + '</b><small>Invitation en attente · valable jusqu’au ' + new Date(i.expiresAt).toLocaleDateString('fr-BE') + '</small></div><button class="btn sm alt" data-act="delinvite" data-id="' + i.id + '">Annuler</button></div>'; }).join('')
    + '<div class="row"><div><b>' + esc(P.me.name) + '</b><small>Parent · administrateur</small></div></div><button class="btn sm wide" style="margin-top:10px" data-act="addstudent">' + ic('plus') + ' Inviter un élève</button></div>';
   h += '<div class="pcard s6"><h2>Listes de l’élève</h2>';
-  P.lists.forEach(function (l) { h += '<div class="row"><div>' + esc(l.name) + '<small>' + REALM[l.lang].s + ' · ' + l.words.length + ' mots' + (l.by === 'parent' ? ' · donnée' : '') + '</small></div>' + '<button class="btn sm alt" data-act="editlist" data-id="' + l.id + '">Modifier</button>' + (l.by === 'parent' ? ' <button class="btn sm alt" data-act="dellist" data-id="' + l.id + '">Retirer</button>' : '') + '</div>'; });
+  P.lists.forEach(function (l) { h += '<div class="row"><div>' + esc(l.name) + '<small>' + REALM[l.lang].s + ' · ' + l.words.length + ' mots' + (l.by === 'parent' ? ' · donnée' : '') + (l.headers ? ' · ' + l.headers.length + ' colonnes' : '') + '</small></div>' + '<div class="row-actions"><button class="btn sm alt" data-act="editlist" data-id="' + l.id + '">Modifier</button><button class="btn sm alt" data-act="dellist" data-id="' + l.id + '" data-own="' + (l.by === 'parent' ? '' : '1') + '">Retirer</button></div></div>'; });
   if (!P.lists.length) { h += '<p class="muted">Aucune liste.</p>'; }
   h += '<button class="btn sm wide" style="margin-top:10px" data-act="newlist">' + ic('plus') + ' Donner une liste</button></div>';
   h += '<div class="pcard s6"><h2>Régularité et récompenses</h2><div class="row"><div>Bon du jour<small>à la première séance du jour</small></div><b class="disp">+10 gemmes</b></div>';
@@ -181,7 +181,7 @@ function viewSheet() {
     return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="editListForm" data-id="' + el.id + '"><h3>Modifier la liste</h3><p class="muted" style="margin:4px 0 12px">Un mot par ligne : <b>mot = traduction</b>. Les mots conservés gardent leur progression. (' + REALM[el.lang].s + ')</p>'
      + '<label class="field" style="margin-bottom:10px">Nom<input class="txt" name="name" value="' + esc(el.name) + '" required></label>'
      + '<label class="field" style="margin-bottom:10px">Ou remplacer par un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#editListForm textarea"></label>'
-     + '<textarea name="text" style="min-height:220px" required>' + esc(el.words.map(function (w) { return w.term + ' = ' + w.fr; }).join('\n')) + '</textarea>'
+     + '<textarea name="text" style="min-height:220px" required>' + esc(listText(el)) + '</textarea>'
      + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Enregistrer</button></div></form>';
   }
   if (s.t === 'student') {
@@ -264,7 +264,9 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'newlist': P.sheet = { t: 'list' }; render(); break;
     case 'editlist': P.sheet = { t: 'editlist', id: t.dataset.id }; render(); break;
     case 'closesheet': P.sheet = null; render(); break;
-    case 'dellist': api('DELETE', base() + '/lists/' + t.dataset.id).then(reload).catch(fail); break;
+    case 'dellist':
+      if (t.dataset.own && !window.confirm('Cette liste a été créée par l’élève. La retirer quand même ?')) { break; }
+      api('DELETE', base() + '/lists/' + t.dataset.id).then(reload).catch(fail); break;
     case 'delstudent':
       if (window.confirm('Supprimer définitivement le compte de l’élève et toutes ses données ?') && window.confirm('Vraiment ? Cette action est irréversible.')) {
         api('DELETE', base()).then(function () { P.sid = null; P.ov = null; return reload(); }).catch(fail);

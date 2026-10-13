@@ -43,7 +43,7 @@ function applyState(st, stats) {
   S.points = st.gems; S.rot = st.rotation; S.active = st.pet.id; S.name = st.me.name; S.set = st.settings; S.equip = st.inv.equip;
   S.owned = {}; st.pet.owned.forEach(function (o) { S.owned[o.id] = true; });
   S.inv = {}; st.inv.owned.forEach(function (id) { S.inv[id] = true; });
-  LISTS = st.lists.map(function (l) { l.id = String(l.id); l.words.forEach(function (w) { w.lang = l.lang; }); return l; });
+  LISTS = st.lists.map(function (l) { l.id = String(l.id); l.words.forEach(function (w) { w.lang = l.lang; w.hdr = l.headers ? l.headers.slice(1, -1) : null; }); return l; });
   LB = {}; WB = {}; LISTS.forEach(function (l) { LB[l.id] = l; l.words.forEach(function (w) { WB[w.id] = w; }); });
 }
 function refresh() {
@@ -166,7 +166,7 @@ function launch(extra) {
   api('POST', 'sessions', body).then(function (r) { begin(r, body, false); }).catch(function (e) { if (e.offline) { S.offline = true; startLocal(body); } else { fail(e); } });
 }
 function begin(r, body, offline) {
-  var q = r.words.map(function (w) { return { id: w.id, term: w.term, fr: w.fr, streak: w.streak, lang: r.lang }; });
+  var q = r.words.map(function (w) { return { id: w.id, term: w.term, fr: w.fr, streak: w.streak, lang: r.lang, forms: w.forms || null, hdr: w.hdr || null }; });
   S.sess = { id: r.id, ep: r.game, params: body, meta: { label: r.label, lang: r.lang }, dir: r.dir, queue: q, total: q.length, first: 0, tries: {}, wrong: {}, answers: [], combo: 0, maxCombo: 0, pts: 0,
     hearts: CFG.boss.hearts, hp: CFG.boss.hp, hpMax: CFG.boss.hp, qi: 0, activeMs: 0, done: false, fb: null, cur: null, win: null, lang: r.lang, pending: [], allEvents: [], flushing: null, saving: false, err: null,
     offline: !!offline, clientId: Offline.uuid(), startedAt: Date.now(), wordIds: q.map(function (w) { return w.id; }).filter(function (id, i, a) { return a.indexOf(id) === i; }) };
@@ -190,15 +190,28 @@ function startLocal(body) {
   var label = body.scope === 'words' ? 'Mots à retravailler · ' + REALM[lang].s : scopeLabel(body.scope, body.listIds[0], body.listIds, lang);
   begin({ id: null, game: game, lang: lang, dir: dir, label: label, words: q }, body, true);
 }
-function expOf(w, dir) { return dir === 'toFr' ? w.fr : w.term; }
+function expOf(w, dir, form) { return Judge.expected(w, dir, form); }
+/** forme demandée à cette question : une colonne au hasard (QCM, lettres), toute la ligne à l'écriture ; null pour un mot ordinaire */
+function pickForm(w, type) {
+  if (!w.forms || type === 'cards') { return null; }
+  return type === 'forge' ? -1 : Math.floor(Math.random() * w.forms.length);
+}
 function nextQ() {
   var s = S.sess; if (!s.queue.length) { return; }
   var w = s.queue[0], type = s.ep === 'boss' ? (s.qi % 2 === 0 ? 'duel' : 'forge') : s.ep;
-  var cur = { w: w, type: type, hint: false, opts: null, tiles: null, slots: [], t: Date.now(), lang: w.lang };
-  var ans = expOf(w, s.dir);
+  var cur = { w: w, type: type, hint: false, opts: null, tiles: null, slots: [], t: Date.now(), lang: w.lang, form: pickForm(w, type) };
+  var ans = expOf(w, s.dir, cur.form);
   if (type === 'duel') {
-    var pool = LISTS.filter(function (l) { return l.lang === w.lang; }).reduce(function (a, l) { return a.concat(l.words); }, []).filter(function (x) { return x.id !== w.id && expOf(x, s.dir) !== ans; });
-    var seen = {}, d = []; sh(pool).forEach(function (x) { var e = expOf(x, s.dir); if (d.length < 3 && !seen[e]) { seen[e] = 1; d.push(e); } });
+    var all = LISTS.filter(function (l) { return l.lang === w.lang; }).reduce(function (a, l) { return a.concat(l.words); }, []), cand;
+    if (cur.form !== null) {
+      /* mauvaises réponses : la même colonne des autres verbes, puis les autres formes */
+      cand = all.filter(function (x) { return x.id !== w.id && x.forms && x.forms[cur.form]; }).map(function (x) { return x.forms[cur.form]; });
+      all.forEach(function (x) { if (x.forms) { x.forms.forEach(function (f) { cand.push(f); }); } });
+      cand = cand.filter(function (e) { return e !== ans && e.toLowerCase() !== w.term.toLowerCase(); });
+    } else {
+      cand = all.filter(function (x) { return x.id !== w.id && expOf(x, s.dir) !== ans; }).map(function (x) { return expOf(x, s.dir); });
+    }
+    var seen = {}, d = []; (cur.form !== null ? cand.slice(0, 12).concat(sh(cand.slice(12))) : sh(cand)).forEach(function (e) { if (d.length < 3 && !seen[e]) { seen[e] = 1; d.push(e); } });
     cur.opts = sh([ans].concat(d));
   }
   if (type === 'scramble') {
@@ -209,10 +222,11 @@ function nextQ() {
   s.cur = cur;
 }
 function resolve(ok, given, hinted) {
-  var s = S.sess, w = s.cur.w, ans = expOf(w, s.dir), attempt = (s.tries[w.id] || 0) + 1; s.tries[w.id] = attempt;
+  var s = S.sess, w = s.cur.w, ans = expOf(w, s.dir, s.cur.form), attempt = (s.tries[w.id] || 0) + 1; s.tries[w.id] = attempt;
   var kind = ok ? null : (given && Judge.lev(Judge.norm(given, S.set), Judge.norm(ans, S.set)) <= 2 ? 'presque' : 'oubli');
   s.answers.push({ wid: w.id, term: w.term, fr: w.fr, lang: w.lang, ok: ok, ms: Date.now() - s.cur.t, attempt: attempt, given: given || '', kind: kind });
   var ev = { type: 'answer', wordId: w.id, qtype: s.cur.type, given: given || '', ok: ok, ms: Date.now() - s.cur.t, hinted: !!hinted };
+  if (s.cur.form !== null) { ev.form = s.cur.form; }
   s.pending.push(ev); s.allEvents.push(ev);
   var p = 0, base = GAMES[s.cur.type].g;
   if (ok) {
@@ -388,7 +402,7 @@ function viewWords(){
     h+='<div class="'+R2.cls+'"><button class="backbtn" data-act="back">'+ic('left')+' Mes mots</button>';
     h+='<div class="ptitle"><div><h1 class="disp" style="font-size:26px">'+esc(l.name)+'</h1><p class="muted">'+esc(l.sub)+' · '+l.words.length+' mots</p></div><span class="tag">'+R2.tag+'</span></div>';
     h+='<div class="chunk" style="padding:6px 14px">';
-    l.words.forEach(function(w){var p='';for(var i=1;i<=3;i++){p+='<span class="pip'+(w.streak>=i?' on':'')+'"></span>';}h+='<div class="wrow"><span class="t">'+esc(w.term)+'</span><span class="f">'+esc(w.fr)+'</span><span class="pips">'+p+'</span></div>';});
+    l.words.forEach(function(w){var p='';for(var i=1;i<=3;i++){p+='<span class="pip'+(w.streak>=i?' on':'')+'"></span>';}h+='<div class="wrow"><span class="t">'+esc(w.term)+(w.forms?'<small style="display:block;font-weight:600;color:var(--ink-2)">'+esc(formsText(w))+'</small>':'')+'</span><span class="f">'+esc(w.fr)+'</span><span class="pips">'+p+'</span></div>';});
     h+='</div><div style="height:16px"></div><button class="btn wide" data-act="playlist" data-id="'+l.id+'">'+ic('play','currentColor')+' Jouer cette liste</button>'+(l.by==='moi'?'<button class="btn alt wide" style="margin-top:10px" data-act="editlist" data-id="'+l.id+'">Modifier cette liste</button><button class="btn alt wide" style="margin-top:10px" data-act="dellist" data-id="'+l.id+'">Supprimer cette liste</button>':'')+'</div>';
     return '<div class="view enter">'+h+'</div>';
   }
@@ -428,14 +442,15 @@ function viewSheet(){
     return '<div class="scrim" data-act="closesheet"></div><div class="sheet"><h3>Modifier la liste</h3><p class="muted" style="margin:4px 0 12px">Un mot par ligne : <b>mot = traduction</b>. Les mots que tu gardes gardent leur progression ; ajoute, corrige ou retire des lignes. ('+REALM[el.lang].s+')</p>'
      +'<label class="field" style="margin-bottom:10px">Nom<input class="txt" id="el-name" value="'+esc(el.name)+'" autocomplete="off"></label>'
      +'<label class="field" style="margin-bottom:10px">Ou remplacer par un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#el-words"></label>'
-     +'<textarea id="el-words" style="min-height:220px">'+esc(el.words.map(function(w){return w.term+' = '+w.fr;}).join('\n'))+'</textarea>'
+     +'<textarea id="el-words" style="min-height:220px">'+esc(listText(el))+'</textarea>'
      +'<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" data-act="saveedit" data-id="'+el.id+'">Enregistrer</button></div></div>';
   }
   return '';
 }
 function viewSession(){
   var s=S.sess;
-  var c=s.cur,w=c.w,R2=REALM[w.lang],q=s.dir==='toFr'?w.term:w.fr,ans=expOf(w,s.dir);
+  var c=s.cur,w=c.w,R2=REALM[w.lang],multi=c.form!==null,ans=expOf(w,s.dir,c.form),q=multi?w.term+' ('+w.fr+')':(s.dir==='toFr'?w.term:w.fr);
+  var ask=multi?(c.form<0?'Écris les formes : '+w.hdr.join(' · '):'Donne : '+w.hdr[c.form]):'';
   var prog,left={};
   if(s.ep==='boss'){prog=(s.hpMax-s.hp)/s.hpMax;}
   else{s.queue.forEach(function(x){left[x.id]=1;});prog=(s.total-Object.keys(left).length)/s.total;}
@@ -449,14 +464,15 @@ function viewSession(){
   h+='<div class="s-main">';
   if(s.ep==='boss'){h+='<div class="bosswrap"><div class="boss'+(s.fb&&s.fb.ok?' hit':'')+'">'+bossArt(w.lang,110)+'</div><div class="hpbar"><i style="width:'+Math.round(s.hp/s.hpMax*100)+'%"></i></div></div>';}
   var tagq=s.dir==='toFr'?R2.tag:'FR',taga=s.dir==='toFr'?'FR':R2.tag;
+  if(c.type==='cards'&&w.forms){q=w.term+' ('+w.fr+')';ans=w.forms.join(' · ');tagq=taga=R2.tag;}
   if(c.type==='cards'){
-    h+='<p class="q-lbl">'+(s.dir==='toFr'?'Que signifie…':'Comment dit-on…')+'</p>'
+    h+='<p class="q-lbl">'+(w.forms?'Quelles sont les formes de…':s.dir==='toFr'?'Que signifie…':'Comment dit-on…')+'</p>'
      +'<div class="deck"><span class="swhint l" id="hl">À revoir</span><span class="swhint r" id="hr">Je savais</span><div class="fcard" id="fcard"><div class="fflip" id="fflip">'
      +'<div class="fface front"><span class="tag">'+tagq+'</span><span class="w">'+esc(q)+'</span><small>Touche la carte pour la retourner</small></div>'
      +'<div class="fface back"><span class="tag">'+taga+'</span><span class="w">'+esc(ans)+'</span><small>Glisse : à droite si tu savais</small></div></div></div></div>'
      +'<div class="s-actions"><button class="btn bad" data-act="flash" data-v="0">À revoir</button><button class="btn good" data-act="flash" data-v="1">Je savais</button></div>';
   }else if(c.type==='duel'){
-    h+='<p class="q-lbl">'+(s.dir==='toFr'?'Que signifie…':'Comment dit-on…')+'</p><p class="q-word">'+esc(q)+'</p><div class="opts">';
+    h+='<p class="q-lbl">'+(multi?ask+' — de…':s.dir==='toFr'?'Que signifie…':'Comment dit-on…')+'</p><p class="q-word">'+esc(q)+'</p><div class="opts">';
     c.opts.forEach(function(o,i){var st='';if(s.fb){st=o===ans?' ok':(o===c.picked?' no':'');}h+='<button class="opt'+st+'" data-act="opt" data-i="'+i+'"'+(s.fb?' disabled':'')+'><span class="k">'+'ABCD'[i]+'</span>'+esc(o)+'</button>';});
     h+='</div>';
   }else if(c.type==='scramble'){
@@ -465,20 +481,27 @@ function viewSession(){
       if(ch===' '){sl+='<span class="slotgap"></span>';return;}
       var ti=c.slots[li];sl+='<button class="slot'+(ti!==undefined?' f':'')+(s.fb&&s.fb.ok?' okk':'')+'" data-act="slot" data-i="'+li+'">'+(ti!==undefined?esc(c.tiles[ti]):'')+'</button>';li++;
     });
-    h+='<p class="q-lbl">Remets les lettres dans l’ordre</p><p class="q-word">'+esc(q)+'</p><div class="slots">'+sl+'</div><div class="tiles">';
+    h+='<p class="q-lbl">'+(multi?ask+' — remets les lettres dans l’ordre':'Remets les lettres dans l’ordre')+'</p><p class="q-word">'+esc(q)+'</p><div class="slots">'+sl+'</div><div class="tiles">';
     c.tiles.forEach(function(t,i){h+='<button class="tile'+(c.slots.indexOf(i)>-1?' used':'')+'" data-act="tile" data-i="'+i+'">'+esc(t)+'</button>';});
     h+='</div>';
   }else{
     var hint=c.hint?ans.replace(/\s.*$/,'').slice(0,Math.min(2,ans.length))+'…':'';
-    h+='<p class="q-lbl">'+(s.dir==='toFr'?'Que signifie…':'Écris en '+R2.s.toLowerCase())+'</p><p class="q-word">'+esc(q)+'</p>'
-     +'<form class="forge" id="forge"><input id="fin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+(hint?esc(hint):'Ta réponse…')+'" '+(s.fb?'disabled class="'+(s.fb.ok?'okk':'no')+'" value="'+esc(c.given||'')+'"':'')+'>'
+    var inputs='';
+    if(multi&&c.form<0){
+      var gv=(c.given||'').split(' | ');
+      w.forms.forEach(function(f,i){inputs+='<input '+(i===0?'id="fin" ':'')+'class="'+(s.fb?(s.fb.ok?'okk':'no'):'')+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="'+esc(w.hdr[i])+'" placeholder="'+esc(i===0&&hint?hint:w.hdr[i])+'" '+(s.fb?'disabled value="'+esc(gv[i]||'')+'"':'')+' style="margin-bottom:8px">';});
+    }else{
+      inputs='<input id="fin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+(hint?esc(hint):'Ta réponse…')+'" '+(s.fb?'disabled class="'+(s.fb.ok?'okk':'no')+'" value="'+esc(c.given||'')+'"':'')+'>';
+    }
+    h+='<p class="q-lbl">'+(multi?ask+' — de…':s.dir==='toFr'?'Que signifie…':'Écris en '+R2.s.toLowerCase())+'</p><p class="q-word">'+esc(q)+'</p>'
+     +'<form class="forge" id="forge">'+inputs
      +(s.fb?'':'<button class="btn" type="submit">Forger !</button><button class="btn alt sm" type="button" data-act="hint"'+(c.hint||S.points<1?' disabled':'')+'>'+ic('gem','var(--sky)')+' Indice (1 gemme)</button>')+'</form>';
   }
   h+='</div>';
   if(s.fb){
     var okm=CHEER_OK[s.qi%CHEER_OK.length],nom=s.fb.kind==='presque'?'Presque ! Surveille l’orthographe.':CHEER_NO[s.qi%CHEER_NO.length];
     h+='<div class="fb '+(s.fb.ok?'ok':'no')+'"><h3>'+(s.fb.ok?okm:nom)+'</h3>'
-      +(s.fb.ok?'<p>'+(s.fb.p?'+'+s.fb.p+' gemme'+(s.fb.p>1?'s':''):'Mot retrouvé !')+(s.combo>=3?' · combo ×'+s.combo:'')+'</p>':'<p>Réponse : <b>'+esc(s.fb.ans)+'</b></p>')
+      +(s.fb.ok?'<p>'+(s.fb.p?'+'+s.fb.p+' gemme'+(s.fb.p>1?'s':''):'Mot retrouvé !')+(s.combo>=3?' · combo ×'+s.combo:'')+'</p>':'<p>Réponse : <b>'+esc(s.fb.ans.replace(/ \| /g,' · '))+'</b></p>')
       +'<button class="btn wide '+(s.fb.ok?'good':'bad')+'" data-act="next">Continuer</button></div>';
     h+='<div class="mascot">'+critterS(S.active,petNow(S.active).lvl,64,stage(),s.fb.ok?'happy':'sad')+'</div>';
   }
@@ -666,7 +689,7 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'opt': {
       if (s.fb) { break; }
       var o = s.cur.opts[+t.dataset.i]; s.cur.picked = o;
-      var ok = o === expOf(s.cur.w, s.dir); resolve(ok, o, false);
+      var ok = o === expOf(s.cur.w, s.dir, s.cur.form); resolve(ok, o, false);
       if (ok && s.lastP) { pop('+' + s.lastP); }
       render(); break;
     }
@@ -675,7 +698,7 @@ document.getElementById('app').addEventListener('click', function (e) {
       if (s.fb) { break; }
       var c = s.cur; if (c.slots.indexOf(+t.dataset.i) > -1) { break; }
       c.slots.push(+t.dataset.i);
-      var ans = expOf(c.w, s.dir).replace(/\s/g, '');
+      var ans = expOf(c.w, s.dir, c.form).replace(/\s/g, '');
       if (c.slots.length === ans.length) {
         var built = c.slots.map(function (i) { return c.tiles[i]; }).join('');
         var okk = built.toLowerCase() === ans.toLowerCase();
@@ -720,8 +743,9 @@ document.getElementById('app').addEventListener('submit', function (e) {
   if (e.target.id !== 'forge') { return; }
   e.preventDefault();
   var s = S.sess; if (!s || s.fb) { return; }
-  var given = document.getElementById('fin').value; if (!given.trim()) { return; }
-  var exp = expOf(s.cur.w, s.dir), ok = Judge.isCorrect('forge', given, exp, S.set);
+  var given = Array.prototype.slice.call(document.querySelectorAll('#forge input')).map(function (i) { return i.value.trim(); }).join(' | ');
+  if (!given.replace(/[ |]/g, '')) { return; }
+  var exp = expOf(s.cur.w, s.dir, s.cur.form), ok = Judge.isCorrect('forge', given, exp, S.set);
   s.cur.given = given; resolve(ok, given, !!s.cur.hinted);
   if (ok && s.lastP) { pop('+' + s.lastP); }
   render();

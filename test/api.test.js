@@ -544,3 +544,32 @@ test('modifier une liste : mots conservés gardent leur historique, ajouts et re
   await o.post('/api/auth/login', { username: 'max', password: 'motdepasse5', portal: 'student' });
   assert.equal((await o.req('PUT', `/api/lists/${list.id}`, { name: 'pirate', text: 'a = b\nc = d' })).status, 404);
 });
+
+test('listes à plusieurs colonnes : formes, en-têtes, correction par forme', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  const txt = '# Infinitif = Prétérit = Participe passé = Traduction\ngo = went = gone = aller\nbe = was = been = être\nsee = saw = seen = voir';
+  const c = await E.student.post('/api/lists', { lang: 'en', name: 'Irréguliers', text: txt });
+  assert.equal(c.status, 200);
+  const lists = (await E.student.get('/api/state')).json.lists || (await E.student.get('/api/lists')).json.lists;
+  const L = lists.find((l) => l.name === 'Irréguliers');
+  assert.deepEqual(L.headers, ['Infinitif', 'Prétérit', 'Participe passé', 'Traduction']);
+  assert.deepEqual(L.words.find((w) => w.term === 'go').forms, ['went', 'gone']);
+  const s = (await E.student.post('/api/sessions', { lang: 'en', scope: 'all', listIds: [], game: 'forge' })).json;
+  const w = s.words.find((x) => x.term === 'go');
+  const ev = (e) => E.student.post(`/api/sessions/${s.id}/events`, { events: [{ type: 'answer', wordId: w.id, qtype: 'forge', ...e }] });
+  assert.equal((await ev({ given: 'went | gone', form: -1 })).json.results[0].ok, true, 'ligne entière');
+  assert.equal((await ev({ given: 'went | goed', form: -1 })).json.results[0].ok, false);
+  assert.equal((await ev({ given: 'went' })).status, 400, 'forme demandée obligatoire');
+  assert.equal((await ev({ given: 'gone', form: 5 })).status, 400, 'forme hors liste');
+  const d = await E.student.post('/api/sessions', { lang: 'en', scope: 'all', listIds: [], game: 'duel' });
+  const dw = d.json.words.find((x) => x.term === 'be');
+  const r = await E.student.post(`/api/sessions/${d.json.id}/events`, { events: [{ type: 'answer', wordId: dw.id, qtype: 'duel', given: 'been', form: 1 }] });
+  assert.equal(r.json.results[0].ok, true, 'QCM : participe passé');
+  const bad = await E.student.post(`/api/sessions/${d.json.id}/events`, { events: [{ type: 'answer', wordId: dw.id, qtype: 'duel', given: 'x', form: -1 }] });
+  assert.equal(bad.status, 400, 'toute la ligne seulement à l’écriture');
+  // une liste à 2 colonnes reste inchangée, et un tableau de 3 colonnes donne 3 colonnes
+  await E.student.post('/api/lists', { lang: 'nl', name: 'Simple', text: 'a = b\nc = d' });
+  const t3 = await E.student.post('/api/lists', { lang: 'nl', name: 'Trois', text: 'gaan;ging;aller\nzijn;was;être' });
+  assert.equal(t3.status, 200);
+});
