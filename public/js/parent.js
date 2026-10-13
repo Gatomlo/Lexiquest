@@ -136,7 +136,7 @@ function pSettings() {
    + P.invites.map(function (i) { return '<div class="row"><div><b>' + esc(i.name) + '</b><small>Invitation en attente · valable jusqu’au ' + new Date(i.expiresAt).toLocaleDateString('fr-BE') + '</small></div><button class="btn sm alt" data-act="delinvite" data-id="' + i.id + '">Annuler</button></div>'; }).join('')
    + '<div class="row"><div><b>' + esc(P.me.name) + '</b><small>Parent · administrateur</small></div></div><button class="btn sm wide" style="margin-top:10px" data-act="addstudent">' + ic('plus') + ' Inviter un élève</button></div>';
   h += '<div class="pcard s6"><h2>Listes de l’élève</h2>';
-  P.lists.forEach(function (l) { h += '<div class="row"><div>' + esc(l.name) + '<small>' + REALM[l.lang].s + ' · ' + l.words.length + ' mots' + (l.by === 'parent' ? ' · donnée' : '') + '</small></div>' + (l.by === 'parent' ? '<button class="btn sm alt" data-act="dellist" data-id="' + l.id + '">Retirer</button>' : '<span class="tag">Sienne</span>') + '</div>'; });
+  P.lists.forEach(function (l) { h += '<div class="row"><div>' + esc(l.name) + '<small>' + REALM[l.lang].s + ' · ' + l.words.length + ' mots' + (l.by === 'parent' ? ' · donnée' : '') + '</small></div>' + '<button class="btn sm alt" data-act="editlist" data-id="' + l.id + '">Modifier</button>' + (l.by === 'parent' ? ' <button class="btn sm alt" data-act="dellist" data-id="' + l.id + '">Retirer</button>' : '') + '</div>'; });
   if (!P.lists.length) { h += '<p class="muted">Aucune liste.</p>'; }
   h += '<button class="btn sm wide" style="margin-top:10px" data-act="newlist">' + ic('plus') + ' Donner une liste</button></div>';
   h += '<div class="pcard s6"><h2>Régularité et récompenses</h2><div class="row"><div>Bon du jour<small>à la première séance du jour</small></div><b class="disp">+10 gemmes</b></div>';
@@ -175,6 +175,14 @@ function viewSheet() {
      + '<label class="field" style="margin-bottom:10px">Prénom de l’élève<input class="txt" name="name" autocomplete="off" required></label>'
      + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Créer le lien</button></div>'
      + '<button class="ad-link" type="button" data-act="directstudent" style="margin-top:12px">Je préfère créer le compte moi-même</button></form>';
+  }
+  if (s.t === 'editlist') {
+    var el = P.lists.filter(function (x) { return String(x.id) === String(s.id); })[0]; if (!el) { return ''; }
+    return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="editListForm" data-id="' + el.id + '"><h3>Modifier la liste</h3><p class="muted" style="margin:4px 0 12px">Un mot par ligne : <b>mot = traduction</b>. Les mots conservés gardent leur progression. (' + REALM[el.lang].s + ')</p>'
+     + '<label class="field" style="margin-bottom:10px">Nom<input class="txt" name="name" value="' + esc(el.name) + '" required></label>'
+     + '<label class="field" style="margin-bottom:10px">Ou remplacer par un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#editListForm textarea"></label>'
+     + '<textarea name="text" style="min-height:220px" required>' + esc(el.words.map(function (w) { return w.term + ' = ' + w.fr; }).join('\n')) + '</textarea>'
+     + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Enregistrer</button></div></form>';
   }
   if (s.t === 'student') {
     return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="studentForm"><h3>Nouvel élève</h3>'
@@ -245,6 +253,7 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'delinvite': api('DELETE', 'admin/invites/' + t.dataset.id).then(reload).catch(fail); break;
     case 'resetpw': P.sheet = { t: 'password' }; render(); break;
     case 'newlist': P.sheet = { t: 'list' }; render(); break;
+    case 'editlist': P.sheet = { t: 'editlist', id: t.dataset.id }; render(); break;
     case 'closesheet': P.sheet = null; render(); break;
     case 'dellist': api('DELETE', base() + '/lists/' + t.dataset.id).then(reload).catch(fail); break;
     case 'delstudent':
@@ -262,7 +271,9 @@ document.getElementById('app').addEventListener('change', function (e) {
 document.getElementById('app').addEventListener('submit', function (e) {
   e.preventDefault();
   var f = e.target, id = f.id;
-  if (id === 'inviteForm') {
+  if (id === 'editListForm') {
+    api('PUT', base() + '/lists/' + f.dataset.id, { name: f.name.value, text: f.text.value }).then(function () { P.sheet = null; toast('Liste enregistrée.'); return reload(); }).catch(function (err) { toast(err.message); });
+  } else if (id === 'inviteForm') {
     api('POST', 'admin/invites', { name: f.name.value }).then(function (r) {
       P.sheet = { t: 'invite', name: f.name.value.trim(), link: new URL('./', location.href).href + '#invite=' + r.token }; render();
       if (P.tab === 'settings') { load().then(function () { /* liste des invitations à jour au retour */ }); }

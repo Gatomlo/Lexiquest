@@ -232,7 +232,7 @@ La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans 
 | E6 | Gardien hebdomadaire | Statut et jours restants ; pénalité au passage du lundi si non vaincu ; Gardien bonus sans effet | 1 |
 | E7 | Récap de séance | Gemmes détaillées, durée active, mots ratés, jeux verrouillés ou retrouvés | 1 |
 | E8 | Boutique, soins, compagnons | Acheter, adopter, choisir le compagnon actif ; jauges horaires, événements aléatoires, résurrection ; accessoires et décors achetés, portés ou retirés | 1 |
-| E9 | Mes mots | Listes par langue, création par collage « mot = traduction », maîtrise par mot | 1 |
+| E9 | Mes mots | Listes par langue, création par collage « mot = traduction », **modification** (nom, ajout, correction, retrait de mots ; les mots conservés gardent leur progression ; les listes données par le parent ne sont modifiables que par lui), maîtrise par mot | 1 |
 | E10 | Mes stats | Jours joués, temps, réussite, jeux utilisés, maîtrise par langue, calendrier, mots coriaces | 1 |
 | E11 | Régularité | Bon du jour, bons de palier, série | 2 |
 | E12 | Hors-ligne et installation | Séance sans réseau ; ajout à l'écran d'accueil (§16) | 2 |
@@ -334,7 +334,7 @@ Règles non évidentes :
 | Route | Rôle | Accès |
 | --- | --- | --- |
 | `POST /auth/login`, `POST /auth/logout`, `GET /me` | Session et profil | Tous |
-| `GET/POST /lists`, `GET/PUT/DELETE /lists/:id` | Listes et mots | Élève, parent |
+| `GET/POST /lists`, `PUT/DELETE /lists/:id` | Listes et mots (la langue d'une liste ne change pas) | Élève |
 | `GET /games` | Jeux, compteurs et verrouillages | Élève |
 | `POST /sessions` (langue, portée, jeu, sens), `POST /sessions/:id/events`, `POST /sessions/:id/end` | Séance par lots ; renvoie gemmes, verrouillages, bons | Élève |
 | `POST /sessions/import` | Séance jouée hors-ligne (identifiant unique, mots, réponses, heure) ; corrigée et valorisée comme une séance en ligne | Élève |
@@ -346,7 +346,7 @@ Règles non évidentes :
 | `GET /stats`, `GET /review-queue?lang=` | Statistiques de l'élève, mots à revoir | Élève |
 | `GET /admin/students`, `GET /admin/students/:id/overview`, `.../sessions?range=`, `.../sessions/:sid`, `.../difficulties`, `.../settings`, `.../lists`, `.../export.csv` | Suivi (le calendrier est dans `overview`) | Parent |
 | `POST /admin/invites`, `GET /admin/invites`, `DELETE /admin/invites/:id`, `GET /invite/:jeton`, `POST /invite/:jeton/accept` | Invitation d'un élève par lien (les deux dernières routes sont publiques, limitées en essais) | Parent / public |
-| `POST /admin/students`, `PATCH /admin/students/:id` (réglages, mot de passe), `POST /admin/students/:id/lists`, `DELETE /admin/students/:id/lists/:lid`, `DELETE /admin/students/:id` | Comptes, réglages, listes données | Parent |
+| `POST /admin/students`, `PATCH /admin/students/:id` (réglages, mot de passe), `POST /admin/students/:id/lists`, `PUT /admin/students/:id/lists/:lid`, `DELETE /admin/students/:id/lists/:lid`, `DELETE /admin/students/:id` | Comptes, réglages, listes données | Parent |
 
 ## 15. Sécurité, vie privée, sauvegardes
 

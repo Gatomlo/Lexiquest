@@ -513,3 +513,34 @@ test('règles réglables par le parent : rotation, gemmes par jeu, pertes du Gar
   const d = (await E.student.get('/api/config')).json.rulesDefault;
   assert.deepEqual(d, { rot: { max: 3, need: 2 }, pen: { care: 40, joy: 20 }, gems: { cards: 1, duel: 2, scramble: 3, forge: 4 } });
 });
+
+test('modifier une liste : mots conservés gardent leur historique, ajouts et retraits, droits', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const base = `/api/admin/students/${E.studentId}`;
+  await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'cards' });
+  let st = (await E.student.get('/api/state')).json;
+  const list = st.lists.find((l) => l.lang === 'nl'), keepWord = list.words.find((w) => w.term === 'de trui');
+  assert.ok(keepWord.streak >= 1, 'historique présent');
+  const text = 'de trui = le pull (corrigé)\nhet nieuwe = le nouveau\nde broek = le pantalon\n';
+  const r = await E.student.req('PUT', `/api/lists/${list.id}`, { name: 'Renommée', text });
+  assert.equal(r.status, 200, r.text); assert.equal(r.json.words, 3);
+  st = (await E.student.get('/api/state')).json;
+  const after = st.lists.find((l) => l.id === list.id);
+  assert.equal(after.name, 'Renommée');
+  assert.deepEqual(after.words.map((w) => w.term), ['de trui', 'het nieuwe', 'de broek']);
+  const same = after.words.find((w) => w.term === 'de trui');
+  assert.equal(same.id, keepWord.id, 'même mot, même identifiant'); assert.equal(same.streak, keepWord.streak); assert.equal(same.fr, 'le pull (corrigé)');
+  assert.equal(E.db.prepare('SELECT COUNT(*) AS n FROM word_stats WHERE word_id = ?').get(list.words.find((w) => w.term === 'het hemd').id).n, 0, 'mot retiré : historique retiré');
+  assert.equal((await E.student.req('PUT', `/api/lists/${list.id}`, { name: 'x', text: 'un seul = mot' })).status, 400);
+  // liste donnée par le parent : l'élève ne peut pas la modifier, le parent oui
+  await E.parent.post(base + '/lists', { lang: 'en', name: 'Donnée', text: 'a = b\nc = d' });
+  const given = (await E.student.get('/api/state')).json.lists.find((l) => l.name === 'Donnée');
+  assert.equal((await E.student.req('PUT', `/api/lists/${given.id}`, { name: 'x', text: 'a = b\nc = d' })).status, 404);
+  assert.equal((await E.parent.req('PUT', `${base}/lists/${given.id}`, { name: 'Donnée v2', text: 'a = b\nc = d\ne = f' })).status, 200);
+  assert.equal((await E.student.get('/api/state')).json.lists.find((l) => l.id === given.id).words.length, 3);
+  // un autre élève n'est pas touché
+  const o = new E.Client(E.base); require('../lib/users').createUser(E.db, { username: 'max', display: 'Max', role: 'student', password: 'motdepasse5', parentId: E.parentId });
+  await o.post('/api/auth/login', { username: 'max', password: 'motdepasse5', portal: 'student' });
+  assert.equal((await o.req('PUT', `/api/lists/${list.id}`, { name: 'pirate', text: 'a = b\nc = d' })).status, 404);
+});

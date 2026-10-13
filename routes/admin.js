@@ -53,6 +53,12 @@ module.exports = function adminRoutes(db) {
   }));
   r.get('/students/:id/lists', wrap((req) => ({ lists: require('../lib/lists').listsOf(db, req.student.id) })));
   r.post('/students/:id/lists', wrap((req) => ({ id: Lists.createList(db, req.student.id, { ...(req.body || {}), assignedBy: req.parent.id }) })));
+  r.put('/students/:id/lists/:lid', wrap((req) => {
+    const own = db.prepare('SELECT id FROM lists WHERE id = ? AND owner_id = ?').get(Number(req.params.lid), req.student.id);
+    if (!own) { throw new HttpError(404, 'Liste introuvable.'); }
+    const b = req.body || {};
+    return { words: Lists.updateList(db, own.id, { name: b.name, text: b.text }) };
+  }));
   r.delete('/students/:id/lists/:lid', wrap((req) => {
     const x = db.prepare('DELETE FROM lists WHERE id = ? AND owner_id = ?').run(Number(req.params.lid), req.student.id);
     if (!x.changes) { throw new HttpError(404, 'Liste introuvable.'); }

@@ -130,6 +130,12 @@ module.exports = function apiRoutes(db) {
 
   r.get('/lists', stu, wrap((req) => ({ lists: Lists.listsOf(db, req.user.id) })));
   r.post('/lists', stu, wrap((req) => ({ id: Lists.createList(db, req.user.id, req.body || {}) })));
+  r.put('/lists/:id', stu, wrap((req) => {
+    const own = db.prepare('SELECT id FROM lists WHERE id = ? AND owner_id = ? AND assigned_by IS NULL').get(Number(req.params.id), req.user.id);
+    if (!own) { throw new HttpError(404, 'Liste introuvable (ou donnée par le parent : lui seul peut la modifier).'); }
+    const b = req.body || {};
+    return { words: Lists.updateList(db, own.id, { name: b.name, text: b.text }) };
+  }));
   r.delete('/lists/:id', stu, wrap((req) => { Lists.deleteList(db, req.user.id, Number(req.params.id)); return { ok: true }; }));
 
   r.get('/shop', stu, wrap(() => ({ items: C.ITEMS, durable: C.DURABLE, pets: C.PETS })));

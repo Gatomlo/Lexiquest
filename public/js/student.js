@@ -389,7 +389,7 @@ function viewWords(){
     h+='<div class="ptitle"><div><h1 class="disp" style="font-size:26px">'+esc(l.name)+'</h1><p class="muted">'+esc(l.sub)+' · '+l.words.length+' mots</p></div><span class="tag">'+R2.tag+'</span></div>';
     h+='<div class="chunk" style="padding:6px 14px">';
     l.words.forEach(function(w){var p='';for(var i=1;i<=3;i++){p+='<span class="pip'+(w.streak>=i?' on':'')+'"></span>';}h+='<div class="wrow"><span class="t">'+esc(w.term)+'</span><span class="f">'+esc(w.fr)+'</span><span class="pips">'+p+'</span></div>';});
-    h+='</div><div style="height:16px"></div><button class="btn wide" data-act="playlist" data-id="'+l.id+'">'+ic('play','currentColor')+' Jouer cette liste</button>'+(l.by==='moi'?'<button class="btn alt wide" style="margin-top:10px" data-act="dellist" data-id="'+l.id+'">Supprimer cette liste</button>':'')+'</div>';
+    h+='</div><div style="height:16px"></div><button class="btn wide" data-act="playlist" data-id="'+l.id+'">'+ic('play','currentColor')+' Jouer cette liste</button>'+(l.by==='moi'?'<button class="btn alt wide" style="margin-top:10px" data-act="editlist" data-id="'+l.id+'">Modifier cette liste</button><button class="btn alt wide" style="margin-top:10px" data-act="dellist" data-id="'+l.id+'">Supprimer cette liste</button>':'')+'</div>';
     return '<div class="view enter">'+h+'</div>';
   }
   h+='<div class="ptitle"><h1 class="disp" style="font-size:28px">Mes mots</h1></div>';
@@ -421,6 +421,14 @@ function viewSheet(){
      +'<label class="field" style="margin-bottom:10px">Ou un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#nl-words"></label>'
      +'<textarea id="nl-words" placeholder="de fiets = le vélo&#10;het huis = la maison"></textarea>'
      +'<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" data-act="savelist">Créer la liste</button></div></div>';
+  }
+  if(sh2.t==='editlist'){
+    var el=LB[sh2.id];if(!el){return '';}
+    return '<div class="scrim" data-act="closesheet"></div><div class="sheet"><h3>Modifier la liste</h3><p class="muted" style="margin:4px 0 12px">Un mot par ligne : <b>mot = traduction</b>. Les mots que tu gardes gardent leur progression ; ajoute, corrige ou retire des lignes. ('+REALM[el.lang].s+')</p>'
+     +'<label class="field" style="margin-bottom:10px">Nom<input class="txt" id="el-name" value="'+esc(el.name)+'" autocomplete="off"></label>'
+     +'<label class="field" style="margin-bottom:10px">Ou remplacer par un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#el-words"></label>'
+     +'<textarea id="el-words" style="min-height:220px">'+esc(el.words.map(function(w){return w.term+' = '+w.fr;}).join('\n'))+'</textarea>'
+     +'<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" data-act="saveedit" data-id="'+el.id+'">Enregistrer</button></div></div>';
   }
   return '';
 }
@@ -628,6 +636,11 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'savelist':
       api('POST', 'lists', { lang: document.getElementById('nl-lang').value, name: document.getElementById('nl-name').value, text: document.getElementById('nl-words').value })
         .then(function (r) { S.sheet = null; return refresh().then(function () { S.sub = { t: 'list', id: String(r.id) }; render(); toast('Liste créée : ' + LB[String(r.id)].words.length + ' mots'); }); }).catch(function (e) { toast(e.message); });
+      break;
+    case 'editlist': S.sheet = { t: 'editlist', id: t.dataset.id }; render(); break;
+    case 'saveedit':
+      api('PUT', 'lists/' + t.dataset.id, { name: document.getElementById('el-name').value, text: document.getElementById('el-words').value })
+        .then(function () { S.sheet = null; return refresh(); }).then(function () { render(); toast('Liste enregistrée.'); }).catch(function (e) { if (e.offline || e.status === 401) { fail(e); } else { toast(e.message); } });
       break;
     case 'dellist':
       if (window.confirm('Supprimer cette liste ?')) { api('DELETE', 'lists/' + t.dataset.id).then(function () { S.sub = null; return refresh(); }).then(function () { render(); }).catch(fail); }
