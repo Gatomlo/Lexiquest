@@ -1,0 +1,7 @@
+/* Polices hébergées sur le serveur (sous-ensemble latin) : Lilita One et Nunito (SIL OFL), Plus Jakarta Sans (SIL OFL). Licences dans ../fonts/. */
+@font-face{font-family:'Lilita One';font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/lilita-one-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/nunito-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:600;font-display:swap;src:url(../fonts/nunito-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/nunito-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:800;font-display:swap;src:url(../fonts/nunito-latin-800-normal.woff2) format('woff2')}
+@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:200 800;font-display:swap;src:url(../fonts/plus-jakarta-sans-latin-wght-normal.woff2) format('woff2')}

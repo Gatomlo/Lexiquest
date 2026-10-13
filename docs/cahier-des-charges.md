@@ -307,13 +307,12 @@ flowchart LR
 | `sessions` | id, élève, **langue**, portée, jeu, sens, début, fin, temps actif, mots, bonnes réponses, victoire | Une ligne par séance |
 | `answers` | id, séance, mot, essai, réponse donnée, juste, type d'erreur, temps (ms), horodatage | Événements en ajout seul |
 | `word_stats` | élève, mot, essais, échecs, série, dernière réponse | Cache recalculable |
-| `daily_activity` | élève, jour, temps actif, séances, réponses | Cache recalculable |
+| `http_sessions` | identifiant, contenu, expiration | Sessions de connexion (30 jours, survivent aux redémarrages) |
 | `gem_events` | id, élève, delta, motif, séance, date | Registre des gemmes ; solde = somme |
 | `user_pets` | élève, espèce, vie, énergie, plaisir, heure de référence, actif, adopté le | Compagnons |
 | `user_items` | élève, article, catégorie (accessoire, décor), acheté le, porté | Achats durables |
 | `pet_events` | id, élève, compagnon, heure, type (événement aléatoire, Gardien, résurrection), jauge, delta | Journal du compagnon (écrit quand les jauges sont figées) |
-| `game_rotation` | élève, jeu, séances depuis déblocage, verrouillé, autres jeux joués | Rotation (recalculable depuis `sessions`) |
-| `weekly_boss` | élève, semaine, langue choisie, vaincu le, pénalité appliquée | Gardien hebdomadaire |
+| *(sans table)* | rotation, Gardien hebdomadaire, série, minutes par jour | Recalculés depuis `sessions` à chaque lecture : jamais de désaccord possible |
 | `vouchers` | élève, palier, série, encaissé le | Bons encaissés |
 | `settings` | élève ou global, clé, valeur | Barème, rotation, objectifs, tolérance |
 
@@ -339,8 +338,8 @@ Règles non évidentes :
 | `GET /pets`, `POST /pets/:id/adopt`, `POST /pets/:id/activate` | Compagnons, jauges à l'heure, dernier événement ; activation refusée si l'actif est à terre | Élève |
 | `GET /streak`, `POST /vouchers/:palier/claim` | Régularité et bons | Élève |
 | `GET /stats`, `GET /review-queue?lang=` | Statistiques de l'élève, mots à revoir | Élève |
-| `GET /admin/students`, `.../overview`, `.../sessions`, `.../difficulties`, `.../calendar`, `.../export.csv` | Suivi | Parent |
-| `POST /admin/students`, `PATCH /admin/students/:id`, `POST /admin/lists/:id/assign` | Comptes, réglages, listes | Parent |
+| `GET /admin/students`, `GET /admin/students/:id/overview`, `.../sessions?range=`, `.../sessions/:sid`, `.../difficulties`, `.../settings`, `.../lists`, `.../export.csv` | Suivi (le calendrier est dans `overview`) | Parent |
+| `POST /admin/students`, `PATCH /admin/students/:id` (réglages, mot de passe), `POST /admin/students/:id/lists`, `DELETE /admin/students/:id/lists/:lid`, `DELETE /admin/students/:id` | Comptes, réglages, listes données | Parent |
 
 ## 15. Sécurité, vie privée, sauvegardes
 

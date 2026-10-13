@@ -276,3 +276,47 @@ test('statistiques élève et parent', async (t) => {
   assert.equal(ov.goneDays, 0);
   assert.equal(ov.stats.days7, 1);
 });
+
+test('rejouer les mots ratés : portée « words », jamais d’autre langue', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const st = (await E.student.get('/api/state')).json;
+  const nl = st.lists.find((l) => l.lang === 'nl'), en = st.lists.find((l) => l.lang === 'en');
+  const ids = [nl.words[0].id, nl.words[1].id, nl.words[2].id, en.words[0].id];
+  const r = await E.student.post('/api/sessions', { lang: 'nl', scope: 'words', wordIds: ids, game: 'cards' });
+  assert.equal(r.status, 200, r.text);
+  assert.deepEqual(r.json.words.map((w) => w.id).sort((a, b) => a - b), ids.slice(0, 3).sort((a, b) => a - b), 'le mot anglais est écarté');
+  assert.equal((await E.student.post('/api/sessions', { lang: 'nl', scope: 'words', wordIds: [en.words[0].id], game: 'cards' })).status, 400);
+});
+
+test('fichiers statiques : pages, polices et en-têtes de sécurité', async (t) => {
+  const E = await setup(); t.after(E.close);
+  for (const p of ['/', '/parent', '/js/student.js', '/css/app.css', '/fonts/nunito-latin-700-normal.woff2']) {
+    const res = await fetch(E.base + p);
+    assert.equal(res.status, 200, p);
+    assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+    assert.match(res.headers.get('content-security-policy'), /default-src 'self'/);
+  }
+  assert.equal((await fetch(E.base + '/api/inconnu')).status, 404);
+  assert.equal((await fetch(E.base + '/data/lexiquest.db')).status, 404, 'la base n’est pas servie');
+});
+
+test('montage sous /lexiquest : cookie limité à ce chemin, tout fonctionne en chemins relatifs', async (t) => {
+  const express = require('express'), http = require('node:http');
+  const { open } = require('../lib/db');
+  const { createUser } = require('../lib/users');
+  const db = open(':memory:');
+  createUser(db, { username: 'lea', display: 'Léa', role: 'student', password: 'motdepasse2' });
+  const outer = express();
+  outer.use('/lexiquest', require('../server').createApp(db));
+  const server = http.createServer(outer); await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}/lexiquest`;
+  const res = await fetch(base + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'lea', password: 'motdepasse2', portal: 'student' }) });
+  assert.equal(res.status, 200);
+  const cookie = res.headers.get('set-cookie');
+  assert.match(cookie, /Path=\/lexiquest/); assert.match(cookie, /HttpOnly/); assert.match(cookie, /SameSite=Lax/);
+  const st = await fetch(base + '/api/state', { headers: { Cookie: cookie.split(';')[0] } });
+  assert.equal(st.status, 200);
+  assert.equal((await fetch(base + '/')).status, 200);
+});

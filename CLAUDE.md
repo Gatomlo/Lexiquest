@@ -4,11 +4,13 @@
 Jeu pédagogique web (PWA, smartphone first) pour mémoriser le vocabulaire de néerlandais et d'anglais : séances de 5 min, points à dépenser pour soigner un compagnon fantastique (inspiration Tamagotchi), bons de régularité, suivi parent (quand, combien de temps, résultats, difficultés). Public : une adolescente de 3e secondaire. Successeur de « Carnet de Vocabulaire » (artefact v1).
 
 ## État
-Phase **cahier des charges + maquette**. L'application serveur n'est pas encore écrite.
+**Lots 0 et 1 codés** (serveur, jeux, compagnon, boutique, suivi parent) ; la maquette reste la référence visuelle. À faire : lot 2 (PWA, hors-ligne, synchronisation) et lot 3, puis déploiement dans `Gatomlo/node-gateway`.
 
 ## Fichiers clés
 - `docs/cahier-des-charges.md` : spécification complète (source de vérité).
 - `maquette/index.html` : maquette interactive autonome (HTML/CSS/JS vanilla, données simulées, aucun réseau sauf Google Fonts). Rôles élève/parent via le sélecteur du haut ; « Absence simulée » avance le calendrier pour montrer la décrépitude.
+
+- `server.js` (exporte l'app, `createApp(db)` pour les tests), `lib/` (règles : `config.js` barème, `sessions.js`, `pets.js`, `progress.js`, `stats.js`), `routes/api.js` et `routes/admin.js`, `public/` (front vanilla : `student.js`, `parent.js`, `art.js`, `common.js`, `judge.js` partagé avec le serveur), `test/`.
 
 ## Stack cible (voir le cahier, §12)
 Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla sans build — comme Fée Lezcomptes. Déployé comme sous-application de `Gatomlo/node-gateway` (`apps/lexiquest`, route `/lexiquest`, Infomaniak).
@@ -25,9 +27,12 @@ Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla 
 - Deux styles complets à comparer dans la maquette (Jeu / Adulte, bouton en haut de page) : décision en attente.
 - L'écran de connexion élève ne montre **aucune entrée « parent »** ; le parent a son adresse à part.
 - Gemmes calculées côté serveur depuis les événements ; solde = somme de `gem_events`. Décrépitude calculée à la lecture (simulation heure par heure, événements tirés d'une graine par élève), pas de tâche planifiée.
+- **Le serveur décide** : il choisit les mots, corrige (`public/js/judge.js`), calcule les gemmes et recalcule rotation, Gardien et série depuis les séances terminées. Le client ne fait qu'afficher et déclarer ses réponses.
+- Fuseau fixé par `lib/clock.js` (`Europe/Brussels`) ; en production `SESSION_SECRET` obligatoire ; cookie de session limité au chemin de montage.
 - Dépôt public : aucune donnée réelle d'élève, ni `.env`, ni `*.db`.
 
 ## Commandes
+- `npm install`, `npm test` (node:test, base en mémoire), `npm run seed-demo` (comptes papa/lea), `npm start`.
 - Voir la maquette : ouvrir `maquette/index.html` dans un navigateur (aucune installation).
 - Contrôle de syntaxe du script de la maquette : extraire le `<script>` puis `node --check`.
 
