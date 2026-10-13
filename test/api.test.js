@@ -603,3 +603,22 @@ test('copie de listes entre élèves du même parent ; aperçu « comme l’él�
   assert.equal((await E.parent.get('/api/admin/students')).status, 200);
   assert.equal((await E.student.post('/api/auth/unview', {})).status, 400, 'pas d’aperçu en cours');
 });
+
+test('gestion des élèves : renommer, suppression confirmée par l’identifiant, données liées effacées', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const list = await E.parent.get('/api/admin/students');
+  assert.equal(list.json.students[0].lists, 2);
+  assert.equal(list.json.students[0].lastAt, null);
+  const base = `/api/admin/students/${E.studentId}`;
+  assert.equal((await E.parent.req('PATCH', base, { name: '  ' })).status, 400, 'nom vide refusé');
+  assert.equal((await E.parent.req('PATCH', base, { name: 'Léa-Rose' })).status, 200);
+  assert.equal((await E.parent.get('/api/admin/students')).json.students[0].name, 'Léa-Rose');
+  assert.equal((await E.parent.req('DELETE', base, {})).status, 400, 'confirmation obligatoire');
+  assert.equal((await E.parent.req('DELETE', base, { confirm: 'autre' })).status, 400);
+  assert.equal((await E.parent.req('DELETE', base, { confirm: 'LEA' })).status, 200, 'identifiant, sans tenir compte de la casse');
+  assert.equal((await E.parent.get('/api/admin/students')).json.students.length, 0);
+  assert.equal(E.db.prepare('SELECT COUNT(*) AS n FROM lists WHERE owner_id = ?').get(E.studentId).n, 0);
+  assert.equal(E.db.prepare('SELECT COUNT(*) AS n FROM words').get().n, 0, 'mots effacés avec les listes');
+  assert.equal((await E.student.get('/api/state')).status, 401, 'la session de l’élève supprimé n’ouvre plus rien');
+});

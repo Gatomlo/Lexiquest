@@ -28,7 +28,11 @@ module.exports = function adminRoutes(db) {
 
   r.get('/students', wrap((req) => ({
     students: db.prepare("SELECT id, display, username FROM users WHERE role = 'student' AND parent_id = ? AND active = 1 ORDER BY id").all(req.parent.id)
-      .map((s) => ({ id: s.id, name: s.display, username: s.username })),
+      .map((s) => ({
+        id: s.id, name: s.display, username: s.username,
+        lastAt: db.prepare('SELECT MAX(ended_at) AS t FROM sessions WHERE user_id = ? AND done = 1').get(s.id).t || null,
+        lists: Number(db.prepare('SELECT COUNT(*) AS n FROM lists WHERE owner_id = ?').get(s.id).n),
+      })),
   })));
   r.post('/students', wrap((req) => {
     const b = req.body || {};
@@ -55,6 +59,11 @@ module.exports = function adminRoutes(db) {
   r.patch('/students/:id', wrap((req) => {
     const b = req.body || {};
     if (typeof b.password === 'string' && b.password) { U.setPassword(db, req.student.id, b.password); }
+    if (typeof b.name === 'string') {
+      const n = b.name.trim().slice(0, 40);
+      if (!n) { throw new HttpError(400, 'Le nom ne peut pas être vide.'); }
+      db.prepare('UPDATE users SET display = ? WHERE id = ?').run(n, req.student.id);
+    }
     return { settings: U.setSettings(db, req.student.id, b) };
   }));
   r.get('/students/:id/lists', wrap((req) => ({ lists: require('../lib/lists').listsOf(db, req.student.id) })));
@@ -87,7 +96,13 @@ module.exports = function adminRoutes(db) {
     res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="lexiquest-${req.student.username}.csv"` });
     res.send(Stats.exportCsv(db, req.student.id));
   });
-  r.delete('/students/:id', wrap((req) => { db.prepare('DELETE FROM users WHERE id = ?').run(req.student.id); return { ok: true }; }));
+  /* suppression définitive : le corps doit répéter l'identifiant de l'élève */
+  r.delete('/students/:id', wrap((req) => {
+    const c = String((req.body || {}).confirm || '').trim().toLowerCase();
+    if (c !== req.student.username.toLowerCase()) { throw new HttpError(400, 'Recopie l’identifiant de l’élève pour confirmer la suppression.'); }
+    db.prepare('DELETE FROM users WHERE id = ?').run(req.student.id);
+    return { ok: true };
+  }));
 
   return r;
 };

@@ -6,11 +6,13 @@ var P = { me: null, students: [], sid: null, tab: 'overview', sub: null, sheet: 
 var STATE_N, GAMES, REALM = { nl: { s: 'Néerlandais', tag: 'NL', cls: 'r-nl' }, en: { s: 'Anglais', tag: 'EN', cls: 'r-en' } };
 
 function base() { return 'admin/students/' + P.sid; }
+function baseOf(id) { return 'admin/students/' + id; }
 function load() {
   var t = P.tab;
   var p = api('GET', 'admin/students').then(function (r) {
     P.students = r.students;
     if (!P.sid || !r.students.some(function (s) { return s.id === P.sid; })) { P.sid = r.students.length ? r.students[0].id : null; }
+    if (t === 'students') { return api('GET', 'admin/invites').then(function (o) { P.invites = o.invites; }); }
     if (!P.sid) { return null; }
     if (t === 'overview') { return api('GET', base() + '/overview').then(function (o) { P.ov = o; }); }
     if (t === 'sessions') { return api('GET', base() + '/sessions?range=' + (P.range === 999 ? 0 : P.range)).then(function (o) { P.sessions = o.sessions; }); }
@@ -126,6 +128,24 @@ function pDiff() {
 function footer() {
   return displayControls() + '<div style="height:16px"></div><button class="btn alt wide" data-act="logout">' + ic('out') + ' Se déconnecter</button>';
 }
+function pStudents() {
+  var h = '<div class="ptitle"><h1>Élèves</h1></div><div class="pgrid">';
+  P.students.forEach(function (s) {
+    h += '<div class="pcard s6"><h2>' + esc(s.name) + (s.id === P.sid ? ' <span class="tag">suivi</span>' : '') + '</h2>'
+      + '<p class="muted" style="margin-bottom:10px">Identifiant : ' + esc(s.username) + ' · ' + s.lists + ' liste' + (s.lists > 1 ? 's' : '') + ' · ' + (s.lastAt ? 'dernière séance ' + dayLabel(s.lastAt).toLowerCase() : 'pas encore de séance') + '</p>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      + '<button class="btn sm" data-act="follow" data-id="' + s.id + '">Voir le suivi</button>'
+      + '<button class="btn sm alt" data-act="viewas" data-id="' + s.id + '">Voir comme l’élève</button>'
+      + '<button class="btn sm alt" data-act="renamestudent" data-id="' + s.id + '">Renommer</button>'
+      + '<button class="btn sm alt" data-act="resetpw" data-id="' + s.id + '">Nouveau mot de passe</button>'
+      + '<button class="btn sm alt" data-act="delstudent" data-id="' + s.id + '" style="color:var(--coral)">Supprimer</button></div></div>';
+  });
+  if (!P.students.length) { h += '<div class="pcard s12"><p class="muted">Aucun élève pour l’instant.</p></div>'; }
+  h += '<div class="pcard s12"><h2>Ajouter un élève</h2>'
+    + P.invites.map(function (i) { return '<div class="row"><div><b>' + esc(i.name) + '</b><small>Invitation en attente · valable jusqu’au ' + new Date(i.expiresAt).toLocaleDateString('fr-BE') + '</small></div><button class="btn sm alt" data-act="delinvite" data-id="' + i.id + '">Annuler</button></div>'; }).join('')
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sm" data-act="addstudent">' + ic('plus') + ' Inviter un élève</button><button class="btn sm alt" data-act="directstudent">Créer le compte moi-même</button></div></div>';
+  return h + '</div>' + footer();
+}
 function pSettings() {
   var S = P.settings, stu = P.students.filter(function (s) { return s.id === P.sid; })[0], C = CFG;
   var h = '<div class="ptitle"><h1>Réglages</h1>' + who() + '</div><div class="pgrid"><div class="pcard s6"><h2>Objectif et correction</h2>'
@@ -178,6 +198,20 @@ function viewSheet() {
      + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Créer le lien</button></div>'
      + '<button class="ad-link" type="button" data-act="directstudent" style="margin-top:12px">Je préfère créer le compte moi-même</button></form>';
   }
+  if (s.t === 'rename') {
+    var rs = P.students.filter(function (x) { return x.id === s.id; })[0]; if (!rs) { return ''; }
+    return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="renameForm" data-id="' + rs.id + '"><h3>Renommer l’élève</h3>'
+     + '<label class="field" style="margin:10px 0">Nom affiché<input class="txt" name="name" value="' + esc(rs.name) + '" maxlength="40" required></label>'
+     + '<p class="muted">L’identifiant de connexion (' + esc(rs.username) + ') ne change pas.</p>'
+     + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Enregistrer</button></div></form>';
+  }
+  if (s.t === 'delstudent') {
+    var ds = P.students.filter(function (x) { return x.id === s.id; })[0]; if (!ds) { return ''; }
+    return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="delForm" data-id="' + ds.id + '" data-user="' + esc(ds.username) + '"><h3>Supprimer ' + esc(ds.name) + '</h3>'
+     + '<div class="alert bad" style="margin:10px 0">' + ic('alert') + '<span>Le compte, les listes, les séances, les gemmes et le compagnon seront effacés <b>définitivement</b>.</span></div>'
+     + '<label class="field" style="margin-bottom:10px">Pour confirmer, recopie l’identifiant : <b>' + esc(ds.username) + '</b><input class="txt" name="confirm" autocomplete="off" autocapitalize="none" required></label>'
+     + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn bad" style="flex:1" type="submit">Supprimer définitivement</button></div></form>';
+  }
   if (s.t === 'copylists') {
     var others = P.students.filter(function (x) { return x.id !== P.sid; });
     var nm = (P.students.filter(function (x) { return x.id === P.sid; })[0] || {}).name || 'l’élève';
@@ -219,11 +253,12 @@ function viewSheet() {
 function shell() {
   var t = P.tab;
   if (!P.sid) { return '<div class="view enter">' + noStudent() + '</div>'; }
-  var body = P.sub && P.sub.t === 'sess' ? pSessDetail() : t === 'overview' ? (P.ov ? pOverview() : '') : t === 'sessions' ? pSessions() : t === 'diff' ? pDiff() : (P.settings ? pSettings() : '');
+  var body = P.sub && P.sub.t === 'sess' ? pSessDetail() : t === 'overview' ? (P.ov ? pOverview() : '') : t === 'sessions' ? pSessions() : t === 'diff' ? pDiff() : t === 'students' ? pStudents() : (P.settings ? pSettings() : '');
   var tb = '<nav class="tabbar" aria-label="Navigation parent">'
    + '<button class="tab" data-act="ptab" data-v="overview" aria-current="' + (t === 'overview') + '">' + ic('bars') + 'Aperçu</button>'
    + '<button class="tab" data-act="ptab" data-v="sessions" aria-current="' + (t === 'sessions') + '">' + ic('list') + 'Séances</button>'
    + '<button class="tab" data-act="ptab" data-v="diff" aria-current="' + (t === 'diff') + '">' + ic('alert') + 'Difficultés</button>'
+   + '<button class="tab" data-act="ptab" data-v="students" aria-current="' + (t === 'students') + '">' + ic('paw') + 'Élèves</button>'
    + '<button class="tab" data-act="ptab" data-v="settings" aria-current="' + (t === 'settings') + '">' + ic('gear') + 'Réglages</button></nav>';
   return '<div class="view' + (P.enter ? ' enter' : '') + '">' + body + '</div>' + tb;
 }
@@ -273,20 +308,18 @@ document.getElementById('app').addEventListener('click', function (e) {
     }
     case 'sharelink': navigator.share({ title: 'Lexiquest', text: 'Voici ton lien pour créer ton compte Lexiquest :', url: P.sheet.link }).catch(function () { /* annulé */ }); break;
     case 'delinvite': api('DELETE', 'admin/invites/' + t.dataset.id).then(reload).catch(fail); break;
-    case 'resetpw': P.sheet = { t: 'password' }; render(); break;
+    case 'follow': P.sid = +t.dataset.id; P.ov = null; P.settings = null; P.tab = 'overview'; P.enter = true; render(); reload(); break;
+    case 'renamestudent': P.sheet = { t: 'rename', id: +t.dataset.id }; render(); break;
+    case 'resetpw': if (t.dataset.id) { P.sid = +t.dataset.id; P.ov = null; P.settings = null; } P.sheet = { t: 'password' }; render(); break;
     case 'newlist': P.sheet = { t: 'list' }; render(); break;
     case 'copylists': P.sheet = { t: 'copylists' }; render(); break;
-    case 'viewas': api('POST', base() + '/view-as', {}).then(function () { location.href = './'; }).catch(fail); break;
+    case 'viewas': api('POST', baseOf(t.dataset.id || P.sid) + '/view-as', {}).then(function () { location.href = './'; }).catch(fail); break;
     case 'editlist': P.sheet = { t: 'editlist', id: t.dataset.id }; render(); break;
     case 'closesheet': P.sheet = null; render(); break;
     case 'dellist':
       if (t.dataset.own && !window.confirm('Cette liste a été créée par l’élève. La retirer quand même ?')) { break; }
       api('DELETE', base() + '/lists/' + t.dataset.id).then(reload).catch(fail); break;
-    case 'delstudent':
-      if (window.confirm('Supprimer définitivement le compte de l’élève et toutes ses données ?') && window.confirm('Vraiment ? Cette action est irréversible.')) {
-        api('DELETE', base()).then(function () { P.sid = null; P.ov = null; return reload(); }).catch(fail);
-      }
-      break;
+    case 'delstudent': P.sheet = { t: 'delstudent', id: +(t.dataset.id || P.sid) }; render(); break;
   }
 });
 document.getElementById('app').addEventListener('change', function (e) {
@@ -303,7 +336,13 @@ document.getElementById('app').addEventListener('change', function (e) {
 document.getElementById('app').addEventListener('submit', function (e) {
   e.preventDefault();
   var f = e.target, id = f.id;
-  if (id === 'copyForm') {
+  if (id === 'renameForm') {
+    api('PATCH', baseOf(f.dataset.id), { name: f.name.value }).then(function () { P.sheet = null; toast('Nom enregistré.'); return reload(); }).catch(function (err) { toast(err.message); });
+  } else if (id === 'delForm') {
+    api('DELETE', baseOf(f.dataset.id), { confirm: f.confirm.value }).then(function () {
+      P.sheet = null; if (P.sid === +f.dataset.id) { P.sid = null; P.ov = null; P.settings = null; } toast('Compte supprimé.'); return reload();
+    }).catch(function (err) { toast(err.message); });
+  } else if (id === 'copyForm') {
     var pick = function (n) { return Array.prototype.slice.call(f.querySelectorAll('input[name=' + n + ']:checked')).map(function (i) { return +i.value; }); };
     var ls = pick('list'), to = pick('to');
     if (!ls.length || !to.length) { toast('Coche au moins une liste et un élève.'); return; }
