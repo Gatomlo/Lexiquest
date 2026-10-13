@@ -2,6 +2,7 @@
 const express = require('express');
 const U = require('../lib/users');
 const Lists = require('../lib/lists');
+const Invites = require('../lib/invites');
 const Stats = require('../lib/stats');
 const { HttpError } = U;
 
@@ -33,6 +34,9 @@ module.exports = function adminRoutes(db) {
     const b = req.body || {};
     return { id: U.createUser(db, { username: b.username, display: b.name, role: 'student', password: b.password, parentId: req.parent.id }) };
   }));
+  r.get('/invites', wrap((req) => ({ invites: Invites.pending(db, req.parent.id) })));
+  r.post('/invites', wrap((req) => { const i = Invites.create(db, req.parent.id, (req.body || {}).name); return { id: i.id, token: i.token, expiresAt: i.expiresAt }; }));
+  r.delete('/invites/:iid', wrap((req) => { Invites.revoke(db, req.parent.id, req.params.iid); return { ok: true }; }));
   r.get('/students/:id/overview', wrap((req) => Stats.adminOverview(db, req.student)));
   r.get('/students/:id/sessions', wrap((req) => ({ sessions: Stats.sessionList(db, req.student.id, Number(req.query.range) || 0) })));
   r.get('/students/:id/sessions/:sid', wrap((req) => {

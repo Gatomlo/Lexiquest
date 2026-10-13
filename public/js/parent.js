@@ -2,7 +2,7 @@
 'use strict';
 /* Suivi parent : quand, combien de temps, résultats, difficultés (cahier §9). */
 var P = { me: null, students: [], sid: null, tab: 'overview', sub: null, sheet: null, toast: null, range: 30, dlang: 'all', 
-  ov: null, sessions: [], detail: null, diff: [], settings: null, lists: [], booted: false, loginErr: '', enter: true };
+  ov: null, invites: [], sessions: [], detail: null, diff: [], settings: null, lists: [], booted: false, loginErr: '', enter: true };
 var STATE_N, GAMES, REALM = { nl: { s: 'Néerlandais', tag: 'NL', cls: 'r-nl' }, en: { s: 'Anglais', tag: 'EN', cls: 'r-en' } };
 
 function base() { return 'admin/students/' + P.sid; }
@@ -15,7 +15,7 @@ function load() {
     if (t === 'overview') { return api('GET', base() + '/overview').then(function (o) { P.ov = o; }); }
     if (t === 'sessions') { return api('GET', base() + '/sessions?range=' + (P.range === 999 ? 0 : P.range)).then(function (o) { P.sessions = o.sessions; }); }
     if (t === 'diff') { return api('GET', base() + '/difficulties').then(function (o) { P.diff = o.words; }); }
-    return Promise.all([api('GET', base() + '/settings'), api('GET', base() + '/lists')]).then(function (r2) { P.settings = r2[0].settings; P.lists = r2[1].lists; });
+    return Promise.all([api('GET', base() + '/settings'), api('GET', base() + '/lists'), api('GET', 'admin/invites')]).then(function (r2) { P.settings = r2[0].settings; P.lists = r2[1].lists; P.invites = r2[2].invites; });
   });
   return p;
 }
@@ -133,7 +133,8 @@ function pSettings() {
    + '<div class="row"><div>Tolérer les accents<small>« cafe » accepté pour « café »</small></div><button class="switch" role="switch" aria-checked="' + S.accents + '" data-act="toggle" data-v="accents" aria-label="Tolérer les accents"></button></div>'
    + '<div class="row"><div>Articles obligatoires<small>« de fiets » et non « fiets », « to wake up » et non « wake up »</small></div><button class="switch" role="switch" aria-checked="' + S.articles + '" data-act="toggle" data-v="articles" aria-label="Articles obligatoires"></button></div></div>';
   h += '<div class="pcard s6"><h2>Comptes</h2>' + (stu ? '<div class="row"><div><b>' + esc(stu.name) + '</b><small>Élève · ' + esc(stu.username) + '</small></div><button class="btn sm alt" data-act="resetpw">Nouveau mot de passe</button></div>' : '')
-   + '<div class="row"><div><b>' + esc(P.me.name) + '</b><small>Parent · administrateur</small></div></div><button class="btn sm wide" style="margin-top:10px" data-act="addstudent">' + ic('plus') + ' Ajouter un élève</button></div>';
+   + P.invites.map(function (i) { return '<div class="row"><div><b>' + esc(i.name) + '</b><small>Invitation en attente · valable jusqu’au ' + new Date(i.expiresAt).toLocaleDateString('fr-BE') + '</small></div><button class="btn sm alt" data-act="delinvite" data-id="' + i.id + '">Annuler</button></div>'; }).join('')
+   + '<div class="row"><div><b>' + esc(P.me.name) + '</b><small>Parent · administrateur</small></div></div><button class="btn sm wide" style="margin-top:10px" data-act="addstudent">' + ic('plus') + ' Inviter un élève</button></div>';
   h += '<div class="pcard s6"><h2>Listes de l’élève</h2>';
   P.lists.forEach(function (l) { h += '<div class="row"><div>' + esc(l.name) + '<small>' + REALM[l.lang].s + ' · ' + l.words.length + ' mots' + (l.by === 'parent' ? ' · donnée' : '') + '</small></div>' + (l.by === 'parent' ? '<button class="btn sm alt" data-act="dellist" data-id="' + l.id + '">Retirer</button>' : '<span class="tag">Sienne</span>') + '</div>'; });
   if (!P.lists.length) { h += '<p class="muted">Aucune liste.</p>'; }
@@ -147,6 +148,20 @@ function pSettings() {
 }
 function viewSheet() {
   var s = P.sheet; if (!s) { return ''; }
+  if (s.t === 'invite') {
+    if (s.link) {
+      return '<div class="scrim" data-act="closesheet"></div><div class="sheet"><h3>Lien pour ' + esc(s.name) + '</h3>'
+       + '<p class="muted" style="margin:6px 0 12px">Envoie-lui ce lien (message, e-mail…). Il choisira son identifiant et son mot de passe. Valable 7 jours, à usage unique.</p>'
+       + '<input class="txt" id="inviteLink" readonly value="' + esc(s.link) + '" onfocus="this.select()">'
+       + '<div style="display:flex;gap:10px;margin-top:12px"><button class="btn" style="flex:1" data-act="copylink">Copier le lien</button>' + (navigator.share ? '<button class="btn alt" data-act="sharelink">Partager</button>' : '') + '</div>'
+       + '<button class="btn alt wide" style="margin-top:10px" data-act="closesheet">Terminé</button></div>';
+    }
+    return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="inviteForm"><h3>Inviter un élève</h3>'
+     + '<p class="muted" style="margin:6px 0 12px">Tu reçois un lien à lui envoyer : il crée lui-même son identifiant et son mot de passe.</p>'
+     + '<label class="field" style="margin-bottom:10px">Prénom de l’élève<input class="txt" name="name" autocomplete="off" required></label>'
+     + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Créer le lien</button></div>'
+     + '<button class="ad-link" type="button" data-act="directstudent" style="margin-top:12px">Je préfère créer le compte moi-même</button></form>';
+  }
   if (s.t === 'student') {
     return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="studentForm"><h3>Nouvel élève</h3>'
      + '<label class="field" style="margin:10px 0">Nom affiché<input class="txt" name="name" required></label><label class="field" style="margin-bottom:10px">Identifiant<input class="txt" name="username" autocapitalize="none" required></label>'
@@ -200,7 +215,15 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'back': P.sub = null; P.enter = true; render(); break;
     case 'goal': api('PATCH', base(), { goalDays: P.settings.goalDays + (+v) }).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break;
     case 'toggle': { var patch = {}; patch[v] = !P.settings[v]; api('PATCH', base(), patch).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break; }
-    case 'addstudent': P.sheet = { t: 'student' }; render(); break;
+    case 'addstudent': P.sheet = { t: 'invite' }; render(); break;
+    case 'directstudent': P.sheet = { t: 'student' }; render(); break;
+    case 'copylink': {
+      var li = document.getElementById('inviteLink'); li.select();
+      (navigator.clipboard ? navigator.clipboard.writeText(li.value) : Promise.reject()).then(function () { toast('Lien copié.'); }, function () { try { document.execCommand('copy'); toast('Lien copié.'); } catch (e) { toast('Copie le lien à la main.'); } });
+      break;
+    }
+    case 'sharelink': navigator.share({ title: 'Lexiquest', text: 'Voici ton lien pour créer ton compte Lexiquest :', url: P.sheet.link }).catch(function () { /* annulé */ }); break;
+    case 'delinvite': api('DELETE', 'admin/invites/' + t.dataset.id).then(reload).catch(fail); break;
     case 'resetpw': P.sheet = { t: 'password' }; render(); break;
     case 'newlist': P.sheet = { t: 'list' }; render(); break;
     case 'closesheet': P.sheet = null; render(); break;
@@ -220,7 +243,12 @@ document.getElementById('app').addEventListener('change', function (e) {
 document.getElementById('app').addEventListener('submit', function (e) {
   e.preventDefault();
   var f = e.target, id = f.id;
-  if (id === 'setupForm') {
+  if (id === 'inviteForm') {
+    api('POST', 'admin/invites', { name: f.name.value }).then(function (r) {
+      P.sheet = { t: 'invite', name: f.name.value.trim(), link: new URL('./', location.href).href + '#invite=' + r.token }; render();
+      if (P.tab === 'settings') { load().then(function () { /* liste des invitations à jour au retour */ }); }
+    }).catch(function (err) { toast(err.message); });
+  } else if (id === 'setupForm') {
     api('POST', 'setup', { name: f.name.value, username: f.username.value, password: f.password.value })
       .then(function (r) { P.me = r.me; P.setup = false; P.loginErr = ''; P.tab = 'overview'; return load().then(loadNotif); }).then(render)
       .catch(function (err) { P.loginErr = err.message; render(); });

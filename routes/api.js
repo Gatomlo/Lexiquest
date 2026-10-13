@@ -10,6 +10,7 @@ const S = require('../lib/sessions');
 const Stats = require('../lib/stats');
 const Push = require('../lib/push');
 const Kv = require('../lib/kv');
+const Invites = require('../lib/invites');
 const Reminders = require('../lib/reminders');
 const { HttpError } = U;
 
@@ -73,6 +74,28 @@ module.exports = function apiRoutes(db) {
         res.json({ me: { id, name: String(b.name).trim(), role: 'parent' } });
       });
     } catch (e) { next(e); }
+  });
+
+  /* ---------- invitation d'un élève par lien ---------- */
+  r.get('/invite/:token', (req, res, next) => {
+    const key = 'invite|' + req.ip;
+    if (tooMany(key)) { return next(new HttpError(429, 'Trop d’essais. Réessaie dans quelques minutes.')); }
+    const inv = Invites.find(db, req.params.token);
+    if (!inv) { noteFail(key); return next(new HttpError(410, 'Ce lien n’est plus valable : demande-en un nouveau à ton parent.')); }
+    res.json({ name: inv.display });
+  });
+  r.post('/invite/:token/accept', (req, res, next) => {
+    const key = 'invite|' + req.ip;
+    if (tooMany(key)) { return next(new HttpError(429, 'Trop d’essais. Réessaie dans quelques minutes.')); }
+    try {
+      const b = req.body || {};
+      const u = Invites.accept(db, req.params.token, { username: b.username, password: b.password });
+      req.session.regenerate((err) => {
+        if (err) { return next(err); }
+        req.session.userId = u.id;
+        res.json({ me: { id: u.id, name: u.name, role: 'student' } });
+      });
+    } catch (e) { if (e.status === 410) { noteFail(key); } next(e); }
   });
 
   /* ---------- connexion ---------- */

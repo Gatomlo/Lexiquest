@@ -98,6 +98,20 @@ function viewLogin() {
    + (S.loginErr || S.bootErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(S.loginErr || S.bootErr) + '</span></div>' : '')
    + '<button class="btn wide" type="submit">Retrouver mon compagnon</button></form></div>';
 }
+function viewInvite() {
+  var inv = S.invite;
+  if (inv.err) {
+    return '<div class="view login"><div class="login-top">' + critter('phenix', 0, 104, 1, null, null) + '<h1>Lexiquest</h1></div><div class="login-body"><div class="alert bad">' + ic('alert') + '<span>' + esc(inv.err) + '</span></div><button class="btn alt wide" data-act="noinvite">Retour à la connexion</button></div></div>';
+  }
+  var sugg = String(inv.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return '<div class="view login"><div class="login-top">' + critter('phenix', 0, 104, 1, null, null)
+   + '<h1>Bienvenue ' + esc(inv.name) + ' !</h1><p>Choisis ton identifiant et ton mot de passe.</p></div>'
+   + '<form class="login-body" id="inviteForm"><label class="field">Identifiant<input name="username" value="' + esc(sugg) + '" autocomplete="username" autocapitalize="none" required></label>'
+   + '<label class="field">Mot de passe (8 caractères minimum)<input name="password" type="password" minlength="8" autocomplete="new-password" required></label>'
+   + '<label class="field">Mot de passe, encore une fois<input name="password2" type="password" minlength="8" autocomplete="new-password" required></label>'
+   + (inv.formErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(inv.formErr) + '</span></div>' : '')
+   + '<button class="btn wide" type="submit">Créer mon compte</button></form></div>';
+}
 function footerHTML() {
   return notifCard('student') + displayControls() + '<button class="btn alt wide" style="margin-top:14px" data-act="logout">' + ic('out') + ' Se déconnecter</button>';
 }
@@ -547,10 +561,11 @@ function viewHome(){
 function render() {
   var app = document.getElementById('app'), h;
   if (!S.booted) { h = ''; }
+  else if (S.invite) { h = viewInvite(); }
   else if (!S.st) { h = viewLogin(); }
   else if (S.sess) { h = S.sess.done ? (S.sess.res ? viewRecap() : viewSaving()) : viewSession(); }
   else { h = studentShell(); }
-  if (S.st) { h += viewSheet(); }
+  if (S.st && !S.invite) { h += viewSheet(); }
   if (S.toast) { h += '<div class="toast">' + esc(S.toast) + '</div>'; }
   app.className = 'app adult';
   app.innerHTML = h;
@@ -572,6 +587,7 @@ document.getElementById('app').addEventListener('click', function (e) {
   var a = t.dataset.act, v = t.dataset.v, s = S.sess;
   if (a.indexOf('notif-') === 0) { handleNotif(a, t).then(function () { return loadNotif(); }).then(render).catch(function (e) { toast(e.message); }); return; }
   switch (a) {
+    case 'noinvite': S.invite = null; history.replaceState(null, '', location.pathname + location.search); S.enter = true; render(); break;
     case 'logout': api('POST', 'auth/logout', {}).then(function () { Offline.clearCache(); S.st = null; S.sess = null; S.tab = 'home'; S.enter = true; render(); }).catch(fail); break;
     case 'tab': go(v); break;
     case 'lang': S.lang = v; render(); break;
@@ -653,6 +669,16 @@ document.getElementById('app').addEventListener('change', function (e) {
   if (t.dataset && t.dataset.csv) { readCsvInto(t, toast); }
 });
 document.getElementById('app').addEventListener('submit', function (e) {
+  if (e.target.id === 'inviteForm') {
+    e.preventDefault();
+    var fi = e.target;
+    if (fi.password.value !== fi.password2.value) { S.invite.formErr = 'Les deux mots de passe ne sont pas identiques.'; render(); return; }
+    api('POST', 'invite/' + encodeURIComponent(S.invite.token) + '/accept', { username: fi.username.value, password: fi.password.value })
+      .then(function () { S.invite = null; history.replaceState(null, '', location.pathname + location.search); S.tab = 'home'; S.enter = true; return refresh(); })
+      .then(function () { render(); loadNotif().then(render); })
+      .catch(function (err) { if (err.status === 410) { S.invite = { err: err.message }; } else { S.invite.formErr = err.message; } render(); });
+    return;
+  }
   if (e.target.id === 'loginForm') {
     e.preventDefault();
     var f = e.target;
@@ -692,7 +718,9 @@ window.addEventListener('online', function () { S.offline = false; if (S.st) { t
 window.addEventListener('offline', function () { S.offline = true; render(); });
 window.onInstallReady = function () { if (S.st && !S.sess) { render(); } };
 
-loadConfig().then(function (c) { applyConfig(c); return api('GET', 'me').then(function () { return refresh(); }).catch(function (e) {
+var invMatch = /(?:^|[#&])invite=([A-Za-z0-9_-]+)/.exec(location.hash);
+if (invMatch) { S.invite = { token: invMatch[1] }; }
+loadConfig().then(function (c) { applyConfig(c); if (S.invite) { return api('GET', 'invite/' + encodeURIComponent(S.invite.token)).then(function (r) { S.invite.name = r.name; }, function (e) { S.invite = { err: e.offline ? 'Pas de réseau : réessaie avec Internet.' : e.message }; }); } }).then(function () { if (S.invite) { return; } return api('GET', 'me').then(function () { return refresh(); }).catch(function (e) {
     if (!e.offline) { S.st = null; return api('GET', 'setup').then(function (s) { S.setupNeeded = s.needed; }).catch(function () { /* rien */ }); }
     var c2 = Offline.loadCache();   // pas de réseau : on repart du dernier état connu
     if (c2) { applyState(c2.st, c2.stats); S.offline = true; } else { S.st = null; S.bootErr = 'Pas de réseau. Connecte-toi une première fois avec Internet pour utiliser Lexiquest hors-ligne.'; }

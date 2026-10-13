@@ -25,6 +25,7 @@ Node ≥ 22.5, `node:sqlite`, front vanilla sans build — comme Fée Lezcomptes
 - **Une seule langue par séance** (néerlandais ou anglais) : jamais de mélange, ni dans les mots, ni dans les distracteurs du QCM ; la langue se choisit avant la portée.
 - L'élève a ses propres statistiques (mêmes indicateurs que le parent, sans le détail des séances).
 - **Style retenu : Adulte** (le style Jeu n'existe plus que dans la maquette). Thème clair/sombre réglable sur l'appareil.
+- **Compte élève par lien d'invitation** : le parent crée un lien à usage unique (7 jours, jeton haché en base, `lib/invites.js`) ; l'élève ouvre `/lexiquest/#invite=…` et choisit identifiant et mot de passe. Toute requête qui modifie des données porte un corps JSON, même vide (le client `api()` l'impose ; le serveur répond 415 sinon).
 - L'écran de connexion élève ne montre **aucune entrée « parent »** ; le parent a son adresse à part.
 - Gemmes calculées côté serveur depuis les événements ; solde = somme de `gem_events`. Décrépitude calculée à la lecture (simulation heure par heure, événements tirés d'une graine par élève), pas de tâche planifiée.
 - **Hors-ligne** : l'appareil joue avec le dernier état connu et envoie les séances à `POST /sessions/import` (identifiant unique, idempotent) ; le serveur recorrige tout. Rien d'autre ne marche sans réseau (boutique, bons).

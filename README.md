@@ -30,7 +30,7 @@ npm test
 
 Aucune variable d'environnement à régler : le secret de session et les clés des notifications sont tirés au hasard au premier démarrage et gardés dans la base (`data/lexiquest.db`, hors dépôt, à sauvegarder).
 
-**Première installation** : ouvrir `/parent` ; tant qu'il n'y a aucun compte, la page propose de créer le compte parent (premier arrivé, premier servi : à faire juste après le déploiement). Le parent ajoute ensuite l'élève dans Réglages. Mot de passe oublié : `node scripts/reset-password.js <identifiant> <nouveau mot de passe>` sur le serveur.
+**Première installation** : ouvrir `/parent` ; tant qu'il n'y a aucun compte, la page propose de créer le compte parent (premier arrivé, premier servi : à faire juste après le déploiement). Le parent invite ensuite l'élève (Réglages → Inviter un élève) : il obtient un lien à lui envoyer, valable 7 jours et à usage unique, sur lequel l'élève choisit son identifiant et son mot de passe. Mot de passe oublié : `node scripts/reset-password.js <identifiant> <nouveau mot de passe>` sur le serveur.
 
 ## Déploiement
 

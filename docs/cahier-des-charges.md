@@ -294,7 +294,7 @@ flowchart LR
 - Elle est montée sur `/lexiquest` : côté navigateur, **aucun chemin absolu** ; la base est déduite à l'exécution (comme `BASE` dans Répétito).
 - Cookie de session : `Path` = base, `HttpOnly`, `Secure`, `SameSite=Lax`.
 - Code déposé dans `apps/lexiquest` de la passerelle ; base SQLite dans un dossier `data/` hors dépôt, sauvegardé.
-- **Aucune variable d'environnement obligatoire**, comme les autres outils : secret de session et clés VAPID générés au premier démarrage et gardés en base (table `kv`) ; le premier compte, le compte parent, se crée à la première visite de `/lexiquest/parent` (`POST /api/setup`, refusé dès qu'un compte existe) ; le parent ajoute ensuite l'élève. Un script serveur (`scripts/reset-password.js`) règle le cas du mot de passe oublié.
+- **Aucune variable d'environnement obligatoire**, comme les autres outils : secret de session et clés VAPID générés au premier démarrage et gardés en base (table `kv`) ; le premier compte, le compte parent, se crée à la première visite de `/lexiquest/parent` (`POST /api/setup`, refusé dès qu'un compte existe) ; le parent invite ensuite l'élève : il crée dans Réglages un **lien d'invitation** (jeton aléatoire, seule son empreinte est gardée ; valable 7 jours, à usage unique, annulable), l'envoie à l'élève, qui y choisit son identifiant et son mot de passe et arrive connecté. Le parent peut aussi créer le compte lui-même. Un script serveur (`scripts/reset-password.js`) règle le cas du mot de passe oublié.
 - L'outil n'a rien à installer ; au démarrage, il répare un `node_modules` abîmé s'il en a un et recharge ses modules si Node refuse un `package.json` sur le volume réseau. Le manifeste s'appelle `manifest.json` pour que la page d'accueil de la passerelle en affiche l'icône.
 
 **Socle** : Node.js 22.5 ou plus (`node:sqlite`, à vérifier chez l'hébergeur), JavaScript vanilla sans build, comme Fée Lezcomptes. **Aucune dépendance propre** (l'installation sur l'hébergeur a déjà été corrompue par des coupures) : Express est celui de la passerelle ; mots de passe scrypt, sessions signées HMAC en base et Web Push (VAPID + chiffrement aes128gcm) écrits avec `node:crypto`.
@@ -345,6 +345,7 @@ Règles non évidentes :
 | `GET /streak`, `POST /vouchers/:palier/claim` | Régularité et bons | Élève |
 | `GET /stats`, `GET /review-queue?lang=` | Statistiques de l'élève, mots à revoir | Élève |
 | `GET /admin/students`, `GET /admin/students/:id/overview`, `.../sessions?range=`, `.../sessions/:sid`, `.../difficulties`, `.../settings`, `.../lists`, `.../export.csv` | Suivi (le calendrier est dans `overview`) | Parent |
+| `POST /admin/invites`, `GET /admin/invites`, `DELETE /admin/invites/:id`, `GET /invite/:jeton`, `POST /invite/:jeton/accept` | Invitation d'un élève par lien (les deux dernières routes sont publiques, limitées en essais) | Parent / public |
 | `POST /admin/students`, `PATCH /admin/students/:id` (réglages, mot de passe), `POST /admin/students/:id/lists`, `DELETE /admin/students/:id/lists/:lid`, `DELETE /admin/students/:id` | Comptes, réglages, listes données | Parent |
 
 ## 15. Sécurité, vie privée, sauvegardes

@@ -448,3 +448,35 @@ test('chiffrement des notifications conforme au vecteur de test du RFC 8291', ()
     { privateKey: 'yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw', salt: 'DGv6ra1nlYgDCS1FRnbzlw' });
   assert.equal(out.toString('base64url'), 'DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN');
 });
+
+test('invitation par lien : à usage unique, expire, rattache l’élève au parent', async (t) => {
+  const E = await setup(); t.after(E.close); t.after(() => clock.reset());
+  await E.loginAll();
+  assert.equal((await E.student.post('/api/admin/invites', { name: 'Zoé' })).status, 403, 'réservé au parent');
+  assert.equal((await E.parent.post('/api/admin/invites', { name: ' ' })).status, 400);
+  const inv = (await E.parent.post('/api/admin/invites', { name: 'Zoé' })).json;
+  assert.match(inv.token, /^[A-Za-z0-9_-]{30,}$/);
+  assert.equal((await E.parent.get('/api/admin/invites')).json.invites.length, 1);
+  assert.ok(!JSON.stringify(E.db.prepare('SELECT * FROM invites').all()).includes(inv.token), 'seule l’empreinte du jeton est gardée');
+  const anon = new E.Client(E.base);
+  assert.equal((await anon.get('/api/invite/jeton-bidon-0123456789abcdef')).status, 410);
+  assert.equal((await anon.get('/api/invite/' + inv.token)).json.name, 'Zoé');
+  assert.equal((await anon.post(`/api/invite/${inv.token}/accept`, { username: 'z', password: 'motdepasse9' })).status, 400, 'identifiant invalide : le lien reste utilisable');
+  assert.equal((await anon.post(`/api/invite/${inv.token}/accept`, { username: 'lea', password: 'motdepasse9' })).status, 409, 'identifiant déjà pris');
+  const ok = await anon.post(`/api/invite/${inv.token}/accept`, { username: 'zoe', password: 'motdepasse9' });
+  assert.equal(ok.status, 200, ok.text);
+  assert.equal(ok.json.me.role, 'student');
+  assert.equal((await anon.get('/api/state')).status, 200, 'connectée dès la création');
+  assert.equal((await new E.Client(E.base).get('/api/invite/' + inv.token)).status, 410, 'usage unique');
+  const mine = (await E.parent.get('/api/admin/students')).json.students.map((s) => s.username);
+  assert.ok(mine.includes('zoe'), 'rattachée au parent qui a invité');
+  // expiration et annulation
+  const old = (await E.parent.post('/api/admin/invites', { name: 'Max' })).json;
+  clock.advance(8 * 864e5);
+  assert.equal((await new E.Client(E.base).get('/api/invite/' + old.token)).status, 410, 'expirée après 7 jours');
+  clock.reset();
+  const cancel = (await E.parent.post('/api/admin/invites', { name: 'Ana' })).json;
+  const list = (await E.parent.get('/api/admin/invites')).json.invites;
+  assert.equal((await E.parent.req('DELETE', '/api/admin/invites/' + list[0].id, {})).status, 200);
+  assert.equal((await new E.Client(E.base).get('/api/invite/' + cancel.token)).status, 410, 'annulée');
+});

@@ -25,8 +25,9 @@ function dayLabel(d) {
 function api(method, path, body) {
   return fetch('api/' + path, {
     method: method, credentials: 'same-origin',
-    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    // toute requête qui modifie quelque chose porte un corps JSON (même vide) : le serveur l'exige
+    headers: method === 'GET' ? {} : { 'Content-Type': 'application/json' },
+    body: method === 'GET' ? undefined : JSON.stringify(body === undefined ? {} : body),
   }).catch(function () {
     var off = new Error('Pas de réseau.'); off.offline = true; throw off;
   }).then(function (res) {

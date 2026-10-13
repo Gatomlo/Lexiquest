@@ -496,3 +496,9 @@ svg.ic{width:24px;height:24px;flex:none}
 .ad-claim svg{width:15px;height:15px}
 .ad-lang{font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--acc-soft);color:var(--ink);margin-right:6px}
 .app.adult .seg button{border-width:0}
+/* grand écran : le menu devient une colonne à gauche ; ces règles passent après le thème adulte, dont le padding écrasait la marge du contenu */
+@container app (min-width:760px){
+  .app.adult .view{padding:22px 24px 30px 118px}
+  .app.adult .tabbar{border-top:0;border-right:1px solid var(--edge)}
+  .app.adult .tab[aria-current=true]{width:100%}
+}
