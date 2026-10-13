@@ -222,6 +222,7 @@ svg.ic{width:24px;height:24px;flex:none}
 .sheet h3{font:400 24px 'Lilita One'}
 .sheet textarea,.sheet input.txt{width:100%;border-radius:14px;border:2.5px solid var(--edge);padding:10px 12px;background:var(--bg);color:var(--ink);font:700 15px 'Nunito'}
 .sheet textarea{min-height:130px;resize:vertical}
+@media (min-width:700px){.sheet{top:0;bottom:0;margin:auto;height:fit-content;width:min(560px,calc(100% - 48px));border:3px solid var(--edge);border-radius:26px;padding:22px 24px 24px}}
 .toast{position:absolute;left:16px;right:16px;bottom:90px;z-index:70;background:var(--ink);color:var(--surface);border-radius:16px;padding:12px 14px;font-weight:800;text-align:center;animation:rise .2s}
 
 /* ---------- session ---------- */

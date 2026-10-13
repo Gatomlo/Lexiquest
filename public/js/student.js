@@ -419,6 +419,7 @@ function viewSheet(){
      +'<label class="field" style="margin-bottom:10px">Langue<select class="txt" id="nl-lang"><option value="nl">Néerlandais</option><option value="en">Anglais</option></select></label>'
      +'<label class="field" style="margin-bottom:10px">Nom<input class="txt" id="nl-name" placeholder="Chapitre 5" autocomplete="off"></label>'
      +'<label class="field" style="margin-bottom:10px">Ou un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#nl-words"></label>'
+     +'<label class="field" style="margin-bottom:10px">Ou plusieurs fichiers CSV d’un coup (une liste par fichier, nommée comme le fichier)<input type="file" multiple accept=".csv,.tsv,.txt,text/csv,text/plain" data-csvmulti="1"></label>'
      +'<textarea id="nl-words" placeholder="de fiets = le vélo&#10;het huis = la maison"></textarea>'
      +'<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" data-act="savelist">Créer la liste</button></div></div>';
   }
@@ -583,7 +584,15 @@ function render() {
   bindSwipe();
   var f = document.getElementById('fin'); if (f && !f.disabled) { f.focus(); }
 }
-function toast(m) { S.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { S.toast = null; render(); }, 2600); }
+/** message éphémère ; si une fenêtre est ouverte, on ne redessine pas (render() effacerait les champs en cours de saisie) */
+function toast(m) {
+  var app = document.getElementById('app');
+  function drop() { S.toast = null; if (S.sheet) { var x = app.querySelector('.toast'); if (x) { x.remove(); } } else { render(); } }
+  S.toast = m;
+  if (S.sheet) { var old = app.querySelector('.toast'); if (old) { old.remove(); } var d = document.createElement('div'); d.className = 'toast'; d.textContent = m; app.appendChild(d); }
+  else { render(); }
+  clearTimeout(toast.t); toast.t = setTimeout(drop, 2600);
+}
 function go(tab, extra) {
   S.tab = tab; S.sub = null; S.enter = true; if (extra) { extra(); } render();
   refresh().then(function () { render(); }).catch(softFail);
@@ -682,6 +691,12 @@ document.getElementById('app').addEventListener('change', function (e) {
   var t = e.target;
   if (t.dataset && t.dataset.act === 'notif-time') { handleNotif('notif-time', t).then(render).catch(function (err) { toast(err.message); }); }
   if (t.dataset && t.dataset.csv) { readCsvInto(t, toast); }
+  if (t.dataset && t.dataset.csvmulti && t.files && t.files.length) {
+    toast('Import en cours…');
+    importCsvFiles(t.files, document.getElementById('nl-lang').value, function (b) { return api('POST', 'lists', b); })
+      .then(function (r) { return refresh().then(function () { if (r.ok) { S.sheet = null; render(); } toast(importSummary(r)); }); })
+      .catch(function (e) { toast(e.message); });
+  }
 });
 document.getElementById('app').addEventListener('submit', function (e) {
   if (e.target.id === 'inviteForm') {

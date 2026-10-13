@@ -199,6 +199,7 @@ function viewSheet() {
    + '<label class="field" style="margin-bottom:10px">Langue<select class="txt" name="lang"><option value="nl">Néerlandais</option><option value="en">Anglais</option></select></label>'
    + '<label class="field" style="margin-bottom:10px">Nom<input class="txt" name="name" placeholder="Chapitre 5" required></label>'
    + '<label class="field" style="margin-bottom:10px">Ou un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#listForm textarea"></label>'
+   + '<label class="field" style="margin-bottom:10px">Ou plusieurs fichiers CSV d’un coup (une liste par fichier, nommée comme le fichier)<input type="file" multiple accept=".csv,.tsv,.txt,text/csv,text/plain" data-csvmulti="1"></label>'
    + '<textarea name="text" placeholder="de fiets = le vélo&#10;het huis = la maison" required></textarea>'
    + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Donner la liste</button></div></form>';
 }
@@ -220,7 +221,15 @@ function render() {
   app.className = 'app adult';
   app.innerHTML = h; P.enter = false;
 }
-function toast(m) { P.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { P.toast = null; render(); }, 2600); }
+/** message éphémère ; si une fenêtre est ouverte, on ne redessine pas (render() effacerait les champs en cours de saisie) */
+function toast(m) {
+  var app = document.getElementById('app');
+  function drop() { P.toast = null; if (P.sheet) { var x = app.querySelector('.toast'); if (x) { x.remove(); } } else { render(); } }
+  P.toast = m;
+  if (P.sheet) { var old = app.querySelector('.toast'); if (old) { old.remove(); } var d = document.createElement('div'); d.className = 'toast'; d.textContent = m; app.appendChild(d); }
+  else { render(); }
+  clearTimeout(toast.t); toast.t = setTimeout(drop, 2600);
+}
 
 document.getElementById('app').addEventListener('click', function (e) {
   var pf = e.target.closest('[data-pref]');
@@ -266,6 +275,12 @@ document.getElementById('app').addEventListener('click', function (e) {
 document.getElementById('app').addEventListener('change', function (e) {
   if (e.target.dataset && e.target.dataset.act === 'notif-time') { handleNotif('notif-time', e.target).then(render).catch(function (err) { toast(err.message); }); }
   if (e.target.dataset && e.target.dataset.csv) { readCsvInto(e.target, toast); }
+  if (e.target.dataset && e.target.dataset.csvmulti && e.target.files && e.target.files.length) {
+    toast('Import en cours…');
+    importCsvFiles(e.target.files, document.querySelector('#listForm [name=lang]').value, function (b) { return api('POST', base() + '/lists', b); })
+      .then(function (r) { if (r.ok) { P.sheet = null; } return reload().then(function () { toast(importSummary(r)); }); })
+      .catch(function (err) { toast(err.message); });
+  }
   if (e.target.id === 'studentSel') { P.sid = +e.target.value; P.ov = null; P.settings = null; reload(); }
 });
 document.getElementById('app').addEventListener('submit', function (e) {
