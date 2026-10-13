@@ -150,7 +150,8 @@ svg.ic{width:24px;height:24px;flex:none}
 .pet.munch{animation:munch .6s 2}
 .petcard{padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
 .petcard.l2{background:color-mix(in srgb,var(--surface) 80%,#8D9C94)}
-.petcard.l3,.petcard.l4{background:color-mix(in srgb,var(--surface) 55%,#8D9C94)}
+.petcard.l2[class*=d-]{background:color-mix(in srgb,var(--surface) 80%,#8D9C94)}
+.petcard.l3,.petcard.l4,.petcard.l3[class*=d-],.petcard.l4[class*=d-]{background:color-mix(in srgb,var(--surface) 55%,#8D9C94)}
 .evt{font-size:12.5px;font-weight:700;color:var(--ink-2);max-width:320px;line-height:1.35}.evt b.up{color:var(--grass)}.evt b.dn{color:var(--coral)}
 .petname{font:400 24px 'Lilita One'}
 .state{display:inline-block;border:2.5px solid var(--edge);border-radius:999px;padding:2px 12px;font-weight:800;font-size:13px}
@@ -225,6 +226,12 @@ svg.ic{width:24px;height:24px;flex:none}
 .item:active{transform:translateY(3px);box-shadow:0 1px 0 var(--edge)}
 .item[disabled]{opacity:.5;cursor:not-allowed}
 .item svg{width:42px;height:42px}
+.item.on{background:var(--grass-soft)}
+.swatch{width:46px;height:42px;border-radius:10px;border:2.5px solid var(--edge)}
+.d-foret{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 62%,#2F8F5B),color-mix(in srgb,var(--surface) 55%,#A3D977))}
+.d-plage{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 55%,#8FD0FF) 0 58%,color-mix(in srgb,var(--surface) 45%,#FFD98A) 58%)}
+.d-chateau{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 60%,#C28BFF),color-mix(in srgb,var(--surface) 55%,#E8D9C4))}
+.d-etoiles{background:radial-gradient(circle at 18% 22%,#fff 0 1.2px,transparent 2px),radial-gradient(circle at 72% 14%,#fff 0 1.5px,transparent 2.4px),radial-gradient(circle at 86% 46%,#fff 0 1px,transparent 1.8px),radial-gradient(circle at 34% 58%,#fff 0 1px,transparent 1.8px),linear-gradient(180deg,color-mix(in srgb,var(--surface) 45%,#23305E),color-mix(in srgb,var(--surface) 50%,#6B5BB8))}
 .item small{font-weight:700;color:var(--ink-2);font-size:11px}
 .price{display:inline-flex;gap:3px;align-items:center;font:400 15px 'Lilita One';background:var(--sun);color:var(--on-sun);border:2px solid var(--edge);border-radius:999px;padding:0 9px}
 .price svg{width:14px;height:14px}
@@ -565,28 +572,40 @@ var GAMES={
 };
 var ROT={max:3,need:2};
 var BOSS_PEN={care:40,joy:20};
-var RES_PRICE=30;
+var RES_PRICE=150;
 var ORDER=['cards','duel','scramble','forge','boss'];
 var REALM={nl:{s:'Néerlandais',cls:'r-nl',tag:'NL'},en:{s:'Anglais',cls:'r-en',tag:'EN'}};
 var PETS={
   phenix:{n:'Lexi',k:'Phénix',price:0},
-  dragon:{n:'Pyro',k:'Dragonnet',price:150},
-  licorne:{n:'Étoile',k:'Licorne',price:220},
-  griffon:{n:'Griff',k:'Griffon',price:300},
-  kraken:{n:'Glouglou',k:'Bébé kraken',price:400}
+  dragon:{n:'Pyro',k:'Dragonnet',price:400},
+  licorne:{n:'Étoile',k:'Licorne',price:700},
+  griffon:{n:'Griff',k:'Griffon',price:1000},
+  kraken:{n:'Glouglou',k:'Bébé kraken',price:1500}
 };
 var ITEMS=[
-  {id:'pomme',n:'Pomme dorée',cat:'food',price:5,gain:{food:25},say:'Croc croc, délicieux !'},
-  {id:'gateau',n:'Gâteau au miel',cat:'food',price:12,gain:{food:50},say:'Miam ! Merci !'},
-  {id:'festin',n:'Grand festin',cat:'food',price:25,gain:{food:100,joy:10},say:'Quel festin !'},
-  {id:'potion',n:'Potion de soin',cat:'care',price:8,gain:{care:35},say:'Je me sens beaucoup mieux.'},
-  {id:'bain',n:'Bain moussant',cat:'care',price:6,gain:{care:20,joy:5},say:'Me voilà tout propre !'},
-  {id:'balle',n:'Balle magique',cat:'play',price:4,gain:{joy:25},say:'Youpi, on joue !'},
+  {id:'pomme',n:'Pomme dorée',cat:'food',price:20,gain:{food:25},say:'Croc croc, délicieux !'},
+  {id:'gateau',n:'Gâteau au miel',cat:'food',price:36,gain:{food:50},say:'Miam ! Merci !'},
+  {id:'festin',n:'Grand festin',cat:'food',price:70,gain:{food:100,joy:10},say:'Quel festin !'},
+  {id:'potion',n:'Potion de soin',cat:'care',price:40,gain:{care:35},say:'Je me sens beaucoup mieux.'},
+  {id:'bain',n:'Bain moussant',cat:'care',price:30,gain:{care:20,joy:5},say:'Me voilà tout propre !'},
+  {id:'balle',n:'Balle magique',cat:'play',price:20,gain:{joy:25},say:'Youpi, on joue !'},
   {id:'resur',n:'Potion de résurrection',cat:'care',price:RES_PRICE,set:{food:50,care:50,joy:50},ko:true,say:'Je suis de retour ! Merci de ne pas m’avoir abandonné.'}
 ];
 /* par heure : énergie et plaisir baissent toujours ; la vie baisse pour chaque jauge sous LOW (faim, ennui) ;
    la nuit (20 h à 8 h) il dort : toutes les baisses sont multipliées par NIGHT.f */
-var RATE={food:.6,care:.5,joy:1},LOW=20,NIGHT={from:20,to:8,f:.5};
+/* achats durables : gardés pour toujours, un accessoire et un décor portés à la fois, valables pour tous les compagnons */
+var DURABLE=[
+  {id:'noeud',n:'Nœud papillon',cat:'acc',price:60},
+  {id:'echarpe',n:'Écharpe',cat:'acc',price:90},
+  {id:'lunettes',n:'Lunettes rondes',cat:'acc',price:120},
+  {id:'chapeau',n:'Chapeau de magicien',cat:'acc',price:180},
+  {id:'couronne',n:'Couronne dorée',cat:'acc',price:300},
+  {id:'foret',n:'Forêt enchantée',cat:'decor',price:150},
+  {id:'plage',n:'Plage',cat:'decor',price:220},
+  {id:'chateau',n:'Château',cat:'decor',price:320},
+  {id:'etoiles',n:'Ciel étoilé',cat:'decor',price:450}
+];
+var RATE={food:1.2,care:.75,joy:1.5},LOW=20,NIGHT={from:20,to:8,f:.5};
 function isNight(hr){return hr>=NIGHT.from||hr<NIGHT.to;}
 var STATN={food:'Énergie',care:'Vie',joy:'Plaisir'},GAUGES=['care','food','joy'];
 /* événements aléatoires : un tous les 1 à 3 jours, sur une seule jauge */
@@ -710,7 +729,7 @@ function init(){
   var t=todayIdx();
   buildEvents(hourNow()-19);
   S={role:null,tab:'home',ptab:'overview',sub:null,sheet:null,sess:null,toast:null,theme:(S&&S.theme)||'game',
-     points:84,active:'phenix',owned:{phenix:true},
+     points:120,active:'phenix',owned:{phenix:true},inv:{},equip:{acc:null,decor:null},
      pets:{phenix:{food:72,care:80,joy:78,anchor:hourNow()}},evlog:[{h:hourNow()-19,id:'baies'}],
      careDays:9,lastCareDay:t,dailyDay:t,claimed:{3:false,7:false,14:false,30:false},
      rot:{cards:{n:2,locked:false,seen:[]},duel:{n:3,locked:true,seen:['cards']},scramble:{n:1,locked:false,seen:[]},forge:{n:0,locked:false,seen:[]}},
@@ -851,8 +870,9 @@ function itemSvg(id){
 }
 
 /* créatures : 5 espèces, 3 stades, 4 niveaux de forme + à terre */
-function critter(kind,lvl,size,stg,react){
+function critter(kind,lvl,size,stg,react,acc){
   size=size||110;stg=stg==null?1:stg;
+  if(acc===undefined){acc=S&&S.equip&&kind===S.active?S.equip.acc:null;}
   var ko=lvl===4;if(ko){lvl=3;react=null;}
   var eff=lvl;if(react==='happy'||react==='wow'){eff=0;}else if(react==='sad'){eff=2;}
   var E='var(--edge)',R=[22,26,29][stg],cy=60,i,sd,k;
@@ -908,6 +928,7 @@ function critter(kind,lvl,size,stg,react){
     else{s+='<path d="M43 '+(my+5)+' q7 -7 14 0" fill="none" '+sw+'/>';}
   }
   s+='<circle cx="33" cy="'+(cy+4)+'" r="3.6" fill="#FF6150" opacity="'+(eff<2?.5:.18)+'"/><circle cx="67" cy="'+(cy+4)+'" r="3.6" fill="#FF6150" opacity="'+(eff<2?.5:.18)+'"/>';
+  if(acc){s+=accSvg(acc,R,cy,ey,sw);}
   /* décrépitude */
   if(lvl>=2){s+='<path d="M72 '+(cy-20)+' q4 7 0 10 q-4 -3 0 -10z" fill="#8FD0FF" stroke="'+E+'" stroke-width="1.8"/>';}
   if(lvl===3){
@@ -918,6 +939,16 @@ function critter(kind,lvl,size,stg,react){
   if(ko){s+='<text x="70" y="18" font-family="Nunito,sans-serif" font-weight="900" font-size="13" fill="'+E+'">z<tspan font-size="10" dy="-6">z</tspan><tspan font-size="8" dy="-5">z</tspan></text>';}
   return s+'</svg>';
 }
+function accSvg(id,R,cy,ey,sw){
+  var X=50+R*.6,Y=cy-R*.75,y;
+  if(id==='noeud'){y=cy+R*.62;return '<path d="M50 '+y+' l-10 -6 v12z M50 '+y+' l10 -6 v12z" fill="#FF6150" '+sw+'/><circle cx="50" cy="'+y+'" r="2.8" fill="#FFC62E" '+sw+'/>';}
+  if(id==='echarpe'){y=cy+R*.38;return '<path d="M'+(50+R*.35)+' '+(y+5)+' l3 16 l8 -2 l-4 -15z" fill="#FFC62E" '+sw+'/><path d="M'+(50-R*.9)+' '+y+' q'+(R*.9)+' 10 '+(R*1.8)+' 0 v8 q'+(-R*.9)+' 10 '+(-R*1.8)+' 0z" fill="#2E8CFF" '+sw+'/>';}
+  if(id==='lunettes'){return '<circle cx="41" cy="'+ey+'" r="8.6" fill="rgba(255,255,255,.18)" '+sw+'/><circle cx="59" cy="'+ey+'" r="8.6" fill="rgba(255,255,255,.18)" '+sw+'/><path d="M49.6 '+ey+' h0.8" '+sw+'/>';}
+  if(id==='chapeau'){return '<g transform="rotate(26 '+X+' '+Y+')"><path d="M'+(X-8)+' '+Y+' L'+X+' '+(Y-24)+' L'+(X+8)+' '+Y+'z" fill="#8F72E8" '+sw+'/><ellipse cx="'+X+'" cy="'+Y+'" rx="13" ry="3.6" fill="#5B3FC0" '+sw+'/><circle cx="'+(X-1)+'" cy="'+(Y-11)+'" r="2" fill="#FFC62E"/></g>';}
+  if(id==='couronne'){return '<g transform="rotate(20 '+X+' '+Y+')"><path d="M'+(X-10)+' '+Y+' v-11 l5 6 l5 -9 l5 9 l5 -6 v11z" fill="#FFC62E" '+sw+'/><circle cx="'+X+'" cy="'+(Y-4)+'" r="1.8" fill="#FF6150"/></g>';}
+  return '';
+}
+function decorCls(){return S.equip&&S.equip.decor?' d-'+S.equip.decor:'';}
 function bossArt(lang,size){
   var c=lang==='nl'?'#FF9418':lang==='en'?'#2E8CFF':'#FFC62E';
   return '<svg class="bossart" width="'+size+'" height="'+size+'" viewBox="0 0 120 120" aria-hidden="true">'
@@ -954,7 +985,7 @@ function hud(){
 }
 function petCard(full){
   var n=petNow(S.active),P=PETS[S.active];
-  return '<div class="chunk petcard l'+n.lvl+'">'+critter(S.active,n.lvl,full?150:120,stage(),S.munch?'happy':null)
+  return '<div class="chunk petcard l'+n.lvl+decorCls()+'">'+critter(S.active,n.lvl,full?150:120,stage(),S.munch?'happy':null)
    +'<div class="petname">'+P.n+'<span class="muted" style="font:700 13px Nunito;margin-left:8px">'+P.k+' · '+['bébé','jeune','adulte'][stage()]+'</span></div>'
    +'<div class="bubble">'+esc(petMsg(n))+'</div>'+bars(n)+evtLine(n)
    +(full?'':'<button class="btn sm alt" data-act="tab" data-v="pet" style="margin-top:6px">'+ic('heart')+(n.ko?' Le relever':' Prendre soin')+'</button>')+'</div>';
@@ -1003,7 +1034,7 @@ function viewHomeAdult(){
   var next=VOUCH.filter(function(v){return v.d>st;})[0];
   var h='<div class="ad-head"><div><small>'+dayLabel(now)+'</small><h1>'+hello+', '+esc(S.name)+'</h1></div>'
     +'<div class="ad-chips"><span class="ad-chip">'+ic('flame','var(--coral)')+'<span class="tnum">'+st+'</span></span><span class="ad-chip">'+ic('gem','var(--sky)')+'<span class="tnum">'+S.points+'</span></span></div></div>';
-  h+='<div class="ad-hero">'+critter(S.active,n.lvl,124,stage(),S.munch?'happy':null)+'<div class="name">'+P.n+'</div><div class="ad-state">'+P.k+' · '+STATE_N[n.lvl]+'</div><div class="sub">'+esc(petMsg(n))+'</div>'
+  h+='<div class="ad-hero'+decorCls()+'">'+critter(S.active,n.lvl,124,stage(),S.munch?'happy':null)+'<div class="name">'+P.n+'</div><div class="ad-state">'+P.k+' · '+STATE_N[n.lvl]+'</div><div class="sub">'+esc(petMsg(n))+'</div>'
     +'<div class="ad-gauges">'+GAUGES.map(function(k){return '<div class="ad-g"><div class="lab"><span>'+STATN[k]+'</span><span class="tnum">'+Math.round(n[k])+'</span></div><div class="tr"><i style="width:'+Math.round(n[k])+'%;background:'+col(n[k])+'"></i></div></div>';}).join('')+'</div>'+evtLine(n)
     +'<button class="ad-link" data-act="tab" data-v="pet">'+(n.ko?'Le relever':'Prendre soin')+'</button></div>';
   h+='<button class="ad-cta" data-act="tab" data-v="play"><span>Commencer une séance</span><span class="k">≈ 5 min</span></button>';
@@ -1125,6 +1156,17 @@ function viewPet(){
       var gains=i.set?'relève à '+i.set.care+' partout':Object.keys(i.gain).map(function(k){return '+'+i.gain[k]+' '+STATN[k].toLowerCase();}).join(', ');
       var off=S.points<i.price||(i.ko?!n.ko:n.ko);
       h+='<button class="item" data-act="buy" data-id="'+i.id+'"'+(off?' disabled':'')+'>'+itemSvg(i.id)+i.n+'<small>'+gains+'</small><span class="price">'+ic('gem','var(--sky)')+i.price+'</span></button>';
+    });
+    h+='</div>';
+  });
+  [['acc','Accessoires'],['decor','Décors']].forEach(function(g){
+    h+='<h2 class="sec">'+g[1]+' <span class="muted" style="font:700 12px Nunito">· à toi pour toujours</span></h2><div class="items">';
+    DURABLE.filter(function(d){return d.cat===g[0];}).forEach(function(d){
+      var own=!!S.inv[d.id],on=S.equip[d.cat]===d.id;
+      var pv=d.cat==='acc'?critter(S.active,0,42,1,null,d.id):'<span class="swatch d-'+d.id+'"></span>';
+      h+='<button class="item'+(on?' on':'')+'" data-act="dur" data-id="'+d.id+'"'+(!own&&S.points<d.price?' disabled':'')+'>'+pv+d.n
+        +'<small>'+(on?'Porté · retirer':own?'À toi · porter':(d.cat==='acc'?'pour tous tes compagnons':'fond de ton compagnon'))+'</small>'
+        +(own?'<span class="price">'+ic('check')+'</span>':'<span class="price">'+ic('gem','var(--sky)')+d.price+'</span>')+'</button>';
     });
     h+='</div>';
   });
@@ -1488,7 +1530,7 @@ function pSettings(){
   LISTS.forEach(function(l){h+='<div class="row"><div>'+esc(l.name)+'<small>'+REALM[l.lang].s+' · '+l.words.length+' mots</small></div>'+(l.by==='parent'?'<span class="tag">Donnée</span>':'<button class="btn sm alt" data-act="toast" data-m="Liste assignée à '+esc(S.name)+' (maquette)">Assigner</button>')+'</div>';});
   h+='</div><div class="pcard s6"><h2>Régularité et récompenses</h2><div class="row"><div>Bon du jour<small>à la première séance du jour</small></div><b class="disp">+10 gemmes</b></div>';
   VOUCH.forEach(function(v){h+='<div class="row"><div>'+v.d+' jours de suite</div><b class="disp">+'+v.p+' gemmes</b></div>';});
-  h+='<p class="muted" style="font-size:12.5px;margin-top:8px">Compagnon : −1 de plaisir et −0,6 d’énergie par heure ; sous '+LOW+', faim et ennui retirent chacun 0,5 de vie par heure. La nuit (20 h – 8 h), il dort : tout baisse deux fois moins vite. Un événement aléatoire tous les 1 à 3 jours. À 0 de vie, il est à terre jusqu’à une potion de résurrection ('+RES_PRICE+' gemmes).</p></div>';
+  h+='<p class="muted" style="font-size:12.5px;margin-top:8px">Compagnon : −1,5 de plaisir et −1,2 d’énergie par heure ; sous '+LOW+', faim et ennui retirent chacun 0,75 de vie par heure. Une séance par jour plus le bon du jour suffit tout juste à l’entretenir. La nuit (20 h – 8 h), il dort : tout baisse deux fois moins vite. Un événement aléatoire tous les 1 à 3 jours. À 0 de vie, il est à terre jusqu’à une potion de résurrection ('+RES_PRICE+' gemmes).</p></div>';
   h+='<div class="pcard s12"><h2>Règles du jeu</h2><div class="row"><div>Rotation des jeux<small>Un jeu se verrouille après '+ROT.max+' séances ; il se retrouve en jouant '+ROT.need+' autres jeux différents</small></div><b class="disp">'+ROT.max+' / '+ROT.need+'</b></div><div class="row"><div>Gardien hebdomadaire<small>À vaincre chaque semaine, langue au choix mais jamais 3 semaines de suite la même ; sinon −'+BOSS_PEN.care+' de vie et −'+BOSS_PEN.joy+' de plaisir ; un Gardien bonus ne change rien</small></div><b class="disp">1 / semaine</b></div><div class="row"><div>Gemmes par bon mot<small>Plus le jeu est difficile, plus il rapporte</small></div><b class="disp">1 à 4</b></div></div>';
   h+='<div class="pcard s12"><h2>Données</h2><p class="muted">Export de toutes les séances et réponses au format CSV, ou suppression complète du compte élève.</p><div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn sm" data-act="toast" data-m="Export CSV préparé (maquette)">'+ic('down')+' Exporter en CSV</button><button class="btn sm alt" data-act="toast" data-m="Suppression simulée : rien n’a été effacé">Supprimer les données</button></div></div></div>';
   h+='<div style="height:16px"></div><button class="btn alt wide" data-act="logout">'+ic('out')+' Se déconnecter</button>';
@@ -1585,6 +1627,11 @@ document.getElementById('app').addEventListener('click',function(e){
     case 'playlist':S.plang=LB[t.dataset.id].lang;S.scope='one';S.one=t.dataset.id;S.tab='play';S.sub=null;S.enter=true;render();break;
     case 'claim':S.claimed[+v]=true;S.points+=VOUCH.filter(function(x){return x.d===+v;})[0].p;confetti(24);render();toast('Bon encaissé !');break;
     case 'buy':buy(t.dataset.id);break;
+    case 'dur':
+      var D=DURABLE.filter(function(x){return x.id===t.dataset.id;})[0];
+      if(S.inv[D.id]){S.equip[D.cat]=S.equip[D.cat]===D.id?null:D.id;render();}
+      else if(S.points>=D.price){S.points-=D.price;S.inv[D.id]=true;S.equip[D.cat]=D.id;confetti(24);render();toast(D.n+' : à toi pour toujours !');}
+      break;
     case 'choose':
       if(petNow(S.active).ko){toast(PETS[S.active].n+' est à terre : relève-le d’abord.');break;}
       materialize(S.active);S.active=t.dataset.id;S.pets[S.active].anchor=hourNow();render();break;

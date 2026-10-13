@@ -17,8 +17,9 @@ Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla 
 - L'app **exporte** son app Express (`module.exports = app`) et ne `listen()` que si `require.main === module`.
 - Côté navigateur : **chemins relatifs uniquement** (montage sous `/lexiquest`).
 - Aucun déblocage par niveau, mais **rotation** : un jeu (hors Gardien) se verrouille après 3 séances et se rouvre en jouant 2 autres jeux différents. Un **Gardien hebdomadaire** à vaincre (sinon −40 vie, −20 plaisir) ; un Gardien bonus (semaine déjà validée) n'a aucun effet.
-- Monnaie = **gemmes** ; les jeux difficiles en rapportent davantage (1, 2, 3, 4 par bon mot). Le compagnon ne meurt jamais : à 0 de vie il est « à terre », seule la potion de résurrection le relève.
-- Jauges **vie / énergie / plaisir**, baisse **horaire** (plaisir −1/h, énergie −0,6/h ; vie −0,5/h par jauge sous 20), **divisée par deux la nuit** (20 h – 8 h, il dort) + un **événement aléatoire** (30 au catalogue) tous les 1 à 3 jours sur une jauge.
+- Monnaie = **gemmes** ; les jeux difficiles en rapportent davantage (1, 2, 3, 4 par bon mot). Le compagnon ne meurt jamais : à 0 de vie il est « à terre », seule la potion de résurrection (150) le relève.
+- **Équilibre** : 1 séance/jour + bon du jour ≈ entretien (≈ 40 gemmes/jour) ; l'épargne (compagnons 400 à 1 500, accessoires et décors durables) exige plusieurs séances par jour. Tout changement de prix ou de vitesse des jauges doit garder cet équilibre.
+- Jauges **vie / énergie / plaisir**, baisse **horaire** (plaisir −1,5/h, énergie −1,2/h ; vie −0,75/h par jauge sous 20), **divisée par deux la nuit** (20 h – 8 h, il dort) + un **événement aléatoire** (30 au catalogue) tous les 1 à 3 jours sur une jauge.
 - **Une seule langue par séance** (néerlandais ou anglais) : jamais de mélange, ni dans les mots, ni dans les distracteurs du QCM ; la langue se choisit avant la portée.
 - L'élève a ses propres statistiques (mêmes indicateurs que le parent, sans le détail des séances).
 - Deux styles complets à comparer dans la maquette (Jeu / Adulte, bouton en haut de page) : décision en attente.

@@ -117,23 +117,47 @@ Un mot raté est re-présenté une fois dans la séance (sauf contre le Gardien)
 | Bon du jour (première séance du jour) | +10 |
 | Bons de régularité | 3 jours +15 · 7 jours +40 · 14 jours +100 · 30 jours +250 |
 
-Une séance rapporte environ 20 gemmes en Chasse aux cartes, 35 en Duel, 40 en Lettres folles, 50 en La Forge, davantage avec les bonus (valeurs à calibrer à l'usage, barème en configuration serveur).
+Une séance moyenne (75 % de réussite du premier coup, +5 de fin compris) rapporte environ 23 gemmes en Chasse aux cartes, 35 en Duel, 33 en Lettres folles, 40 en La Forge ; 50 à 67 sans faute. Avec la rotation, une séance vaut environ **33 gemmes** (valeurs à calibrer à l'usage, barème en configuration serveur).
 
 **Boutique**
 
 | Article | Prix (gemmes) | Effet |
 | --- | --- | --- |
-| Pomme dorée | 5 | +25 énergie |
-| Gâteau au miel | 12 | +50 énergie |
-| Grand festin | 25 | +100 énergie, +10 plaisir |
-| Potion de soin | 8 | +35 vie |
-| Bain moussant | 6 | +20 vie, +5 plaisir |
-| Balle magique | 4 | +25 plaisir |
-| Potion de résurrection | 30 | Seulement si le compagnon est à terre : vie, énergie et plaisir à 50 |
+| Pomme dorée | 20 | +25 énergie |
+| Gâteau au miel | 36 | +50 énergie |
+| Grand festin | 70 | +100 énergie, +10 plaisir |
+| Potion de soin | 40 | +35 vie |
+| Bain moussant | 30 | +20 vie, +5 plaisir |
+| Balle magique | 20 | +25 plaisir |
+| Potion de résurrection | 150 | Seulement si le compagnon est à terre : vie, énergie et plaisir à 50 |
 
-**Compagnons** : Lexi le phénix (offert), Pyro le dragonnet (150), Étoile la licorne (220), Griff le griffon (300), Glouglou le bébé kraken (400).
+**Achats durables** (gardés pour toujours, valables pour tous les compagnons ; un accessoire et un décor portés à la fois, qu'on change librement) :
 
-Équilibre visé : l'entretien quotidien coûte environ 6 gemmes (une balle presque chaque jour, une pomme tous les deux jours) ; le reste s'épargne pour de nouveaux compagnons.
+| Article | Prix (gemmes) | Effet |
+| --- | --- | --- |
+| Nœud papillon | 60 | Accessoire |
+| Écharpe | 90 | Accessoire |
+| Lunettes rondes | 120 | Accessoire |
+| Chapeau de magicien | 180 | Accessoire |
+| Couronne dorée | 300 | Accessoire |
+| Forêt enchantée | 150 | Décor (fond de la carte du compagnon) |
+| Plage | 220 | Décor |
+| Château | 320 | Décor |
+| Ciel étoilé | 450 | Décor |
+
+Purement décoratifs : aucun effet sur les jauges. Lot 3 : nouveaux accessoires et décors pour garder un objectif d'épargne.
+
+**Compagnons** : Lexi le phénix (offert), Pyro le dragonnet (400), Étoile la licorne (700), Griff le griffon (1 000), Glouglou le bébé kraken (1 500).
+
+**Équilibre visé : une séance par jour, plus le bon du jour, suffit tout juste à garder le compagnon en vie.** Le but est d'inciter à faire plusieurs séances par jour.
+
+| | Gemmes par jour |
+| --- | --- |
+| Revenu : 1 séance (≈ 33) + bon du jour (10) | ≈ 43 (33 si la séance est faible) |
+| Entretien : plaisir −27 (≈ 1,1 balle, 22) + énergie −22 (≈ 0,45 gâteau, 16) + usure de la vie par les événements (≈ 2) | ≈ 40 |
+| Bonus réguliers : Gardien de la semaine (+20 par semaine) et bons de série (405 sur le premier mois) | ≈ 3, et ≈ 13 le premier mois |
+
+Avec une seule séance, il ne reste presque rien à épargner. Chaque séance de plus rapporte environ 33 gemmes nettes : Pyro en 12 jours environ à deux séances par jour, une couronne en 9 jours. Tous les compagnons et articles (≈ 5 500 gemmes) représentent une année scolaire à deux séances par jour.
 
 ## 6. Compagnon (inspiration Tamagotchi)
 
@@ -142,9 +166,9 @@ Une séance rapporte environ 20 gemmes en Chasse aux cartes, 35 en Duel, 40 en L
 
 | Jauge | Jour (8 h – 20 h) | Nuit (20 h – 8 h) | Sur 24 h | Remède |
 | --- | --- | --- | --- | --- |
-| Plaisir | −1 par heure | −0,5 par heure | −18 | Balle magique, bain, festin |
-| Énergie | −0,6 par heure | −0,3 par heure | ≈ −11 | Pomme, gâteau, festin |
-| Vie | −0,5 par heure **tant que l'énergie est sous 20** (faim), et autant **tant que le plaisir est sous 20** (ennui) | moitié | jusqu'à −18 | Potion de soin, bain |
+| Plaisir | −1,5 par heure | −0,75 par heure | −27 | Balle magique, bain, festin |
+| Énergie | −1,2 par heure | −0,6 par heure | ≈ −22 | Pomme, gâteau, festin |
+| Vie | −0,75 par heure **tant que l'énergie est sous 20** (faim), et autant **tant que le plaisir est sous 20** (ennui) | moitié | jusqu'à −27 | Potion de soin, bain |
 
 La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans Gardien vaincu (au passage du lundi).
 
@@ -155,8 +179,8 @@ La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans 
 | Énergie | baies sauvages +15, ruche abandonnée pleine de miel +20, noisettes partagées par un écureuil +10, pommes tombées avec le vent +15, grande sieste au soleil +10 | orage qui empêche de dormir −15, goûter volé par un corbeau −10, matinée à courir après un papillon −10, cauchemar −10, gelée qui abîme les fruits −15 |
 | Plaisir | jeu avec une luciole +15, double arc-en-ciel +10, visite d'un lutin farceur +20, plume brillante +10, étoile filante +15 | journée de pluie −15, jouet perdu dans la mare −10, moqueries d'un troll grincheux −15, coincé dans le brouillard −10, cache-cache perdu contre un lapin −5 |
 | Vie | source magique +10, aile soignée par une fée +15, nuit sur un lit de mousse +10, tisane d'une gentille sorcière +10, herbe médicinale +5 | rhume −10, buisson de ronces −10, chute d'un arbre −15, piqûre de guêpe −5, champignon douteux −10 |
-- **À terre** : quand la vie atteint 0, le compagnon tombe (gris, couché, « zzz »). Ses jauges sont figées (plus de baisse ni d'événement), les autres articles de la boutique sont refusés et on ne peut pas changer de compagnon actif. Seule la **potion de résurrection** (30 gemmes) le relève, à 50 dans les trois jauges. S'il manque des gemmes, une séance suffit à les gagner.
-- Ordre de grandeur : sans soin, le plaisir passe sous 20 en 3 jours environ, l'énergie en 4 à 5 jours ; une absence d'une semaine (avec un Gardien manqué) met le compagnon à terre.
+- **À terre** : quand la vie atteint 0, le compagnon tombe (gris, couché, « zzz »). Ses jauges sont figées (plus de baisse ni d'événement), les autres articles de la boutique sont refusés et on ne peut pas changer de compagnon actif. Seule la **potion de résurrection** (150 gemmes, environ 4 séances) le relève, à 50 dans les trois jauges. C'est volontairement coûteux : laisser tomber son compagnon doit se sentir.
+- Ordre de grandeur : sans soin, le plaisir passe sous 20 en 2 à 3 jours, l'énergie aussi ; après 4 jours d'absence, le compagnon est décrépit, et à terre avant 7 jours.
 - Entre 20 h et 8 h, la bulle du compagnon en forme dit qu'il somnole.
 - Cinq états : **radieux** (moyenne 65 et plus), **content** (45 à 64), **fatigué** (25 à 44), **décrépit** (moins de 25), **à terre** (vie à 0, prioritaire).
 - Rendu : radieux = couleurs vives, animé ; fatigué = désaturé, paupières lourdes ; décrépit = gris, poussière, toiles d'araignée, yeux ternes ; à terre = entièrement gris, penché, immobile, « zzz ».
@@ -183,7 +207,7 @@ La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans 
 | E5 | Rotation des jeux | Verrouillage après 3 séances, déblocage par 2 autres jeux, état visible | 1 |
 | E6 | Gardien hebdomadaire | Statut et jours restants ; pénalité au passage du lundi si non vaincu ; Gardien bonus sans effet | 1 |
 | E7 | Récap de séance | Gemmes détaillées, durée active, mots ratés, jeux verrouillés ou retrouvés | 1 |
-| E8 | Boutique, soins, compagnons | Acheter, adopter, choisir le compagnon actif ; jauges horaires, événements aléatoires, résurrection | 1 |
+| E8 | Boutique, soins, compagnons | Acheter, adopter, choisir le compagnon actif ; jauges horaires, événements aléatoires, résurrection ; accessoires et décors achetés, portés ou retirés | 1 |
 | E9 | Mes mots | Listes par langue, création par collage « mot = traduction », maîtrise par mot | 1 |
 | E10 | Mes stats | Jours joués, temps, réussite, jeux utilisés, maîtrise par langue, calendrier, mots coriaces | 1 |
 | E11 | Régularité | Bon du jour, bons de palier, série | 2 |
@@ -268,6 +292,7 @@ flowchart LR
 | `daily_activity` | élève, jour, temps actif, séances, réponses | Cache recalculable |
 | `gem_events` | id, élève, delta, motif, séance, date | Registre des gemmes ; solde = somme |
 | `user_pets` | élève, espèce, vie, énergie, plaisir, heure de référence, actif, adopté le | Compagnons |
+| `user_items` | élève, article, catégorie (accessoire, décor), acheté le, porté | Achats durables |
 | `pet_events` | id, élève, compagnon, heure, type (événement aléatoire, Gardien, résurrection), jauge, delta | Journal du compagnon (écrit quand les jauges sont figées) |
 | `game_rotation` | élève, jeu, séances depuis déblocage, verrouillé, autres jeux joués | Rotation (recalculable depuis `sessions`) |
 | `weekly_boss` | élève, semaine, langue choisie, vaincu le, pénalité appliquée | Gardien hebdomadaire |
@@ -292,7 +317,7 @@ Règles non évidentes :
 | `GET /games` | Jeux, compteurs et verrouillages | Élève |
 | `POST /sessions` (langue, portée, jeu, sens), `POST /sessions/:id/events`, `POST /sessions/:id/end` | Séance par lots ; renvoie gemmes, verrouillages, bons | Élève |
 | `GET /weekly-boss` | Statut du Gardien de la semaine et langue interdite éventuelle | Élève |
-| `GET /wallet`, `GET /shop`, `POST /shop/buy` | Solde, catalogue, achat | Élève |
+| `GET /wallet`, `GET /shop`, `POST /shop/buy`, `POST /shop/equip` | Solde, catalogue, achat, porter ou retirer un accessoire ou un décor | Élève |
 | `GET /pets`, `POST /pets/:id/adopt`, `POST /pets/:id/activate` | Compagnons, jauges à l'heure, dernier événement ; activation refusée si l'actif est à terre | Élève |
 | `GET /streak`, `POST /vouchers/:palier/claim` | Régularité et bons | Élève |
 | `GET /stats`, `GET /review-queue?lang=` | Statistiques de l'élève, mots à revoir | Élève |
@@ -349,7 +374,7 @@ Critères d'acceptation du lot 1 :
 - [ ] **Thème visuel** : « Jeu » ou « Adulte » (maquette complète dans les deux styles), ou une version intermédiaire.
 - [ ] **Rotation** : 3 séances avant verrouillage et 2 autres jeux pour le rouvrir, trop ou trop peu ?
 - [ ] **Gardien** : langue au choix mais jamais 3 semaines de suite la même, pénalité de 40 de vie et 20 de plaisir, adaptées ?
-- [ ] **Jauges** : −1 plaisir et −0,6 énergie par heure, −0,5 vie par heure et par jauge sous 20, potion de résurrection à 30 gemmes : nuit (20 h – 8 h) à mi-vitesse : trop dur ou trop doux ?
+- [ ] **Jauges et prix** : −1,5 plaisir et −1,2 énergie par heure, −0,75 vie par heure et par jauge sous 20, nuit (20 h – 8 h) à mi-vitesse, résurrection à 150 gemmes : une séance par jour suffit-elle *tout juste* en usage réel ?
 - [ ] **Barème** : gemmes par jeu (1 à 4), bonus et prix des compagnons, à calibrer après une semaine d'usage.
 - [ ] **Compagnons** : tous décroissent ou seul l'actif ? (recommandé : seul l'actif)
 - [ ] **Hébergement** : version de Node chez Infomaniak (`node:sqlite` demande 22.5 ou plus), emplacement persistant de `data/`.
