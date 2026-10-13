@@ -1,7 +1,7 @@
 (function () {
 'use strict';
 /* Application élève. L'état vient du serveur (GET state / stats) ; la séance se joue ici et se déclare au serveur. */
-var S = { st: null, stats: null, tab: 'home', sub: null, sheet: null, sess: null, toast: null, theme: pref('style', 'game'), lang: 'all',
+var S = { st: null, stats: null, tab: 'home', sub: null, sheet: null, sess: null, toast: null, lang: 'all',
   plang: 'nl', scope: 'all', one: null, pick: [], game: 'forge', dir: 'toFr', enter: true, sayPet: null, munch: 0, booted: false,
   points: 0, rot: {}, owned: {}, inv: {}, equip: { acc: null, decor: null }, set: { accents: true, articles: true }, active: 'phenix', name: '', loginErr: '' };
 var GAMES, ORDER, ROT, BOSS_PEN, PETS, ITEMS, DURABLE, VOUCH, STATE_N, REALM, RES_PRICE;
@@ -45,10 +45,46 @@ function applyState(st, stats) {
   LB = {}; WB = {}; LISTS.forEach(function (l) { LB[l.id] = l; l.words.forEach(function (w) { WB[w.id] = w; }); });
 }
 function refresh() {
-  return Promise.all([api('GET', 'state'), api('GET', 'stats')]).then(function (r) { applyState(r[0], r[1]); });
+  return Promise.all([api('GET', 'state'), api('GET', 'stats')]).then(function (r) { applyState(r[0], r[1]); S.offline = false; Offline.saveCache(r[0].me.id, r[0], r[1]); });
+}
+function pendingCount() { return S.st ? Offline.queue(S.st.me.id).length : 0; }
+function syncBanner() {
+  var n = pendingCount();
+  if (!S.offline && !n) { return ''; }
+  return '<div class="alert" style="margin-bottom:12px">' + ic(S.offline ? 'alert' : 'clock') + '<span>' + (S.offline ? '<b>Hors-ligne.</b> Tu peux jouer : tes séances seront envoyées au retour du réseau.' : 'Envoi de tes séances…') + (n ? ' ' + n + ' séance' + (n > 1 ? 's' : '') + ' en attente.' : '') + '</span></div>';
+}
+var syncing = false;
+/** envoie les séances jouées hors-ligne, de la plus ancienne à la plus récente */
+function trySync() {
+  if (syncing || !S.st || !navigator.onLine) { return Promise.resolve(); }
+  var items = Offline.queue(S.st.me.id); if (!items.length) { return Promise.resolve(); }
+  syncing = true; var done = 0;
+  return items.reduce(function (p, it) {
+    return p.then(function () {
+      return api('POST', 'sessions/import', it).then(function () { Offline.remove(it.clientId); done++; if (S.sess && S.sess.clientId === it.clientId) { S.sess.pendingSync = false; } },
+        function (e) { if (e.offline || e.status === 401) { throw e; } Offline.remove(it.clientId); /* refusée par le serveur : inutile de la renvoyer */ });
+    });
+  }, Promise.resolve()).then(function () {
+    syncing = false;
+    return refresh().then(function () { render(); if (done) { toast(done + ' séance' + (done > 1 ? 's' : '') + ' envoyée' + (done > 1 ? 's' : '') + '.'); } });
+  }, function (e) { syncing = false; softFail(e); });
+}
+function softFail(e) {
+  if (e && e.offline) { if (!S.offline) { S.offline = true; render(); } return; }
+  fail(e);
+}
+function localRotation(g) {
+  var out = { locked: false, unlocked: [] };
+  if (g !== 'boss' && S.rot[g]) { var r = S.rot[g]; r.n++; if (r.n >= ROT.max) { r.locked = true; r.seen = []; out.locked = true; } }
+  Object.keys(S.rot).forEach(function (h) {
+    var r = S.rot[h];
+    if (h !== g && r.locked && r.seen.indexOf(g) < 0) { r.seen.push(g); if (r.seen.length >= ROT.need) { r.locked = false; r.n = 0; r.seen = []; out.unlocked.push(h); } }
+  });
+  return out;
 }
 function fail(e) {
   if (e && e.status === 401) { S.st = null; S.sess = null; S.enter = true; render(); return; }
+  if (e && e.offline) { S.offline = true; toast('Pas de réseau : cette action demande une connexion.'); return; }
   toast(e && e.message ? e.message : 'Connexion impossible.');
 }
 
@@ -58,24 +94,11 @@ function viewLogin() {
    + '<h1>Lexiquest</h1><p>Révise 5 minutes, prends soin de ton compagnon !</p></div>'
    + '<form class="login-body" id="loginForm"><label class="field">Identifiant<input name="username" autocomplete="username" autocapitalize="none" required></label>'
    + '<label class="field">Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>'
-   + (S.loginErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(S.loginErr) + '</span></div>' : '')
+   + (S.loginErr || S.bootErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(S.loginErr || S.bootErr) + '</span></div>' : '')
    + '<button class="btn wide" type="submit">Retrouver mon compagnon</button></form></div>';
 }
 function footerHTML() {
-  return displayControls() + '<button class="btn alt wide" style="margin-top:14px" data-act="logout">' + ic('out') + ' Se déconnecter</button>';
-}
-function regularityHTML() {
-  var st = streak(), h = '<h2 class="sec">Régularité</h2><div class="chunk" style="padding:14px"><div class="week">';
-  for (var i = 6; i >= 0; i--) { var d = daysAgo(i); h += '<div class="day' + (hasSess(i) ? ' on' : '') + (i === 0 ? ' today' : '') + '"><div class="c">' + (hasSess(i) ? ic('check') : '') + '</div>' + DINI[d.getDay()] + '</div>'; }
-  h += '</div>';
-  var daily = S.st.dailyDone;
-  h += '<div class="ticket' + (daily ? ' done' : '') + '">' + ic('gift') + '<div class="v">+10</div><div class="m"><b>Bon du jour</b><br>' + (daily ? 'Déjà encaissé aujourd’hui.' : 'Offert à ta première séance du jour.') + '</div></div>';
-  S.st.vouchers.forEach(function (v) {
-    h += '<div class="ticket' + (v.claimed ? ' done' : '') + '">' + ic('gift') + '<div class="v">+' + v.p + '</div><div class="m"><b>' + v.d + ' jours de suite</b>'
-      + (v.can ? '<br><span class="up">Bon prêt à encaisser !</span>' : v.claimed ? '<br>Encaissé.' : '<div class="pb"><i style="width:' + Math.round(Math.min(1, st / v.d) * 100) + '%"></i></div>') + '</div>'
-      + (v.can ? '<button class="btn sm good" data-act="claim" data-v="' + v.d + '">Encaisser</button>' : '<span class="muted tnum" style="font-weight:800">' + Math.min(st, v.d) + '/' + v.d + '</span>') + '</div>';
-  });
-  return h + '</div>';
+  return notifCard('student') + displayControls() + '<button class="btn alt wide" style="margin-top:14px" data-act="logout">' + ic('out') + ' Se déconnecter</button>';
 }
 function wordsFor(scope, one, pick, lang) {
   var ls = langLists(lang);
@@ -123,12 +146,32 @@ function viewSaving() {
 /* ---------- séance ---------- */
 function launch(extra) {
   var body = Object.assign({ lang: S.plang, scope: S.scope, listIds: S.scope === 'one' ? [S.one] : S.scope === 'pick' ? S.pick.slice() : [], game: S.game, dir: S.dir }, extra || {});
-  api('POST', 'sessions', body).then(function (r) {
-    var q = r.words.map(function (w) { return { id: w.id, term: w.term, fr: w.fr, streak: w.streak, lang: r.lang }; });
-    S.sess = { id: r.id, ep: r.game, params: body, meta: { label: r.label, lang: r.lang }, dir: r.dir, queue: q, total: q.length, first: 0, tries: {}, wrong: {}, answers: [], combo: 0, maxCombo: 0, pts: 0,
-      hearts: CFG.boss.hearts, hp: CFG.boss.hp, hpMax: CFG.boss.hp, qi: 0, activeMs: 0, done: false, fb: null, cur: null, win: null, lang: r.lang, pending: [], flushing: null, saving: false, err: null };
-    nextQ(); S.sheet = null; S.enter = false; render();
-  }).catch(fail);
+  api('POST', 'sessions', body).then(function (r) { begin(r, body, false); }).catch(function (e) { if (e.offline) { S.offline = true; startLocal(body); } else { fail(e); } });
+}
+function begin(r, body, offline) {
+  var q = r.words.map(function (w) { return { id: w.id, term: w.term, fr: w.fr, streak: w.streak, lang: r.lang }; });
+  S.sess = { id: r.id, ep: r.game, params: body, meta: { label: r.label, lang: r.lang }, dir: r.dir, queue: q, total: q.length, first: 0, tries: {}, wrong: {}, answers: [], combo: 0, maxCombo: 0, pts: 0,
+    hearts: CFG.boss.hearts, hp: CFG.boss.hp, hpMax: CFG.boss.hp, qi: 0, activeMs: 0, done: false, fb: null, cur: null, win: null, lang: r.lang, pending: [], allEvents: [], flushing: null, saving: false, err: null,
+    offline: !!offline, clientId: Offline.uuid(), startedAt: Date.now(), wordIds: q.map(function (w) { return w.id; }).filter(function (id, i, a) { return a.indexOf(id) === i; }) };
+  nextQ(); S.sheet = null; S.enter = false; render();
+}
+/** même choix de mots que le serveur, avec ce que l'appareil connaît (le serveur revérifie tout au retour du réseau) */
+function startLocal(body) {
+  var lang = body.lang, game = body.game;
+  if (game === 'boss') { var B = bossStatus(); if (!B.won && B.ban === lang) { toast('Pas 3 semaines de suite dans la même langue : choisis l’autre langue.'); return; } }
+  else if (S.rot[game] && S.rot[game].locked) { toast('Ce jeu est verrouillé : joue d’autres jeux pour le retrouver.'); return; }
+  var pool;
+  if (body.scope === 'words') { pool = body.wordIds.map(function (id) { return WB[id]; }).filter(function (w) { return w && w.lang === lang; }); }
+  else if (body.scope === 'weak') { pool = (S.stats.weak || []).filter(function (w) { return w.lang === lang; }).map(function (w) { return WB[w.wordId]; }).filter(Boolean); }
+  else { pool = wordsFor(body.scope, body.listIds[0], body.listIds, lang); }
+  if (pool.length < 2) { toast('Pas assez de mots dans cette sélection.'); return; }
+  var dir = ['scramble', 'forge', 'boss'].indexOf(game) >= 0 ? 'toTarget' : (body.dir === 'toTarget' ? 'toTarget' : 'toFr');
+  var n = GAMES[game].q, src = pool.slice();
+  if (game === 'scramble') { var short = src.filter(function (w) { return w.term.replace(/\s/g, '').length <= 14; }); if (short.length >= 4) { src = short; } }
+  var q = sh(sh(src).sort(function (a, b) { return a.streak - b.streak; }).slice(0, n)).slice(0, n);
+  if (game === 'boss') { var b = q.slice(); while (b.length < CFG.boss.queue) { b = b.concat(sh(src)); } q = b.slice(0, CFG.boss.queue); }
+  var label = body.scope === 'words' ? 'Mots à retravailler · ' + REALM[lang].s : scopeLabel(body.scope, body.listIds[0], body.listIds, lang);
+  begin({ id: null, game: game, lang: lang, dir: dir, label: label, words: q }, body, true);
 }
 function expOf(w, dir) { return dir === 'toFr' ? w.fr : w.term; }
 function nextQ() {
@@ -152,7 +195,8 @@ function resolve(ok, given, hinted) {
   var s = S.sess, w = s.cur.w, ans = expOf(w, s.dir), attempt = (s.tries[w.id] || 0) + 1; s.tries[w.id] = attempt;
   var kind = ok ? null : (given && Judge.lev(Judge.norm(given, S.set), Judge.norm(ans, S.set)) <= 2 ? 'presque' : 'oubli');
   s.answers.push({ wid: w.id, term: w.term, fr: w.fr, lang: w.lang, ok: ok, ms: Date.now() - s.cur.t, attempt: attempt, given: given || '', kind: kind });
-  s.pending.push({ type: 'answer', wordId: w.id, qtype: s.cur.type, given: given || '', ok: ok, ms: Date.now() - s.cur.t, hinted: !!hinted });
+  var ev = { type: 'answer', wordId: w.id, qtype: s.cur.type, given: given || '', ok: ok, ms: Date.now() - s.cur.t, hinted: !!hinted };
+  s.pending.push(ev); s.allEvents.push(ev);
   var p = 0, base = GAMES[s.cur.type].g;
   if (ok) {
     if (attempt === 1) { p = hinted ? Math.ceil(base / 2) : base + (s.combo >= 3 ? 1 : 0); s.first++; } else { p = Math.ceil(base / 2); }
@@ -168,7 +212,7 @@ function resolve(ok, given, hinted) {
 }
 /* envoie au serveur les réponses en attente (par lots) ; en cas d'échec elles restent en file */
 function flush() {
-  var s = S.sess; if (!s) { return Promise.resolve(); }
+  var s = S.sess; if (!s || s.offline) { return Promise.resolve(); }
   if (s.flushing) { return s.flushing; }
   if (!s.pending.length) { return Promise.resolve(); }
   var batch = s.pending.splice(0, 40);
@@ -189,22 +233,45 @@ function finish(win) {
 }
 function save() {
   var s = S.sess; s.saving = true; s.err = null;
+  if (s.offline) { saveOffline(); return; }
   flush().then(function () { return api('POST', 'sessions/' + s.id + '/end', { activeSec: Math.round(s.activeMs / 1000) }); }).then(function (R) {
     s.saving = false; s.total_pts = R.gems; s.b = R.bonus; s.pts = R.points; s.first = R.first; s.rotInfo = R.rotation; s.bonusBoss = R.bonusBoss; s.activeSec = R.activeSec; s.res = R;
     S.bestCombo = Math.max(S.bestCombo || 0, s.maxCombo);
-    return refresh();
+    return refresh().then(function () { trySync(); });
   }).then(function () {
     var perfect = S.sess === s && s.res.perfect;
     render();
     if (perfect || (s.ep === 'boss' && s.win)) { confetti(40); }
-  }).catch(function (e) { s.saving = false; if (e.status === 401) { fail(e); return; } s.err = e.message; render(); });
+  }).catch(function (e) {
+    s.saving = false;
+    if (e.status === 401) { fail(e); return; }
+    if (e.offline) { s.offline = true; saveOffline(); return; }
+    s.err = e.message; render();
+  });
+}
+/** réseau absent à la fin : la séance est gardée sur l'appareil et envoyée plus tard (le serveur recalcule tout) */
+function saveOffline() {
+  var s = S.sess, boss = s.ep === 'boss', perfect = !boss && Object.keys(s.wrong).length === 0, B = bossStatus();
+  var b = { fin: s.win ? CFG.gems.finWin : CFG.gems.finLose, perfect: perfect ? CFG.gems.perfect : 0, boss: boss && s.win && !B.won ? CFG.boss.bonusGems : 0, daily: S.st.dailyDone ? 0 : CFG.gems.daily };
+  if (!Offline.add({ clientId: s.clientId, userId: S.st.me.id, lang: s.lang, game: s.ep, dir: s.dir, label: s.meta.label, wordIds: s.wordIds, startedAt: s.startedAt, activeSec: Math.round(s.activeMs / 1000), events: s.allEvents })) {
+    s.saving = false; s.err = 'Mémoire de l’appareil pleine : la séance ne peut pas être gardée.'; render(); return;
+  }
+  s.b = b; s.total_pts = s.pts + b.fin + b.perfect + b.boss + b.daily; s.rotInfo = localRotation(s.ep); s.bonusBoss = boss && B.won; s.activeSec = Math.max(20, Math.round(s.activeMs / 1000));
+  s.saving = false; s.pendingSync = true; s.res = { perfect: perfect }; s.offline = true;
+  S.points += s.total_pts; S.st.gems = S.points; S.st.dailyDone = true;
+  if (boss && s.win && !B.won) { B.won = true; B.wonLang = s.lang; }
+  if (!S.st.played7[6]) { S.st.played7[6] = true; S.st.streak++; }
+  Offline.saveCache(S.st.me.id, S.st, S.stats);
+  render();
+  if (perfect || (boss && s.win)) { confetti(40); }
+  trySync();
 }
 
 function hud(){
   var n=petNow(S.active);
   return '<div class="hud"><span class="pill pts">'+ic('gem','var(--sky)')+'<span class="tnum">'+S.points+'</span></span>'
    +'<span class="pill fl">'+ic('flame','var(--coral)')+'<span class="tnum">'+streak()+'</span></span><span class="sp"></span>'
-   +'<span class="state s'+n.lvl+'">'+STATE_N[n.lvl]+'</span></div>';
+   +'<span class="state s'+n.lvl+'">'+STATE_N[n.lvl]+'</span></div>'+syncBanner();
 }
 function petCard(full){
   var n=petNow(),P=PETS[S.active];
@@ -212,26 +279,6 @@ function petCard(full){
    +'<div class="petname">'+P.n+'<span class="muted" style="font:700 13px Nunito;margin-left:8px">'+P.k+' · '+['bébé','jeune','adulte'][stage()]+'</span></div>'
    +'<div class="bubble">'+esc(petMsg(n))+'</div>'+bars(n)+evtLine(S.st.pet)
    +(full?'':'<button class="btn sm alt" data-act="tab" data-v="pet" style="margin-top:6px">'+ic('heart')+(n.ko?' Le relever':' Prendre soin')+'</button>')+'</div>';
-}
-function bossCard(B){
-  var P=PETS[S.active],other=B.ban?otherLang(B.ban):null;
-  var sub=B.won?'Vaincu en '+REALM[B.wonLang].s.toLowerCase()+'. Un nouveau Gardien arrive lundi.'
-    :(B.left===0?'Dernier jour : avant ce soir minuit !':'Encore '+B.left+' jour'+(B.left>1?'s':'')+' · sinon −'+BOSS_PEN.care+' de vie.')
-      +(other?' Cette semaine : '+REALM[other].s.toLowerCase()+' obligatoire (pas 3 semaines de suite en '+REALM[B.ban].s.toLowerCase()+').':' Tu choisis la langue.');
-  return '<div class="chunk bosscard'+(B.won?' won':(B.left<=1?' urgent':''))+'"><div class="bc-art">'+bossArt(B.won?B.wonLang:other,60)+'</div><div style="flex:1;min-width:0"><span class="tag">Gardien de la semaine</span>'
-   +'<b>'+(B.won?P.n+' est sauvé cette semaine !':'Vaincs-le pour sauver '+P.n)+'</b><span class="m">'+sub+'</span></div>'
-   +(B.won?'':'<button class="btn sm" data-act="bossweek">Affronter</button>')+'</div>';
-}
-function viewHome(){
-  if(S.theme==='adult'){return viewHomeAdult();}
-  var h=hud(),n=petNow(),B=bossStatus();
-  if(n.ko){h+='<div class="alert bad" style="margin-bottom:12px">'+ic('alert')+'<span>'+PETS[S.active].n+' est à terre. Une potion de résurrection ('+RES_PRICE+' gemmes, boutique Avatar) le relève.</span></div>';}
-  else if(n.hits>0){h+='<div class="alert bad" style="margin-bottom:12px">'+ic('alert')+'<span>Le Gardien n’a pas été vaincu la semaine dernière : '+PETS[S.active].n+' a perdu '+(n.hits*BOSS_PEN.care)+' de vie.</span></div>';}
-  else if(n.lvl>=2){h+='<div class="alert bad" style="margin-bottom:12px">'+ic('alert')+'<span>'+(n.days>=2?'Tu n’es pas venu depuis '+n.days+' jours : '+PETS[S.active].n+' dépérit.':PETS[S.active].n+' a besoin de soins.')+' Une séance de 5 minutes te rapporte des gemmes pour le soigner.</span></div>';}
-  h+=petCard(false)+bossCard(B);
-  h+='<div class="cta"><button class="btn wide" data-act="tab" data-v="play">'+ic('play','currentColor')+' Jouer une séance · ≈ 5 min</button></div>';
-  h+=regularityHTML()+footerHTML();
-  return '<div class="view'+(S.enter?' enter':'')+'">'+h+'</div>';
 }
 function langLists(lang){return LISTS.filter(function(l){return l.lang===lang;});}
 function scopeLabel(scope,one,pick,lang){
@@ -354,6 +401,7 @@ function viewSheet(){
     return '<div class="scrim" data-act="closesheet"></div><div class="sheet"><h3>Nouvelle liste</h3><p class="muted" style="margin:4px 0 12px">Colle tes mots, un par ligne : <b>mot = traduction</b></p>'
      +'<label class="field" style="margin-bottom:10px">Langue<select class="txt" id="nl-lang"><option value="nl">Néerlandais</option><option value="en">Anglais</option></select></label>'
      +'<label class="field" style="margin-bottom:10px">Nom<input class="txt" id="nl-name" placeholder="Chapitre 5" autocomplete="off"></label>'
+     +'<label class="field" style="margin-bottom:10px">Ou un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#nl-words"></label>'
      +'<textarea id="nl-words" placeholder="de fiets = le vélo&#10;het huis = la maison"></textarea>'
      +'<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" data-act="savelist">Créer la liste</button></div></div>';
   }
@@ -416,6 +464,7 @@ function viewRecap(){
   var missed=[],seen={};s.answers.forEach(function(a){if(!a.ok&&!seen[a.wid]){seen[a.wid]=1;missed.push(a);}});
   var h='<div class="recap '+REALM[s.lang].cls+'">'+critterS(S.active,n.lvl,130,stage(),won===false?'sad':'wow')+'<h1>'+title+'</h1>';
   h+='<span class="tag" style="font-size:13px">'+REALM[s.lang].s+' · '+GAMES[s.ep].n+'</span>';
+  if(s.pendingSync){h+='<div class="alert" style="max-width:420px;width:100%">'+ic('clock')+'<span>Séance gardée sur ton appareil : elle sera envoyée dès que le réseau revient. Les gemmes sont une estimation.</span></div>';}
   if(boss&&s.bonusBoss){h+='<div class="alert" style="max-width:420px;width:100%">'+ic('crown')+'<span><b>Gardien bonus</b> : la semaine était déjà validée. Victoire ou défaite, il ne change rien pour '+PETS[S.active].n+' ni pour la règle des langues ; seules les gemmes des bonnes réponses comptent.</span></div>';}
   else if(boss&&won){h+='<div class="alert" style="max-width:420px;width:100%;background:var(--grass-soft)">'+ic('heart')+'<span><b>'+PETS[S.active].n+' est sauvé</b> : le Gardien de la semaine est vaincu.</span></div>';}
   h+='<div class="rgrid"><div class="chunk rcell"><b class="tnum">+'+s.total_pts+'</b><span>gemmes gagnées</span></div>'
@@ -458,13 +507,14 @@ function confetti(n){
   for(var i=0;i<n;i++){var c=document.createElement('i');c.className='conf';c.style.left=Math.random()*100+'%';c.style.background=cols[i%cols.length];c.style.animationDelay=(Math.random()*.6)+'s';c.style.animationDuration=(1.8+Math.random()*1.2)+'s';host.appendChild(c);(function(el){setTimeout(function(){el.remove();},3400);})(c);}
 }
 
-function viewHomeAdult(){
+function viewHome(){
   var n=petNow(),P=PETS[S.active],B=bossStatus(),st=streak(),now=new Date();
   var hello=now.getHours()<12?'Bonjour':now.getHours()<18?'Bon après-midi':'Bonsoir',i,ST=S.stats,days=ST.days7,week=ST.minutes7,a7=ST.acc7;
   function col(v){return v>=50?'var(--grass)':v>=25?'var(--sun)':'var(--coral)';}
   var next=VOUCH.filter(function(v){return v.d>st;})[0];
   var h='<div class="ad-head"><div><small>'+dayLabel(now)+'</small><h1>'+hello+', '+esc(S.name)+'</h1></div>'
     +'<div class="ad-chips"><span class="ad-chip">'+ic('flame','var(--coral)')+'<span class="tnum">'+st+'</span></span><span class="ad-chip">'+ic('gem','var(--sky)')+'<span class="tnum">'+S.points+'</span></span></div></div>';
+  h+=syncBanner();
   h+='<div class="ad-hero'+decorCls()+'">'+critterS(S.active,n.lvl,124,stage(),S.munch?'happy':null)+'<div class="name">'+P.n+'</div><div class="ad-state">'+P.k+' · '+STATE_N[n.lvl]+'</div><div class="sub">'+esc(petMsg(n))+'</div>'
     +'<div class="ad-gauges">'+GAUGES.map(function(k){return '<div class="ad-g"><div class="lab"><span>'+STATN[k]+'</span><span class="tnum">'+Math.round(n[k])+'</span></div><div class="tr"><i style="width:'+Math.round(n[k])+'%;background:'+col(n[k])+'"></i></div></div>';}).join('')+'</div>'+evtLine(S.st.pet)
     +'<button class="ad-link" data-act="tab" data-v="pet">'+(n.ko?'Le relever':'Prendre soin')+'</button></div>';
@@ -501,7 +551,7 @@ function render() {
   else { h = studentShell(); }
   if (S.st) { h += viewSheet(); }
   if (S.toast) { h += '<div class="toast">' + esc(S.toast) + '</div>'; }
-  app.className = 'app' + (S.theme === 'adult' ? ' adult' : '');
+  app.className = 'app adult';
   app.innerHTML = h;
   S.enter = false;
   bindSwipe();
@@ -510,17 +560,18 @@ function render() {
 function toast(m) { S.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { S.toast = null; render(); }, 2600); }
 function go(tab, extra) {
   S.tab = tab; S.sub = null; S.enter = true; if (extra) { extra(); } render();
-  refresh().then(function () { render(); }).catch(fail);
+  refresh().then(function () { render(); }).catch(softFail);
 }
 function after(p) { return p.then(refresh).then(function () { render(); }).catch(fail); }
 
 document.getElementById('app').addEventListener('click', function (e) {
   var pf = e.target.closest('[data-pref]');
-  if (pf) { setPref(pf.dataset.pref, pf.dataset.v); S.theme = pref('style', 'game'); applyTheme(); render(); return; }
+  if (pf) { setPref(pf.dataset.pref, pf.dataset.v); applyTheme(); render(); return; }
   var t = e.target.closest('[data-act]'); if (!t) { return; }
   var a = t.dataset.act, v = t.dataset.v, s = S.sess;
+  if (a.indexOf('notif-') === 0) { handleNotif(a, t).then(function () { return loadNotif(); }).then(render).catch(function (e) { toast(e.message); }); return; }
   switch (a) {
-    case 'logout': api('POST', 'auth/logout', {}).then(function () { S.st = null; S.sess = null; S.tab = 'home'; S.enter = true; render(); }).catch(fail); break;
+    case 'logout': api('POST', 'auth/logout', {}).then(function () { Offline.clearCache(); S.st = null; S.sess = null; S.tab = 'home'; S.enter = true; render(); }).catch(fail); break;
     case 'tab': go(v); break;
     case 'lang': S.lang = v; render(); break;
     case 'openlist': S.sub = { t: 'list', id: t.dataset.id }; S.enter = true; render(); break;
@@ -592,15 +643,20 @@ document.getElementById('app').addEventListener('click', function (e) {
       render(); break;
     }
     case 'slot': { if (s.fb) { break; } var cc = s.cur; if (+t.dataset.i < cc.slots.length) { cc.slots.splice(+t.dataset.i, 1); } render(); break; }
-    case 'hint': if (S.points >= 1 && !s.cur.hint) { S.points--; s.cur.hint = true; s.cur.hinted = true; s.pending.push({ type: 'hint' }); render(); } break;
+    case 'hint': if (S.points >= 1 && !s.cur.hint) { S.points--; s.cur.hint = true; s.cur.hinted = true; s.pending.push({ type: 'hint' }); s.allEvents.push({ type: 'hint' }); render(); } break;
   }
+});
+document.getElementById('app').addEventListener('change', function (e) {
+  var t = e.target;
+  if (t.dataset && t.dataset.act === 'notif-time') { handleNotif('notif-time', t).then(render).catch(function (err) { toast(err.message); }); }
+  if (t.dataset && t.dataset.csv) { readCsvInto(t, toast); }
 });
 document.getElementById('app').addEventListener('submit', function (e) {
   if (e.target.id === 'loginForm') {
     e.preventDefault();
     var f = e.target;
     api('POST', 'auth/login', { username: f.username.value, password: f.password.value, portal: 'student' })
-      .then(function () { S.loginErr = ''; S.tab = 'home'; S.enter = true; return refresh(); }).then(function () { render(); })
+      .then(function () { S.loginErr = ''; S.tab = 'home'; S.enter = true; return refresh(); }).then(function () { render(); loadNotif().then(render); trySync(); })
       .catch(function (err) { S.loginErr = err.message; render(); });
     return;
   }
@@ -629,8 +685,17 @@ setInterval(function () {
   if (el) { el.textContent = Math.floor(s.activeMs / 60000) + ':' + pad(Math.floor(s.activeMs / 1000) % 60); }
 }, 1000);
 /* les jauges évoluent avec les heures : on rafraîchit de temps en temps hors séance */
-setInterval(function () { if (S.st && !S.sess && !document.hidden) { refresh().then(function () { render(); }).catch(function () {}); } }, 5 * 60000);
+setInterval(function () { if (S.st && !S.sess && !document.hidden) { refresh().then(function () { render(); }).catch(softFail); } }, 5 * 60000);
+setInterval(function () { if (pendingCount() && navigator.onLine) { trySync(); } }, 60000);
+window.addEventListener('online', function () { S.offline = false; if (S.st) { trySync().then(function () { return S.sess ? null : refresh().then(render); }).catch(softFail); } render(); });
+window.addEventListener('offline', function () { S.offline = true; render(); });
+window.onInstallReady = function () { if (S.st && !S.sess) { render(); } };
 
-loadConfig().then(function (c) { applyConfig(c); return api('GET', 'me').then(function () { return refresh(); }).catch(function () { S.st = null; }); })
-  .then(function () { S.booted = true; render(); }).catch(function (e) { document.getElementById('app').innerHTML = '<div class="view"><p>Impossible de joindre le serveur. ' + esc(e.message) + '</p></div>'; });
+loadConfig().then(function (c) { applyConfig(c); return api('GET', 'me').then(function () { return refresh(); }).catch(function (e) {
+    if (!e.offline) { S.st = null; return; }
+    var c2 = Offline.loadCache();   // pas de réseau : on repart du dernier état connu
+    if (c2) { applyState(c2.st, c2.stats); S.offline = true; } else { S.st = null; S.bootErr = 'Pas de réseau. Connecte-toi une première fois avec Internet pour utiliser Lexiquest hors-ligne.'; }
+  }); })
+  .then(function () { S.booted = true; render(); if (S.st) { loadNotif().then(render); trySync(); } })
+  .catch(function (e) { document.getElementById('app').innerHTML = '<div class="view"><p>Impossible de joindre le serveur. ' + esc(e.message) + '</p></div>'; });
 })();

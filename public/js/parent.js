@@ -1,7 +1,7 @@
 (function () {
 'use strict';
 /* Suivi parent : quand, combien de temps, résultats, difficultés (cahier §9). */
-var P = { me: null, students: [], sid: null, tab: 'overview', sub: null, sheet: null, toast: null, range: 30, dlang: 'all', theme: pref('style', 'game'),
+var P = { me: null, students: [], sid: null, tab: 'overview', sub: null, sheet: null, toast: null, range: 30, dlang: 'all', 
   ov: null, sessions: [], detail: null, diff: [], settings: null, lists: [], booted: false, loginErr: '', enter: true };
 var STATE_N, GAMES, REALM = { nl: { s: 'Néerlandais', tag: 'NL', cls: 'r-nl' }, en: { s: 'Anglais', tag: 'EN', cls: 'r-en' } };
 
@@ -132,7 +132,7 @@ function pSettings() {
   h += '<p class="muted" style="font-size:12.5px;margin-top:8px">Compagnon : −' + C.rates.joy + ' de plaisir et −' + C.rates.food + ' d’énergie par heure ; sous ' + C.low + ', faim et ennui retirent chacun ' + C.rates.care + ' de vie par heure. Une séance par jour plus le bon du jour suffit tout juste à l’entretenir. La nuit (' + C.night.from + ' h – ' + C.night.to + ' h), il dort : tout baisse deux fois moins vite. Un événement aléatoire tous les 1 à 3 jours. À 0 de vie, il est à terre jusqu’à une potion de résurrection (' + C.resPrice + ' gemmes).</p></div>';
   h += '<div class="pcard s12"><h2>Règles du jeu</h2><div class="row"><div>Rotation des jeux<small>Un jeu se verrouille après ' + C.rot.max + ' séances ; il se retrouve en jouant ' + C.rot.need + ' autres jeux différents</small></div><b class="disp">' + C.rot.max + ' / ' + C.rot.need + '</b></div><div class="row"><div>Gardien hebdomadaire<small>À vaincre chaque semaine, langue au choix mais jamais 3 semaines de suite la même ; sinon −' + C.boss.penCare + ' de vie et −' + C.boss.penJoy + ' de plaisir ; un Gardien bonus ne change rien</small></div><b class="disp">1 / semaine</b></div><div class="row"><div>Gemmes par bon mot<small>Plus le jeu est difficile, plus il rapporte</small></div><b class="disp">1 à 4</b></div></div>';
   h += '<div class="pcard s12"><h2>Données</h2><p class="muted">Export de toutes les séances et réponses au format CSV, ou suppression complète du compte élève.</p><div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><a class="btn sm" style="text-decoration:none" href="' + base() + '/export.csv" download>' + ic('down') + ' Exporter en CSV</a><button class="btn sm alt" data-act="delstudent">Supprimer les données</button></div></div></div>';
-  return h + displayControls() + '<div style="height:16px"></div><button class="btn alt wide" data-act="logout">' + ic('out') + ' Se déconnecter</button>';
+  return h + notifCard('parent') + displayControls() + '<div style="height:16px"></div><button class="btn alt wide" data-act="logout">' + ic('out') + ' Se déconnecter</button>';
 }
 function viewSheet() {
   var s = P.sheet; if (!s) { return ''; }
@@ -150,6 +150,7 @@ function viewSheet() {
   return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="listForm"><h3>Donner une liste</h3><p class="muted" style="margin:4px 0 12px">Un mot par ligne : <b>mot = traduction</b></p>'
    + '<label class="field" style="margin-bottom:10px">Langue<select class="txt" name="lang"><option value="nl">Néerlandais</option><option value="en">Anglais</option></select></label>'
    + '<label class="field" style="margin-bottom:10px">Nom<input class="txt" name="name" placeholder="Chapitre 5" required></label>'
+   + '<label class="field" style="margin-bottom:10px">Ou un fichier CSV (mot ; traduction)<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" data-csv="#listForm textarea"></label>'
    + '<textarea name="text" placeholder="de fiets = le vélo&#10;het huis = la maison" required></textarea>'
    + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Donner la liste</button></div></form>';
 }
@@ -168,16 +169,17 @@ function render() {
   var app = document.getElementById('app'), h = '';
   if (P.booted) { h = P.me ? shell() + viewSheet() : viewLogin(); }
   if (P.toast) { h += '<div class="toast">' + esc(P.toast) + '</div>'; }
-  app.className = 'app' + (P.theme === 'adult' ? ' adult' : '');
+  app.className = 'app adult';
   app.innerHTML = h; P.enter = false;
 }
 function toast(m) { P.toast = m; render(); clearTimeout(toast.t); toast.t = setTimeout(function () { P.toast = null; render(); }, 2600); }
 
 document.getElementById('app').addEventListener('click', function (e) {
   var pf = e.target.closest('[data-pref]');
-  if (pf) { setPref(pf.dataset.pref, pf.dataset.v); P.theme = pref('style', 'game'); applyTheme(); render(); return; }
+  if (pf) { setPref(pf.dataset.pref, pf.dataset.v); applyTheme(); render(); return; }
   var t = e.target.closest('[data-act]'); if (!t) { return; }
   var a = t.dataset.act, v = t.dataset.v;
+  if (a.indexOf('notif-') === 0) { handleNotif(a, t).then(function () { return loadNotif(); }).then(render).catch(function (err) { toast(err.message); }); return; }
   switch (a) {
     case 'logout': api('POST', 'auth/logout', {}).then(function () { P.me = null; P.ov = null; render(); }).catch(fail); break;
     case 'ptab': P.tab = v; P.sub = null; P.enter = true; render(); reload(); break;
@@ -200,6 +202,8 @@ document.getElementById('app').addEventListener('click', function (e) {
   }
 });
 document.getElementById('app').addEventListener('change', function (e) {
+  if (e.target.dataset && e.target.dataset.act === 'notif-time') { handleNotif('notif-time', e.target).then(render).catch(function (err) { toast(err.message); }); }
+  if (e.target.dataset && e.target.dataset.csv) { readCsvInto(e.target, toast); }
   if (e.target.id === 'studentSel') { P.sid = +e.target.value; P.ov = null; P.settings = null; reload(); }
 });
 document.getElementById('app').addEventListener('submit', function (e) {
@@ -207,7 +211,7 @@ document.getElementById('app').addEventListener('submit', function (e) {
   var f = e.target, id = f.id;
   if (id === 'loginForm') {
     api('POST', 'auth/login', { username: f.username.value, password: f.password.value, portal: 'parent' })
-      .then(function (r) { P.me = r.me; P.loginErr = ''; P.tab = 'overview'; return load(); }).then(render)
+      .then(function (r) { P.me = r.me; P.loginErr = ''; P.tab = 'overview'; return load().then(loadNotif); }).then(render)
       .catch(function (err) { P.loginErr = err.message; render(); });
   } else if (id === 'studentForm') {
     api('POST', 'admin/students', { name: f.name.value, username: f.username.value, password: f.password.value })
@@ -219,8 +223,9 @@ document.getElementById('app').addEventListener('submit', function (e) {
   }
 });
 
+window.onInstallReady = function () { if (P.me) { render(); } };
 loadConfig().then(function (c) { STATE_N = c.stateN; GAMES = c.games; return api('GET', 'me'); })
-  .then(function (r) { if (r.me.role !== 'parent') { throw Object.assign(new Error('Compte élève'), { status: 401 }); } P.me = r.me; return load(); })
+  .then(function (r) { if (r.me.role !== 'parent') { throw Object.assign(new Error('Compte élève'), { status: 401 }); } P.me = r.me; return load().then(loadNotif); })
   .catch(function () { P.me = null; })
   .then(function () { P.booted = true; render(); });
 })();

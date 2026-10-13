@@ -320,3 +320,17 @@ test('montage sous /lexiquest : cookie limité à ce chemin, tout fonctionne en 
   assert.equal(st.status, 200);
   assert.equal((await fetch(base + '/')).status, 200);
 });
+
+test('un mot raté deux fois ne bloque pas la fin de séance (re-présenté une seule fois)', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const s = (await E.student.post('/api/sessions', { lang: 'nl', scope: 'all', listIds: [], game: 'forge' })).json;
+  const [first, ...rest] = s.words;
+  const ev = (w, given) => E.student.post(`/api/sessions/${s.id}/events`, { events: [{ type: 'answer', wordId: w.id, qtype: 'forge', given }] });
+  await ev(first, 'faux'); await ev(first, 'encore faux');
+  for (const w of rest) { await ev(w, w.term); }
+  const r = await E.student.post(`/api/sessions/${s.id}/end`, {});
+  assert.equal(r.status, 200, r.text);
+  assert.equal(r.json.bonus.perfect, 0);
+  assert.equal(r.json.missed.length, 1);
+});

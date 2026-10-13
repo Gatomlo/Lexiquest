@@ -4,13 +4,13 @@
 Jeu pédagogique web (PWA, smartphone first) pour mémoriser le vocabulaire de néerlandais et d'anglais : séances de 5 min, points à dépenser pour soigner un compagnon fantastique (inspiration Tamagotchi), bons de régularité, suivi parent (quand, combien de temps, résultats, difficultés). Public : une adolescente de 3e secondaire. Successeur de « Carnet de Vocabulaire » (artefact v1).
 
 ## État
-**Lots 0 et 1 codés** (serveur, jeux, compagnon, boutique, suivi parent) ; la maquette reste la référence visuelle. À faire : lot 2 (PWA, hors-ligne, synchronisation) et lot 3, puis déploiement dans `Gatomlo/node-gateway`.
+**Lots 0, 1, 2 et 3 codés** (serveur, jeux, compagnon, boutique, suivi parent, PWA hors-ligne, notifications push, import CSV, nouveaux compagnons et articles ; pas d'e-mail). Reste : déploiement dans `Gatomlo/node-gateway`, tests sur téléphone réel, calibrage après une semaine d'usage.
 
 ## Fichiers clés
 - `docs/cahier-des-charges.md` : spécification complète (source de vérité).
 - `maquette/index.html` : maquette interactive autonome (HTML/CSS/JS vanilla, données simulées, aucun réseau sauf Google Fonts). Rôles élève/parent via le sélecteur du haut ; « Absence simulée » avance le calendrier pour montrer la décrépitude.
 
-- `server.js` (exporte l'app, `createApp(db)` pour les tests), `lib/` (règles : `config.js` barème, `sessions.js`, `pets.js`, `progress.js`, `stats.js`), `routes/api.js` et `routes/admin.js`, `public/` (front vanilla : `student.js`, `parent.js`, `art.js`, `common.js`, `judge.js` partagé avec le serveur), `test/`.
+- `server.js` (exporte l'app, `createApp(db)` pour les tests), `lib/` (règles : `config.js` barème, `sessions.js`, `pets.js`, `progress.js`, `stats.js`, `push.js`, `reminders.js`), `routes/api.js` et `routes/admin.js`, `public/` (front vanilla : `student.js`, `parent.js`, `art.js`, `common.js`, `offline.js`, `judge.js` partagé avec le serveur, `sw.js` service worker versionné par le serveur), `test/`.
 
 ## Stack cible (voir le cahier, §12)
 Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla sans build — comme Fée Lezcomptes. Déployé comme sous-application de `Gatomlo/node-gateway` (`apps/lexiquest`, route `/lexiquest`, Infomaniak).
@@ -24,9 +24,11 @@ Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla 
 - Jauges **vie / énergie / plaisir**, baisse **horaire** (plaisir −1,5/h, énergie −1,2/h ; vie −0,75/h par jauge sous 20), **divisée par deux la nuit** (20 h – 8 h, il dort) + un **événement aléatoire** (30 au catalogue) tous les 1 à 3 jours sur une jauge.
 - **Une seule langue par séance** (néerlandais ou anglais) : jamais de mélange, ni dans les mots, ni dans les distracteurs du QCM ; la langue se choisit avant la portée.
 - L'élève a ses propres statistiques (mêmes indicateurs que le parent, sans le détail des séances).
-- Deux styles complets à comparer dans la maquette (Jeu / Adulte, bouton en haut de page) : décision en attente.
+- **Style retenu : Adulte** (le style Jeu n'existe plus que dans la maquette). Thème clair/sombre réglable sur l'appareil.
 - L'écran de connexion élève ne montre **aucune entrée « parent »** ; le parent a son adresse à part.
 - Gemmes calculées côté serveur depuis les événements ; solde = somme de `gem_events`. Décrépitude calculée à la lecture (simulation heure par heure, événements tirés d'une graine par élève), pas de tâche planifiée.
+- **Hors-ligne** : l'appareil joue avec le dernier état connu et envoie les séances à `POST /sessions/import` (identifiant unique, idempotent) ; le serveur recorrige tout. Rien d'autre ne marche sans réseau (boutique, bons).
+- **Rappels** : Web Push (VAPID), minuterie dans le processus ou cron externe `POST /api/cron/reminders` (`CRON_KEY`) ; iPhone seulement après installation sur l'écran d'accueil.
 - **Le serveur décide** : il choisit les mots, corrige (`public/js/judge.js`), calcule les gemmes et recalcule rotation, Gardien et série depuis les séances terminées. Le client ne fait qu'afficher et déclarer ses réponses.
 - Fuseau fixé par `lib/clock.js` (`Europe/Brussels`) ; en production `SESSION_SECRET` obligatoire ; cookie de session limité au chemin de montage.
 - Dépôt public : aucune donnée réelle d'élève, ni `.env`, ni `*.db`.

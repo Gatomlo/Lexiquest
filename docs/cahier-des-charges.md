@@ -2,7 +2,7 @@
 
 *Version 2 du projet « Carnet de Vocabulaire » : un jeu pédagogique pour mémoriser le vocabulaire de néerlandais et d'anglais, avec comptes, données centralisées sur serveur, statistiques pour l'élève et suivi parent.*
 
-Maquette interactive : [`maquette/index.html`](../maquette/index.html) (à ouvrir dans un navigateur ; rôles élève et parent, absence simulée, deux styles complets : Jeu et Adulte).
+Maquette interactive : [`maquette/index.html`](../maquette/index.html) (à ouvrir dans un navigateur ; rôles élève et parent, absence simulée, deux styles complets : Jeu et Adulte ; l'application garde le style Adulte).
 
 ## 1. Contexte et objectifs
 
@@ -84,7 +84,7 @@ Le tirage favorise les mots les moins maîtrisés, puis mélange.
 | La Forge | Écrire le mot de mémoire ; un indice coûte 1 gemme | 9 | 4 | ●●●●○ |
 | Le Gardien | Boss : 3 cœurs, QCM (2) et écriture (4) alternés, 8 coups pour le vaincre | 12 | 2 à 4 | ●●●●● |
 
-Un mot raté est re-présenté une fois dans la séance (sauf contre le Gardien). Lettres folles, La Forge et Le Gardien demandent d'écrire dans la langue étudiée ; les autres laissent choisir le sens. Le nombre de mots est calibré pour viser 5 minutes.
+Un mot raté est re-présenté une fois dans la séance (sauf contre le Gardien) ; raté deux fois, il est abandonné pour cette séance et reste dans « Mots à revoir ». Lettres folles, La Forge et Le Gardien demandent d'écrire dans la langue étudiée ; les autres laissent choisir le sens. Le nombre de mots est calibré pour viser 5 minutes.
 
 ### 4.3 Rotation des jeux
 
@@ -135,7 +135,7 @@ Une séance moyenne (75 % de réussite du premier coup, +5 de fin compris) rappo
 
 | Article | Prix (gemmes) | Effet |
 | --- | --- | --- |
-| **Accessoires** (13), dessinés sur le compagnon | | |
+| **Accessoires** (16), dessinés sur le compagnon | | |
 | Fleur des champs | 50 | Sur la tête |
 | Nœud papillon | 60 | Au cou |
 | Collier de perles | 80 | Au cou |
@@ -149,7 +149,10 @@ Une séance moyenne (75 % de réussite du premier coup, +5 de fin compris) rappo
 | Chapeau de magicien | 180 | Sur la tête |
 | Auréole | 250 | Au-dessus de la tête |
 | Couronne dorée | 300 | Sur la tête |
-| **Décors** (12), fond de la carte du compagnon | | |
+| Casque audio | 160 | Sur la tête |
+| Monocle | 190 | Sur un œil |
+| Cape de héros | 220 | Au cou |
+| **Décors** (15), fond de la carte du compagnon | | |
 | Prairie fleurie | 100 | Ciel bleu, herbe et fleurs |
 | Mer de nuages | 120 | Aube rose, nuages blancs |
 | Forêt enchantée | 150 | Dégradé vert |
@@ -162,10 +165,13 @@ Une séance moyenne (75 % de réussite du premier coup, +5 de fin compris) rappo
 | Volcan | 340 | Ciel rouge, cône sombre |
 | Aurore boréale | 400 | Voiles vert et violet sur ciel nocturne |
 | Ciel étoilé | 450 | Nuit et étoiles |
+| Village sous la neige | 240 | Flocons, sol blanc |
+| Jungle | 280 | Feuillage vert |
+| Espace | 520 | Étoiles, planètes |
 
-Purement décoratifs : aucun effet sur les jauges. Lot 3 : nouveaux accessoires et décors pour garder un objectif d'épargne.
+Purement décoratifs : aucun effet sur les jauges.
 
-**Compagnons** : Lexi le phénix (offert), Pyro le dragonnet (400), Étoile la licorne (700), Griff le griffon (1 000), Glouglou le bébé kraken (1 500).
+**Compagnons** : Lexi le phénix (offert), Pyro le dragonnet (400), Étoile la licorne (700), Griff le griffon (1 000), Glouglou le bébé kraken (1 500), Roussette le renardeau (1 200), Hulotte la chouette (1 800).
 
 **Équilibre visé : une séance par jour, plus le bon du jour, suffit tout juste à garder le compagnon en vie.** Le but est d'inciter à faire plusieurs séances par jour.
 
@@ -212,7 +218,7 @@ La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans 
 - **Bon du jour** : +10 gemmes à la première séance de la journée.
 - **Bons de palier** : 3, 7, 14 et 30 jours de suite ; chaque bon s'encaisse une fois par série, une série brisée les réinitialise.
 - Aucune pénalité en gemmes : la seule conséquence d'une absence est la décrépitude du compagnon.
-- Lot 3 : rappel quotidien par notification.
+- **Rappel quotidien** par notification sur le téléphone (§16 bis).
 
 ## 8. Fonctionnalités côté élève
 
@@ -229,8 +235,9 @@ La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans 
 | E9 | Mes mots | Listes par langue, création par collage « mot = traduction », maîtrise par mot | 1 |
 | E10 | Mes stats | Jours joués, temps, réussite, jeux utilisés, maîtrise par langue, calendrier, mots coriaces | 1 |
 | E11 | Régularité | Bon du jour, bons de palier, série | 2 |
-| E12 | Hors-ligne et installation | Séance sans réseau ; ajout à l'écran d'accueil | 2 |
-| E13 | Rappel quotidien | Notification à l'heure choisie | 3 |
+| E12 | Hors-ligne et installation | Séance sans réseau ; ajout à l'écran d'accueil (§16) | 2 |
+| E13 | Rappel quotidien | Notification à l'heure choisie, seulement si l'élève n'a pas joué (§16 bis) | 3 |
+| E14 | Import de listes | Collage « mot = traduction » ou fichier CSV (deux colonnes séparées par `;` ou tabulation) | 3 |
 
 ## 9. Statistiques et suivi parent
 
@@ -268,14 +275,7 @@ L'élève et le parent partagent les mêmes indicateurs ; le parent y ajoute le 
 - **Ton** : pensé pour une adolescente, jamais infantilisant, rien qui évoque un outil de contrôle.
 - **Fluidité** : transitions de 150 à 250 ms, mouvement réduit si demandé par le système ; thèmes clair et sombre ; contraste AA ; cibles tactiles de 48 px au moins ; polices hébergées sur le serveur.
 
-**Deux directions visuelles à comparer** (maquette complète, bouton « Jeu / Adulte » en haut de page) :
-
-| | Jeu | Adulte |
-| --- | --- | --- |
-| Esprit | « Autocollant » : contours épais, ombres dures, couleurs vives, boutons qui s'enfoncent | Sobre : fonds graphite ou gris clair, filets fins, une seule teinte dorée, jauges minces |
-| Typographie | Lilita One + Nunito | Plus Jakarta Sans |
-| Compagnon | Au centre d'une carte colorée | Dans un halo discret, état et jauges en retrait |
-| Risque | Perçu comme enfantin | Perçu comme froid, moins de plaisir immédiat |
+**Style retenu : « Adulte »** (décision du parent). Sobre : fonds gris clair ou graphite, filets fins, une seule teinte dorée, jauges minces, Plus Jakarta Sans ; le compagnon dans un halo discret. Le style « Jeu » (contours épais, couleurs vives) n'est pas repris dans l'application ; il reste visible dans la maquette. Le thème clair ou sombre se règle sur l'appareil (Auto, Clair, Sombre).
 
 ## 12. Architecture technique
 
@@ -304,12 +304,14 @@ flowchart LR
 | `users` | id, identifiant, nom affiché, rôle, hash, actif | Comptes |
 | `lists` | id, propriétaire, **langue**, nom, assignée par, version | Listes (une langue chacune) |
 | `words` | id, liste, terme, traduction, position | Paires de mots |
-| `sessions` | id, élève, **langue**, portée, jeu, sens, début, fin, temps actif, mots, bonnes réponses, victoire | Une ligne par séance |
+| `sessions` | id, élève, **langue**, portée, jeu, sens, début, fin, temps actif, mots, bonnes réponses, victoire, identifiant client | Une ligne par séance (l'identifiant client rend l'import hors-ligne idempotent) |
 | `answers` | id, séance, mot, essai, réponse donnée, juste, type d'erreur, temps (ms), horodatage | Événements en ajout seul |
 | `word_stats` | élève, mot, essais, échecs, série, dernière réponse | Cache recalculable |
 | `http_sessions` | identifiant, contenu, expiration | Sessions de connexion (30 jours, survivent aux redémarrages) |
 | `gem_events` | id, élève, delta, motif, séance, date | Registre des gemmes ; solde = somme |
 | `user_pets` | élève, espèce, vie, énergie, plaisir, heure de référence, actif, adopté le | Compagnons |
+| `push_subs` | point d'accès, utilisateur, clés | Appareils abonnés aux notifications |
+| `kv` | clé, valeur | Clés VAPID, dernier rappel envoyé |
 | `user_items` | élève, article, catégorie (accessoire, décor), acheté le, porté | Achats durables |
 | `pet_events` | id, élève, compagnon, heure, type (événement aléatoire, Gardien, résurrection), jauge, delta | Journal du compagnon (écrit quand les jauges sont figées) |
 | *(sans table)* | rotation, Gardien hebdomadaire, série, minutes par jour | Recalculés depuis `sessions` à chaque lecture : jamais de désaccord possible |
@@ -333,6 +335,8 @@ Règles non évidentes :
 | `GET/POST /lists`, `GET/PUT/DELETE /lists/:id` | Listes et mots | Élève, parent |
 | `GET /games` | Jeux, compteurs et verrouillages | Élève |
 | `POST /sessions` (langue, portée, jeu, sens), `POST /sessions/:id/events`, `POST /sessions/:id/end` | Séance par lots ; renvoie gemmes, verrouillages, bons | Élève |
+| `POST /sessions/import` | Séance jouée hors-ligne (identifiant unique, mots, réponses, heure) ; corrigée et valorisée comme une séance en ligne | Élève |
+| `GET /push/key`, `POST /push/subscribe`, `POST /push/unsubscribe`, `POST /push/test`, `GET/PUT /reminder`, `POST /cron/reminders` | Notifications et rappel (heure, activation) ; le cron exige `x-cron-key` | Élève, parent |
 | `GET /weekly-boss` | Statut du Gardien de la semaine et langue interdite éventuelle | Élève |
 | `GET /wallet`, `GET /shop`, `POST /shop/buy`, `POST /shop/equip` | Solde, catalogue, achat, porter ou retirer un accessoire ou un décor | Élève |
 | `GET /pets`, `POST /pets/:id/adopt`, `POST /pets/:id/activate` | Compagnons, jauges à l'heure, dernier événement ; activation refusée si l'actif est à terre | Élève |
@@ -345,7 +349,7 @@ Règles non évidentes :
 
 Les résultats scolaires d'une mineure sont des données sensibles : collecte minimale, hébergement chez le parent, aucun tiers.
 
-- Mots de passe hachés avec bcrypt ; blocage temporaire après 5 échecs.
+- Mots de passe hachés avec bcrypt ; blocage temporaire après 10 échecs en 15 minutes (par identifiant et adresse).
 - Cloisonnement côté serveur par identifiant ; routes `/admin` réservées au parent.
 - Pas d'e-mail obligatoire, pas de statistiques tierces, pas de polices ni scripts externes.
 - Journal des connexions, créations de comptes, exports, suppressions.
@@ -355,10 +359,19 @@ Les résultats scolaires d'une mineure sont des données sensibles : collecte mi
 
 ## 16. Hors-ligne et synchronisation
 
-- Interface en réseau d'abord avec repli sur le cache ; `/api` jamais intercepté.
-- Séances et réponses dans une file locale avec UUID, envoyées par lots toutes les 15 s et au retour du réseau ; le serveur ignore un UUID déjà reçu.
-- Plafond de 60 s par réponse, horodatages futurs refusés ; état de rotation recalculé par le serveur à la réception.
-- Déconnexion refusée tant que la file n'est pas vide.
+- **Application installable** : manifeste (`manifest.webmanifest`, `manifest-parent.webmanifest`), icônes, service worker versionné par l'empreinte des fichiers (un changement du site renouvelle le cache). Réseau d'abord avec repli sur le cache ; `/api` jamais intercepté ni mis en cache.
+- **Jouer sans réseau** : après une première connexion, l'appareil garde le dernier état (listes, compagnon, rotation, Gardien) et le barème. Hors-ligne, il choisit les mots avec les mêmes règles que le serveur (une langue, rotation, langue interdite du Gardien), fait jouer la séance et la range dans une file locale avec un identifiant unique. Une séance commencée en ligne et coupée en route suit le même chemin.
+- **Synchronisation** : au retour du réseau (et toutes les minutes tant que la file n'est pas vide), les séances partent de la plus ancienne à la plus récente vers `POST /sessions/import`. Le serveur **corrige et recalcule tout** (réponses, gemmes, bon du jour du jour réel de la séance, rotation, série) ; il ignore un identifiant déjà reçu ; l'heure de début est ramenée dans les 14 derniers jours et jamais dans le futur ; une séance refusée (mots inconnus, séance incomplète) est abandonnée.
+- **Hors-ligne, les gemmes affichées sont une estimation** (bandeau « séance gardée sur ton appareil ») ; la boutique, les bons et la connexion demandent le réseau.
+- Une déconnexion vide le dernier état mis en cache mais garde les séances en attente.
+
+## 16 bis. Notifications
+
+- **Web Push** (clés VAPID, générées au premier démarrage ou fournies par `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`, contact `VAPID_SUBJECT`). Android : directement ; iPhone : seulement après « Sur l'écran d'accueil » (iOS 16.4 ou plus).
+- **Élève** : un rappel par jour à l'heure choisie (17 h 30 par défaut), **seulement si elle n'a pas encore joué ce jour-là**. Message selon la situation : compagnon à terre, dernier jour du Gardien, compagnon fatigué, sinon invitation simple.
+- **Parent** : un message par jour à l'heure choisie (19 h par défaut) si l'élève n'a pas joué depuis 2 jours ou plus.
+- Un rappel manqué (serveur arrêté) part avec 2 h de retard au plus, puis est abandonné. Un appareil qui ne répond plus (404, 410) est désabonné.
+- **Déclenchement** : une minuterie dans le processus Node (désactivable par `REMINDERS=off`) ; si l'hébergeur n'a pas de processus permanent, un cron externe appelle `POST /api/cron/reminders` avec l'en-tête `x-cron-key` (variable `CRON_KEY`).
 
 ## 17. Plan de livraison
 
@@ -367,7 +380,7 @@ Les résultats scolaires d'une mineure sont des données sensibles : collecte mi
 | 0 — Socle | Dépôt, comptes, session, SQLite, montage sur la passerelle, HTTPS | Connexion fonctionnelle sur le domaine |
 | 1 — Jeu | Langue et portée, cinq jeux, rotation, Gardien hebdomadaire, gemmes, boutique, compagnons, stats élève, suivi parent | Une semaine d'usage réel, chiffres cohérents |
 | 2 — Régularité et confort | Bons, décrépitude complète, hors-ligne, PWA, calendrier, export | Hors-ligne testé en mode avion |
-| 3 — Extras | Rappels, e-mail hebdomadaire, import CSV, nouveaux compagnons et articles | — |
+| 3 — Extras | Rappels par notification, import CSV, nouveaux compagnons et articles (l'e-mail hebdomadaire est abandonné) | Notification reçue sur le téléphone |
 
 Critères d'acceptation du lot 1 :
 
@@ -388,7 +401,7 @@ Critères d'acceptation du lot 1 :
 
 ## 18. Points à valider
 
-- [ ] **Thème visuel** : « Jeu » ou « Adulte » (maquette complète dans les deux styles), ou une version intermédiaire.
+- [x] **Thème visuel** : style « Adulte » retenu.
 - [ ] **Rotation** : 3 séances avant verrouillage et 2 autres jeux pour le rouvrir, trop ou trop peu ?
 - [ ] **Gardien** : langue au choix mais jamais 3 semaines de suite la même, pénalité de 40 de vie et 20 de plaisir, adaptées ?
 - [ ] **Jauges et prix** : −1,5 plaisir et −1,2 énergie par heure, −0,75 vie par heure et par jauge sous 20, nuit (20 h – 8 h) à mi-vitesse, résurrection à 150 gemmes : une séance par jour suffit-elle *tout juste* en usage réel ?

@@ -2,7 +2,7 @@
 
 Jeu pédagogique pour mémoriser le vocabulaire de néerlandais et d'anglais : séances de 5 minutes, cinq jeux accessibles dès le départ, points à dépenser pour nourrir et soigner un compagnon fantastique, bons de régularité, et un tableau de bord pour suivre le travail.
 
-> État : cahier des charges, maquette interactive et **application des lots 0 et 1** (serveur, jeux, compagnon, boutique, suivi parent). Reste : lot 2 (PWA, hors-ligne) et lot 3 (extras).
+> État : cahier des charges, maquette interactive et **application complète** (lots 0 à 3 : serveur, jeux, compagnon, boutique, suivi parent, PWA hors-ligne, notifications). Reste : déploiement et essais sur téléphone.
 
 ## Contenu
 
@@ -28,7 +28,7 @@ npm start             # http://localhost:3000  (élève) · http://localhost:300
 npm test
 ```
 
-Comptes réels : `LEXIQUEST_PASSWORD=… node scripts/create-user.js parent <id> "<nom>"` puis `… student <id> "<nom>" <id du parent>`. En production : `NODE_ENV=production`, `SESSION_SECRET` obligatoire, base dans `data/` (hors dépôt, à sauvegarder ; `LEXIQUEST_DB` pour changer l'emplacement), fuseau `Europe/Brussels` (`LEXIQUEST_TZ`).
+Comptes réels : `LEXIQUEST_PASSWORD=… node scripts/create-user.js parent <id> "<nom>"` puis `… student <id> "<nom>" <id du parent>`. En production : `NODE_ENV=production`, `SESSION_SECRET` obligatoire, `VAPID_SUBJECT=mailto:vous@exemple.be` (notifications ; `CRON_KEY` si un cron externe déclenche les rappels), base dans `data/` (hors dépôt, à sauvegarder ; `LEXIQUEST_DB` pour changer l'emplacement), fuseau `Europe/Brussels` (`LEXIQUEST_TZ`).
 
 ## Déploiement prévu
 

@@ -1,5 +1,7 @@
 'use strict';
+const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const express = require('express');
 const session = require('express-session');
 const clock = require('./lib/clock');
@@ -8,6 +10,19 @@ const SqliteStore = require('./lib/session-store');
 const { HttpError } = require('./lib/users');
 
 const THIRTY_DAYS = 30 * 864e5;
+const PUBLIC = path.join(__dirname, 'public');
+
+/** empreinte des fichiers publics (hors sw.js) : change à chaque mise à jour du site */
+function swVersion(dir) {
+  const h = crypto.createHash('sha1');
+  const walk = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    const f = path.join(d, e.name);
+    if (e.isDirectory()) { walk(f); } else if (e.name !== 'sw.js') { const st = fs.statSync(f); h.update(path.relative(dir, f) + st.size + st.mtimeMs); }
+  } };
+  walk(dir);
+  return h.digest('hex').slice(0, 12);
+}
+const swSource = (dir) => fs.readFileSync(path.join(dir, 'sw.js'), 'utf8');
 
 function createApp(db) {
   const app = express();
@@ -48,7 +63,18 @@ function createApp(db) {
   app.use('/api/admin', require('./routes/admin')(db));
   app.use('/api', (req, res, next) => next(new HttpError(404, 'Route inconnue.')));
 
-  app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: 0 }));
+  /* sans barre finale, les chemins relatifs du navigateur viendraient de la racine du site (/lexiquest → /lexiquest/) */
+  app.get('/', (req, res, next) => {
+    const q = req.originalUrl.indexOf('?'), p = q < 0 ? req.originalUrl : req.originalUrl.slice(0, q);
+    if (p.endsWith('/')) { return next(); }
+    res.redirect(301, p + '/' + (q < 0 ? '' : req.originalUrl.slice(q)));
+  });
+  /* le service worker porte une version : tout changement du site renouvelle le cache des appareils */
+  app.get('/sw.js', (req, res) => {
+    res.set({ 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': './' });
+    res.send(swSource(PUBLIC).replaceAll('__VERSION__', swVersion(PUBLIC)));
+  });
+  app.use(express.static(PUBLIC, { extensions: ['html'], maxAge: 0 }));
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
@@ -66,5 +92,6 @@ module.exports = app;
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
+  require('./lib/reminders').start(app.locals.db);
   app.listen(port, () => console.log(`Lexiquest sur http://localhost:${port} (fuseau ${process.env.TZ}, ${clock.now().toISOString()})`));
 }

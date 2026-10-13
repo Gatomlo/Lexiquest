@@ -8,6 +8,8 @@ const P = require('../lib/progress');
 const Pets = require('../lib/pets');
 const S = require('../lib/sessions');
 const Stats = require('../lib/stats');
+const Push = require('../lib/push');
+const Reminders = require('../lib/reminders');
 const { HttpError } = U;
 
 /* anti force brute : 10 échecs par identifiant et par adresse sur 15 minutes */
@@ -15,17 +17,20 @@ const fails = new Map();
 function tooMany(key) { const r = fails.get(key); return r && r.n >= 10 && Date.now() - r.t < 9e5; }
 function noteFail(key) { const r = fails.get(key); fails.set(key, r && Date.now() - r.t < 9e5 ? { n: r.n + 1, t: r.t } : { n: 1, t: Date.now() }); }
 
-const wrap = (fn) => (req, res, next) => { try { const r = fn(req, res, next); if (r !== undefined && !res.headersSent) { res.json(r); } } catch (e) { next(e); } };
+const wrap = (fn) => (req, res, next) => {
+  const send = (v) => { if (v !== undefined && !res.headersSent) { res.json(v); } };
+  try { const r = fn(req, res, next); if (r && typeof r.then === 'function') { r.then(send, next); } else { send(r); } } catch (e) { next(e); }
+};
 
 function buildState(db, user) {
   const days = P.playedDays(db, user.id), st = P.streakOf(days), t = clock.dayIdx();
-  const daily = P.dailyDone(db, user.id), inv = Pets.inventory(db, user.id);
+  const inv = Pets.inventory(db, user.id);
   const played7 = []; for (let i = 6; i >= 0; i--) { played7.push(days.has(t - i)); }
   const weak = {}; for (const l of C.LANGS) { weak[l] = S.weakWords(db, user.id, l).length; }
   return {
     me: { id: user.id, name: user.display, role: user.role },
     now: clock.nowMs(), gems: U.balance(db, user.id), streak: st.count, played7,
-    dailyDone: !!daily && P.dayOfMs(daily.at) === t,
+    dailyDone: P.dailyOn(db, user.id, t),
     vouchers: P.vouchersOf(db, user.id, days),
     pet: Pets.view(db, user, days), inv,
     boss: P.bossStatus(db, user.id), rotation: P.rotationOf(db, user.id),
@@ -46,7 +51,7 @@ module.exports = function apiRoutes(db) {
   };
 
   r.get('/config', (req, res) => res.json({
-    games: C.GAMES, order: C.ORDER, rot: C.ROT, boss: C.BOSS, vouch: C.VOUCH, resPrice: C.RES_PRICE, realm: C.REALM, stateN: C.STATE_N,
+    games: C.GAMES, gems: C.GEMS, order: C.ORDER, rot: C.ROT, boss: C.BOSS, vouch: C.VOUCH, resPrice: C.RES_PRICE, realm: C.REALM, stateN: C.STATE_N,
     gauges: C.GAUGES, low: C.LOW, pets: C.PETS, items: C.ITEMS, durable: C.DURABLE, rates: C.RATE, night: C.NIGHT,
   }));
 
@@ -95,6 +100,7 @@ module.exports = function apiRoutes(db) {
   r.post('/pets/:id/adopt', stu, wrap((req) => { Pets.adopt(db, req.user, req.params.id); return { ok: true }; }));
   r.post('/pets/:id/activate', stu, wrap((req) => { Pets.activate(db, req.user, req.params.id); return { ok: true }; }));
 
+  r.post('/sessions/import', stu, wrap((req) => S.importOffline(db, req.user, req.body)));
   r.post('/sessions', stu, wrap((req) => S.start(db, req.user, req.body || {})));
   r.post('/sessions/:id/events', stu, wrap((req) => ({ results: S.recordEvents(db, req.user, req.params.id, (req.body || {}).events) })));
   r.post('/sessions/:id/end', stu, wrap((req) => S.end(db, req.user, req.params.id, req.body || {})));
@@ -102,6 +108,34 @@ module.exports = function apiRoutes(db) {
 
   r.get('/stats', stu, wrap((req) => Stats.studentStats(db, req.user)));
   r.get('/review-queue', stu, wrap((req) => ({ words: S.weakWords(db, req.user.id, C.LANGS.includes(req.query.lang) ? req.query.lang : null) })));
+
+  /* ---------- notifications (élève et parent) ---------- */
+  const anyone = auth();
+  r.get('/push/key', (req, res) => res.json({ key: Push.publicKey(db) }));
+  r.post('/push/subscribe', anyone, wrap((req) => {
+    if (!Push.subscribe(db, req.user.id, (req.body || {}).subscription)) { throw new HttpError(400, 'Abonnement invalide.'); }
+    return { ok: true };
+  }));
+  r.post('/push/unsubscribe', anyone, wrap((req) => { Push.unsubscribe(db, req.user.id, (req.body || {}).endpoint); return { ok: true }; }));
+  r.post('/push/test', anyone, wrap(async (req) => {
+    const n = await Push.notifyUser(db, req.user.id, { title: 'Lexiquest', body: 'Les notifications fonctionnent.', url: req.user.role === 'parent' ? 'parent' : './', tag: 'lexiquest-test' });
+    if (!n) { throw new HttpError(409, 'Aucun appareil abonné.'); }
+    return { sent: n };
+  }));
+  r.get('/reminder', anyone, wrap((req) => { const s = U.settingsOf(db, req.user.id); return { remind: s.remind, remindAt: s.remindAt, devices: Push.countSubs(db, req.user.id) }; }));
+  r.put('/reminder', anyone, wrap((req) => {
+    const b = req.body || {}, patch = {};
+    if ('remind' in b) { patch.remind = b.remind; }
+    if ('remindAt' in b) { patch.remindAt = b.remindAt; }
+    const s = U.setSettings(db, req.user.id, patch);
+    return { remind: s.remind, remindAt: s.remindAt, devices: Push.countSubs(db, req.user.id) };
+  }));
+  /* déclenchement externe des rappels (cron) quand le processus Node n'est pas permanent */
+  r.post('/cron/reminders', wrap(async (req) => {
+    const key = process.env.CRON_KEY;
+    if (!key || req.get('x-cron-key') !== key) { throw new HttpError(403, 'Clé invalide.'); }
+    return { sent: await Reminders.run(db) };
+  }));
 
   return r;
 };

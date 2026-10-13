@@ -205,6 +205,9 @@ svg.ic{width:24px;height:24px;flex:none}
 .d-plage{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 55%,#8FD0FF) 0 58%,color-mix(in srgb,var(--surface) 45%,#FFD98A) 58%)}
 .d-chateau{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 60%,#C28BFF),color-mix(in srgb,var(--surface) 55%,#E8D9C4))}
 .d-etoiles{background:radial-gradient(circle at 18% 22%,#fff 0 1.2px,transparent 2px),radial-gradient(circle at 72% 14%,#fff 0 1.5px,transparent 2.4px),radial-gradient(circle at 86% 46%,#fff 0 1px,transparent 1.8px),radial-gradient(circle at 34% 58%,#fff 0 1px,transparent 1.8px),linear-gradient(180deg,color-mix(in srgb,var(--surface) 45%,#23305E),color-mix(in srgb,var(--surface) 50%,#6B5BB8))}
+.d-neige{background:radial-gradient(circle at 15% 25%,#fff 0 2px,transparent 3px),radial-gradient(circle at 60% 15%,#fff 0 2px,transparent 3px),radial-gradient(circle at 85% 40%,#fff 0 2px,transparent 3px),radial-gradient(circle at 35% 55%,#fff 0 1.6px,transparent 2.6px),linear-gradient(180deg,color-mix(in srgb,var(--surface) 60%,#8FB4E8) 0 72%,color-mix(in srgb,var(--surface) 30%,#fff) 72%)}
+.d-jungle{background:radial-gradient(40% 40% at 10% 100%,color-mix(in srgb,var(--surface) 35%,#1F7A45) 0 98%,transparent),radial-gradient(40% 50% at 92% 100%,color-mix(in srgb,var(--surface) 35%,#1F7A45) 0 98%,transparent),linear-gradient(180deg,color-mix(in srgb,var(--surface) 55%,#3FAE6A),color-mix(in srgb,var(--surface) 50%,#A8D66B))}
+.d-espace{background:radial-gradient(circle at 22% 24%,#fff 0 1.2px,transparent 2px),radial-gradient(circle at 76% 18%,#FFC62E 0 1.6px,transparent 2.6px),radial-gradient(circle at 60% 62%,#fff 0 1px,transparent 1.8px),radial-gradient(circle at 12% 70%,#FF8FB1 0 4px,transparent 5px),radial-gradient(circle at 88% 78%,#8FD0FF 0 6px,transparent 7px),linear-gradient(180deg,color-mix(in srgb,var(--surface) 25%,#0B1030),color-mix(in srgb,var(--surface) 35%,#3B1F6B))}
 .item small{font-weight:700;color:var(--ink-2);font-size:11px}
 .price{display:inline-flex;gap:3px;align-items:center;font:400 15px 'Lilita One';background:var(--sun);color:var(--on-sun);border:2px solid var(--edge);border-radius:999px;padding:0 9px}
 .price svg{width:14px;height:14px}
@@ -492,3 +495,4 @@ svg.ic{width:24px;height:24px;flex:none}
 .ad-claim{display:inline-flex;align-items:center;gap:4px;border:0;border-radius:12px;background:var(--sun);color:var(--on-sun);font:800 13px 'Plus Jakarta Sans',sans-serif;padding:9px 12px;cursor:pointer;flex:none}
 .ad-claim svg{width:15px;height:15px}
 .ad-lang{font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--acc-soft);color:var(--ink);margin-right:6px}
+.app.adult .seg button{border-width:0}
