@@ -68,7 +68,7 @@ function pOverview() {
   else if (gone >= 2) { al += '<div class="alert bad">' + ic('alert') + '<span>Aucune séance depuis ' + gone + ' jours.</span></div>'; }
   if (pet.ko) { al += '<div class="alert bad">' + ic('alert') + '<span>L’avatar ' + esc(pet.name) + ' est à terre : il attend une potion de résurrection (' + CFG.resPrice + ' gemmes).</span></div>'; }
   else if (pet.lvl >= 2) { al += '<div class="alert bad">' + ic('alert') + '<span>L’avatar ' + esc(pet.name) + ' est ' + STATE_N[pet.lvl].toLowerCase() + ' : il n’a pas eu de soins récemment.</span></div>'; }
-  if (pet.hits > 0) { al += '<div class="alert bad">' + ic('alert') + '<span>Le Gardien n’a pas été vaincu la semaine dernière : ' + esc(pet.name) + ' a perdu ' + (pet.hits * CFG.boss.penCare) + ' de vie.</span></div>'; }
+  if (pet.hits > 0) { al += '<div class="alert bad">' + ic('alert') + '<span>Le Gardien n’a pas été vaincu la semaine dernière : ' + esc(pet.name) + ' a perdu ' + (pet.hits * o.rules.pen.care) + ' de vie.</span></div>'; }
   else if (!B.won && B.left <= 2) { al += '<div class="alert">' + ic('clock') + '<span>Gardien de la semaine pas encore vaincu : ' + (B.left === 0 ? 'dernier jour' : B.left + ' jour' + (B.left > 1 ? 's' : '') + ' restant' + (B.left > 1 ? 's' : '')) + '.</span></div>'; }
   if (st.days7 < st.goalDays) { al += '<div class="alert">' + ic('clock') + '<span>' + st.days7 + ' jour' + (st.days7 > 1 ? 's' : '') + ' joué' + (st.days7 > 1 ? 's' : '') + ' sur 7, pour un objectif de ' + st.goalDays + '.</span></div>'; }
   if (stuck.length) { al += '<div class="alert bad">' + ic('alert') + '<span>' + stuck.length + ' mot' + (stuck.length > 1 ? 's' : '') + ' raté' + (stuck.length > 1 ? 's' : '') + ' plus de 5 fois sans réussite récente : <b>' + stuck.slice(0, 3).map(function (r) { return esc(r.term); }).join(', ') + '</b>.</span></div>'; }
@@ -142,7 +142,21 @@ function pSettings() {
   h += '<div class="pcard s6"><h2>Régularité et récompenses</h2><div class="row"><div>Bon du jour<small>à la première séance du jour</small></div><b class="disp">+10 gemmes</b></div>';
   C.vouch.forEach(function (v) { h += '<div class="row"><div>' + v.d + ' jours de suite</div><b class="disp">+' + v.p + ' gemmes</b></div>'; });
   h += '<p class="muted" style="font-size:12.5px;margin-top:8px">Compagnon : −' + C.rates.joy + ' de plaisir et −' + C.rates.food + ' d’énergie par heure ; sous ' + C.low + ', faim et ennui retirent chacun ' + C.rates.care + ' de vie par heure. Une séance par jour plus le bon du jour suffit tout juste à l’entretenir. La nuit (' + C.night.from + ' h – ' + C.night.to + ' h), il dort : tout baisse deux fois moins vite. Un événement aléatoire tous les 1 à 3 jours. À 0 de vie, il est à terre jusqu’à une potion de résurrection (' + C.resPrice + ' gemmes).</p></div>';
-  h += '<div class="pcard s12"><h2>Règles du jeu</h2><div class="row"><div>Rotation des jeux<small>Un jeu se verrouille après ' + C.rot.max + ' séances ; il se retrouve en jouant ' + C.rot.need + ' autres jeux différents</small></div><b class="disp">' + C.rot.max + ' / ' + C.rot.need + '</b></div><div class="row"><div>Gardien hebdomadaire<small>À vaincre chaque semaine, langue au choix mais jamais 3 semaines de suite la même ; sinon −' + C.boss.penCare + ' de vie et −' + C.boss.penJoy + ' de plaisir ; un Gardien bonus ne change rien</small></div><b class="disp">1 / semaine</b></div><div class="row"><div>Gemmes par bon mot<small>Plus le jeu est difficile, plus il rapporte</small></div><b class="disp">1 à 4</b></div></div>';
+  function stepper(k, step, unit, label, hint) {
+    return '<div class="row"><div>' + label + (hint ? '<small>' + hint + '</small>' : '') + '</div><div class="stepper"><button class="btn sm alt" data-act="rule" data-k="' + k + '" data-d="' + (-step) + '" aria-label="Moins">−</button><b class="tnum">' + S[k] + unit + '</b><button class="btn sm alt" data-act="rule" data-k="' + k + '" data-d="' + step + '" aria-label="Plus">+</button></div></div>';
+  }
+  h += '<div class="pcard s12"><h2>Règles du jeu</h2>'
+   + stepper('rotMax', 1, ' séances', 'Rotation : un jeu se verrouille après', 'Les cinq jeux restent accessibles à tour de rôle, pour varier')
+   + stepper('rotNeed', 1, ' jeux', 'Pour le rouvrir : jouer', 'jeux différents (le Gardien compte)')
+   + stepper('penCare', 5, '', 'Gardien non vaincu : perte de vie', 'Chaque semaine sans Gardien vaincu, au passage du lundi ; langue au choix mais jamais 3 semaines de suite la même ; un Gardien bonus ne change rien')
+   + stepper('penJoy', 5, '', 'Gardien non vaincu : perte de plaisir', '')
+   + '<h2 style="margin-top:16px">Gemmes par bon mot</h2>'
+   + stepper('gemCards', 1, '', GAMES.cards.n, 'Du premier coup ; moitié (arrondie au-dessus) avec indice ou au second essai ; +1 au combo de 3')
+   + stepper('gemDuel', 1, '', GAMES.duel.n, '')
+   + stepper('gemScramble', 1, '', GAMES.scramble.n, '')
+   + stepper('gemForge', 1, '', GAMES.forge.n + ' (et écriture du Gardien)', '')
+   + '<p class="muted" style="font-size:12.5px;margin-top:10px">Les valeurs d’origine sont calibrées pour qu’une séance par jour suffise tout juste à entretenir le compagnon : plus de gemmes ou moins de pertes rend le jeu plus facile.</p>'
+   + '<button class="btn sm alt" style="margin-top:8px" data-act="rulesreset">Rétablir les valeurs d’origine</button></div>';
   h += '<div class="pcard s12"><h2>Données</h2><p class="muted">Export de toutes les séances et réponses au format CSV, ou suppression complète du compte élève.</p><div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><a class="btn sm" style="text-decoration:none" href="' + base() + '/export.csv" download>' + ic('down') + ' Exporter en CSV</a><button class="btn sm alt" data-act="delstudent">Supprimer les données</button></div></div></div>';
   return h + notifCard('parent') + displayControls() + '<div style="height:16px"></div><button class="btn alt wide" data-act="logout">' + ic('out') + ' Se déconnecter</button>';
 }
@@ -214,6 +228,11 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'sess': api('GET', base() + '/sessions/' + t.dataset.id).then(function (d) { P.detail = d; P.sub = { t: 'sess' }; P.enter = true; render(); }).catch(fail); break;
     case 'back': P.sub = null; P.enter = true; render(); break;
     case 'goal': api('PATCH', base(), { goalDays: P.settings.goalDays + (+v) }).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break;
+    case 'rule': { var rp = {}; rp[t.dataset.k] = P.settings[t.dataset.k] + (+t.dataset.d); api('PATCH', base(), rp).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break; }
+    case 'rulesreset': {
+      var d0 = CFG.rulesDefault, rp2 = { rotMax: d0.rot.max, rotNeed: d0.rot.need, penCare: d0.pen.care, penJoy: d0.pen.joy, gemCards: d0.gems.cards, gemDuel: d0.gems.duel, gemScramble: d0.gems.scramble, gemForge: d0.gems.forge };
+      api('PATCH', base(), rp2).then(function (r) { P.settings = r.settings; render(); toast('Valeurs d’origine rétablies.'); }).catch(fail); break;
+    }
     case 'toggle': { var patch = {}; patch[v] = !P.settings[v]; api('PATCH', base(), patch).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break; }
     case 'addstudent': P.sheet = { t: 'invite' }; render(); break;
     case 'directstudent': P.sheet = { t: 'student' }; render(); break;

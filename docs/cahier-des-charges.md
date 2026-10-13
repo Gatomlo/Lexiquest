@@ -250,7 +250,7 @@ L'élève et le parent partagent les mêmes indicateurs ; le parent y ajoute le 
 | Mots difficiles | Mots les plus ratés avec essais et taux d'échec ; filtre par langue | Oui | Oui, avec dernière erreur |
 | Séances | Liste filtrable, détail réponse par réponse (mot, réponse donnée, juste ou non, temps, type d'erreur), langue de chaque séance | Non | Oui |
 | Alertes et compagnon | Absence de 2 jours ou plus, compagnon fatigué, décrépit ou à terre, dernier événement, Gardien non vaincu, objectif de jours | Non | Oui |
-| Réglages | Jours de jeu par semaine, tolérance accents et articles, listes assignées, comptes, export CSV | Non | Oui |
+| Réglages | Jours de jeu par semaine, tolérance accents et articles, **règles du jeu** (rotation : séances avant verrouillage 1 à 10 et jeux différents pour rouvrir 1 à 4 ; Gardien : perte de vie et de plaisir 0 à 100 ; gemmes par bon mot de chaque jeu 0 à 9, avec retour aux valeurs d'origine), listes données, invitations et comptes, notifications, export CSV | Non | Oui |
 
 ## 10. Définitions des indicateurs
 

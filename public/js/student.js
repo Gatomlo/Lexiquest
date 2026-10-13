@@ -33,11 +33,13 @@ function petMsg(n) {
 }
 function applyConfig(c) {
   GAMES = c.games; ORDER = c.order; ROT = c.rot; PETS = c.pets; ITEMS = c.items; DURABLE = c.durable; VOUCH = c.vouch; STATE_N = c.stateN; RES_PRICE = c.resPrice;
-  BOSS_PEN = { care: c.boss.penCare, joy: c.boss.penJoy };
+  BOSS_PEN = { care: c.boss.penCare, joy: c.boss.penJoy }; ROT = { max: c.rot.max, need: c.rot.need };
   REALM = {}; Object.keys(c.realm).forEach(function (k) { REALM[k] = { s: c.realm[k].s, tag: c.realm[k].tag, cls: 'r-' + k }; });
 }
 function applyState(st, stats) {
   S.st = st; if (stats) { S.stats = stats; }
+  ['cards', 'duel', 'scramble', 'forge'].forEach(function (g) { GAMES[g].g = st.rules.gems[g]; });
+  ROT.max = st.rules.rot.max; ROT.need = st.rules.rot.need; BOSS_PEN.care = st.rules.pen.care; BOSS_PEN.joy = st.rules.pen.joy;
   S.points = st.gems; S.rot = st.rotation; S.active = st.pet.id; S.name = st.me.name; S.set = st.settings; S.equip = st.inv.equip;
   S.owned = {}; st.pet.owned.forEach(function (o) { S.owned[o.id] = true; });
   S.inv = {}; st.inv.owned.forEach(function (id) { S.inv[id] = true; });

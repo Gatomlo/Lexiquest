@@ -480,3 +480,36 @@ test('invitation par lien : à usage unique, expire, rattache l’élève au par
   assert.equal((await E.parent.req('DELETE', '/api/admin/invites/' + list[0].id, {})).status, 200);
   assert.equal((await new E.Client(E.base).get('/api/invite/' + cancel.token)).status, 410, 'annulée');
 });
+
+test('règles réglables par le parent : rotation, gemmes par jeu, pertes du Gardien (bornées)', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const base = `/api/admin/students/${E.studentId}`;
+  // valeurs hors bornes ramenées dans les limites
+  const clamped = (await E.parent.req('PATCH', base, { rotMax: 99, rotNeed: 0, penCare: -5, gemDuel: 50 })).json.settings;
+  assert.deepEqual([clamped.rotMax, clamped.rotNeed, clamped.penCare, clamped.gemDuel], [10, 1, 0, 9]);
+  assert.equal((await E.parent.req('PATCH', base, { rotMax: 'abc' })).status, 400);
+  assert.equal((await E.student.req('PATCH', base, { rotMax: 2 })).status, 403, 'réservé au parent');
+  await E.parent.req('PATCH', base, { rotMax: 2, rotNeed: 1, gemDuel: 3, penCare: 10, penJoy: 0 });
+  const st = (await E.student.get('/api/state')).json;
+  assert.deepEqual(st.rules, { rot: { max: 2, need: 1 }, pen: { care: 10, joy: 0 }, gems: { cards: 1, duel: 3, scramble: 3, forge: 4 } });
+  // gemmes : un Duel à 3 par bon mot (8 mots nl → 14 questions ? la liste en compte 8) ; combo +1 dès la 4e bonne réponse
+  const r = await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'duel', dir: 'toFr' });
+  assert.equal(r.end.json.points, 8 * 3 + 5);
+  // rotation à 2 séances : verrouillé après la deuxième
+  const second = await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'duel' });
+  assert.equal(second.end.json.rotation.locked, true);
+  assert.equal((await E.student.post('/api/sessions', { lang: 'nl', scope: 'all', listIds: [], game: 'duel' })).status, 409);
+  // un seul autre jeu suffit désormais à le rouvrir
+  const other = await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'cards' });
+  assert.deepEqual(other.end.json.rotation.unlocked, ['duel']);
+  // pertes du Gardien réglées
+  const Pets = require('../lib/pets'), clockM = require('../lib/clock');
+  const monday = new Date(2026, 5, 8, 0, 0, 0), h = Math.floor(monday.getTime() / 36e5), week = clockM.weekStart(clockM.dayIdx(monday));
+  const sim = (pen) => Pets.simulate({ food: 100, care: 100, joy: 100, anchor_hour: h - 1 }, { seed: 1, createdHour: 0, wins: [], createdWeek: week - 7, nowHour: h, pen });
+  const a = sim({ care: 10, joy: 0 });
+  assert.equal(Math.round(a.care), 90); assert.equal(Math.round(a.joy), 99, 'seulement la baisse horaire, pas de perte du Gardien');
+  // retour aux valeurs d'origine
+  const d = (await E.student.get('/api/config')).json.rulesDefault;
+  assert.deepEqual(d, { rot: { max: 3, need: 2 }, pen: { care: 40, joy: 20 }, gems: { cards: 1, duel: 2, scramble: 3, forge: 4 } });
+});

@@ -36,7 +36,7 @@ function buildState(db, user) {
     vouchers: P.vouchersOf(db, user.id, days),
     pet: Pets.view(db, user, days), inv,
     boss: P.bossStatus(db, user.id), rotation: P.rotationOf(db, user.id),
-    lists: Lists.listsOf(db, user.id), weak, settings: U.settingsOf(db, user.id),
+    lists: Lists.listsOf(db, user.id), weak, settings: U.settingsOf(db, user.id), rules: require('../lib/rules').fromSettings(U.settingsOf(db, user.id)),
   };
 }
 
@@ -53,7 +53,7 @@ module.exports = function apiRoutes(db) {
   };
 
   r.get('/config', (req, res) => res.json({
-    games: C.GAMES, gems: C.GEMS, order: C.ORDER, rot: C.ROT, boss: C.BOSS, vouch: C.VOUCH, resPrice: C.RES_PRICE, realm: C.REALM, stateN: C.STATE_N,
+    rulesDefault: require('../lib/rules').DEFAULTS, games: C.GAMES, gems: C.GEMS, order: C.ORDER, rot: C.ROT, boss: C.BOSS, vouch: C.VOUCH, resPrice: C.RES_PRICE, realm: C.REALM, stateN: C.STATE_N,
     gauges: C.GAUGES, low: C.LOW, pets: C.PETS, items: C.ITEMS, durable: C.DURABLE, rates: C.RATE, night: C.NIGHT,
   }));
 

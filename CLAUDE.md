@@ -20,7 +20,8 @@ Node ≥ 22.5, `node:sqlite`, front vanilla sans build — comme Fée Lezcomptes
 - Côté navigateur : **chemins relatifs uniquement** (montage sous `/lexiquest`).
 - Aucun déblocage par niveau, mais **rotation** : un jeu (hors Gardien) se verrouille après 3 séances et se rouvre en jouant 2 autres jeux différents. Un **Gardien hebdomadaire** à vaincre (sinon −40 vie, −20 plaisir) ; un Gardien bonus (semaine déjà validée) n'a aucun effet.
 - Monnaie = **gemmes** ; les jeux difficiles en rapportent davantage (1, 2, 3, 4 par bon mot). Le compagnon ne meurt jamais : à 0 de vie il est « à terre », seule la potion de résurrection (150) le relève.
-- **Équilibre** : 1 séance/jour + bon du jour ≈ entretien (≈ 40 gemmes/jour) ; l'épargne (compagnons 400 à 1 500, accessoires et décors durables) exige plusieurs séances par jour. Tout changement de prix ou de vitesse des jauges doit garder cet équilibre.
+- **Règles réglables par le parent, élève par élève** (rotation, pertes du Gardien, gemmes par bon mot ; `lib/rules.js`, clés de la table `settings`, valeurs d'origine dans `lib/config.js`). Tout calcul doit lire les règles de l'élève, jamais les constantes de `config.js`.
+- **Équilibre** (valeurs d'origine) : 1 séance/jour + bon du jour ≈ entretien (≈ 40 gemmes/jour) ; l'épargne (compagnons 400 à 1 500, accessoires et décors durables) exige plusieurs séances par jour. Tout changement de prix ou de vitesse des jauges doit garder cet équilibre.
 - Jauges **vie / énergie / plaisir**, baisse **horaire** (plaisir −1,5/h, énergie −1,2/h ; vie −0,75/h par jauge sous 20), **divisée par deux la nuit** (20 h – 8 h, il dort) + un **événement aléatoire** (30 au catalogue) tous les 1 à 3 jours sur une jauge.
 - **Une seule langue par séance** (néerlandais ou anglais) : jamais de mélange, ni dans les mots, ni dans les distracteurs du QCM ; la langue se choisit avant la portée.
 - L'élève a ses propres statistiques (mêmes indicateurs que le parent, sans le détail des séances).
