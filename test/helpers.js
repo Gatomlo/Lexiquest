@@ -2,7 +2,7 @@
 process.env.LEXIQUEST_DB = ':memory:';
 process.env.SESSION_SECRET = 'test-secret';
 const http = require('node:http');
-const appModule = require('../server');
+const appModule = require('../app');
 const { open } = require('../lib/db');
 const { createUser } = require('../lib/users');
 const clock = require('../lib/clock');

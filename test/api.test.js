@@ -308,7 +308,7 @@ test('montage sous /lexiquest : cookie limité à ce chemin, tout fonctionne en 
   const db = open(':memory:');
   createUser(db, { username: 'lea', display: 'Léa', role: 'student', password: 'motdepasse2' });
   const outer = express();
-  outer.use('/lexiquest', require('../server').createApp(db));
+  outer.use('/lexiquest', require('../app').createApp(db));
   const server = http.createServer(outer); await new Promise((r) => server.listen(0, '127.0.0.1', r));
   t.after(() => server.close());
   const base = `http://127.0.0.1:${server.address().port}/lexiquest`;
@@ -339,7 +339,7 @@ test('première installation : le premier compte créé est le parent, une seule
   const http = require('node:http');
   const { open } = require('../lib/db');
   const db = open(':memory:');
-  const server = http.createServer(require('../server').createApp(db)); await new Promise((r) => server.listen(0, '127.0.0.1', r)); t.after(() => server.close());
+  const server = http.createServer(require('../app').createApp(db)); await new Promise((r) => server.listen(0, '127.0.0.1', r)); t.after(() => server.close());
   const { Client } = await setup().then((E) => { E.close(); return E; });
   const c = new Client(`http://127.0.0.1:${server.address().port}`);
   assert.equal((await c.get('/api/setup')).json.needed, true);
@@ -380,4 +380,71 @@ test('auto-réparation : un package.json illisible dans node_modules est supprim
   assert.deepEqual(fixed, ['express']); assert.equal(installed, 1);
   assert.deepEqual(repairIfNeeded(dir, { log, install: () => assert.fail('rien à réparer') }), []);
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('chargement avec nouveaux essais si Node refuse un package.json (volume réseau)', () => {
+  const { loadWithRetry } = require('../lib/retry-load');
+  const waits = []; let n = 0;
+  const flaky = () => { if (++n < 3) { const e = new Error('Invalid package config /x/package.json.'); e.code = 'ERR_INVALID_PACKAGE_CONFIG'; throw e; } return 'ok'; };
+  assert.equal(loadWithRetry(flaky, { sleep: (ms) => waits.push(ms), log: { warn() {} } }), 'ok');
+  assert.deepEqual(waits, [500, 1000]);
+  const other = () => { throw new Error('autre erreur'); };
+  assert.throws(() => loadWithRetry(other, { sleep() { assert.fail('pas de nouvel essai'); }, log: { warn() {} } }), /autre erreur/);
+  const always = () => { const e = new Error('toujours'); e.code = 'ERR_INVALID_PACKAGE_CONFIG'; throw e; };
+  assert.throws(() => loadWithRetry(always, { tries: 3, sleep() {}, log: { warn() {} } }), /toujours/);
+});
+
+test('notifications sans dépendance : chiffrement aes128gcm déchiffrable par le navigateur, signature VAPID valide', () => {
+  const crypto = require('node:crypto'), W = require('../lib/webpush');
+  const b64u = (b) => Buffer.from(b).toString('base64url');
+  // l'appareil (navigateur) : paire de clés + secret d'authentification
+  const ua = crypto.createECDH('prime256v1'); ua.generateKeys();
+  const auth = crypto.randomBytes(16);
+  const message = JSON.stringify({ title: 'Lexiquest', body: 'Une séance de 5 minutes ? é à ç' });
+  const body = W.encrypt(message, b64u(ua.getPublicKey()), b64u(auth));
+  // déchiffrement côté appareil (RFC 8291)
+  const salt = body.subarray(0, 16), rs = body.readUInt32BE(16), idlen = body[20];
+  assert.equal(rs, 4096); assert.equal(idlen, 65);
+  const asPublic = body.subarray(21, 21 + idlen), cipher = body.subarray(21 + idlen);
+  const shared = ua.computeSecret(asPublic);
+  const ikm = Buffer.from(crypto.hkdfSync('sha256', shared, auth, Buffer.concat([Buffer.from('WebPush: info\0'), ua.getPublicKey(), asPublic]), 32));
+  const cek = Buffer.from(crypto.hkdfSync('sha256', ikm, salt, Buffer.from('Content-Encoding: aes128gcm\0'), 16));
+  const nonce = Buffer.from(crypto.hkdfSync('sha256', ikm, salt, Buffer.from('Content-Encoding: nonce\0'), 12));
+  const d = crypto.createDecipheriv('aes-128-gcm', cek, nonce);
+  d.setAuthTag(cipher.subarray(cipher.length - 16));
+  const plain = Buffer.concat([d.update(cipher.subarray(0, cipher.length - 16)), d.final()]);
+  assert.equal(plain[plain.length - 1], 2, 'délimiteur de fin de message');
+  assert.equal(plain.subarray(0, plain.length - 1).toString('utf8'), message);
+  // signature VAPID : vérifiable avec la clé publique publiée
+  const keys = W.generateKeys();
+  const h = W.vapidHeader('https://fcm.googleapis.com/fcm/send/abc', keys, 'https://exemple.be');
+  const m = /^vapid t=([^.]+)\.([^.]+)\.([^,]+), k=(.+)$/.exec(h);
+  assert.equal(m[4], keys.publicKey);
+  const pub = Buffer.from(keys.publicKey, 'base64url');
+  const vk = crypto.createPublicKey({ key: { kty: 'EC', crv: 'P-256', x: b64u(pub.subarray(1, 33)), y: b64u(pub.subarray(33, 65)) }, format: 'jwk' });
+  assert.ok(crypto.verify('sha256', Buffer.from(m[1] + '.' + m[2]), { key: vk, dsaEncoding: 'ieee-p1363' }, Buffer.from(m[3], 'base64url')));
+  const claims = JSON.parse(Buffer.from(m[2], 'base64url'));
+  assert.equal(claims.aud, 'https://fcm.googleapis.com'); assert.equal(claims.sub, 'https://exemple.be');
+  assert.ok(claims.exp > Date.now() / 1000);
+});
+
+test('mots de passe scrypt et sessions signées : cookie falsifié ou expiré refusé', async (t) => {
+  const P = require('../lib/password');
+  const h = P.hash('motdepasse1');
+  assert.ok(P.verify('motdepasse1', h)); assert.ok(!P.verify('motdepasse2', h)); assert.ok(!P.verify('x', '')); assert.ok(!P.verify('x', 'bcrypt$a$b'));
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  assert.equal((await E.student.get('/api/state')).status, 200);
+  const forged = new E.Client(E.base); forged.cookie = E.student.cookie.replace(/\.[^;.]+$/, '.AAAA');
+  assert.equal((await forged.get('/api/state')).status, 401, 'signature fausse');
+  const old = E.student.cookie; await E.student.post('/api/auth/logout');
+  const replay = new E.Client(E.base); replay.cookie = old;
+  assert.equal((await replay.get('/api/state')).status, 401, 'session détruite à la déconnexion');
+});
+
+test('chiffrement des notifications conforme au vecteur de test du RFC 8291', () => {
+  const W = require('../lib/webpush');
+  const out = W.encrypt('When I grow up, I want to be a watermelon', 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4', 'BTBZMqHH6r4Tts7J_aSIgg',
+    { privateKey: 'yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw', salt: 'DGv6ra1nlYgDCS1FRnbzlw' });
+  assert.equal(out.toString('base64url'), 'DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN');
 });

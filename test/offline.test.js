@@ -151,7 +151,7 @@ test('PWA : manifeste, service worker versionné, redirection de /lexiquest', as
   const express = require('express'), http = require('node:http');
   const { open } = require('../lib/db');
   const outer = express();
-  outer.use('/lexiquest', require('../server').createApp(open(':memory:')));
+  outer.use('/lexiquest', require('../app').createApp(open(':memory:')));
   const server = http.createServer(outer); await new Promise((r) => server.listen(0, '127.0.0.1', r)); t.after(() => server.close());
   const base = `http://127.0.0.1:${server.address().port}`;
   const red = await fetch(base + '/lexiquest', { redirect: 'manual' });

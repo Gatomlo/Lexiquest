@@ -39,7 +39,7 @@ Comme les autres outils : sous-application de [node-gateway](https://github.com/
 ```
 cd <passerelle>/apps
 git clone https://github.com/Gatomlo/Lexiquest.git lexiquest
-cd .. && npm install        # installe aussi les dépendances de apps/lexiquest (Node 22.5 ou plus : node:sqlite)
+cd .. && npm install        # rien à installer pour l'outil : il n'a aucune dépendance (Node 22.5 ou plus : node:sqlite)
 # redémarrer la passerelle
 ```
 

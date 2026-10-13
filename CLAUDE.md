@@ -10,13 +10,13 @@ Jeu pédagogique web (PWA, smartphone first) pour mémoriser le vocabulaire de n
 - `docs/cahier-des-charges.md` : spécification complète (source de vérité).
 - `maquette/index.html` : maquette interactive autonome (HTML/CSS/JS vanilla, données simulées, aucun réseau sauf Google Fonts). Rôles élève/parent via le sélecteur du haut ; « Absence simulée » avance le calendrier pour montrer la décrépitude.
 
-- `server.js` (exporte l'app, `createApp(db)` pour les tests), `lib/` (règles : `config.js` barème, `sessions.js`, `pets.js`, `progress.js`, `stats.js`, `push.js`, `reminders.js`), `routes/api.js` et `routes/admin.js`, `public/` (front vanilla : `student.js`, `parent.js`, `art.js`, `common.js`, `offline.js`, `judge.js` partagé avec le serveur, `sw.js` service worker versionné par le serveur), `test/`.
+- `server.js` (entrée, exporte l'app), `app.js` (`createApp(db)` pour les tests), `lib/` (règles : `config.js` barème, `sessions.js`, `pets.js`, `progress.js`, `stats.js`, `push.js`, `reminders.js` ; outils : `session.js`, `password.js`, `webpush.js`, `retry-load.js`, `repair-modules.js`), `routes/api.js` et `routes/admin.js`, `public/` (front vanilla : `student.js`, `parent.js`, `art.js`, `common.js`, `offline.js`, `judge.js` partagé avec le serveur, `sw.js` service worker versionné par le serveur), `test/`.
 
 ## Stack cible (voir le cahier, §12)
-Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla sans build — comme Fée Lezcomptes. Déployé comme sous-application de `Gatomlo/node-gateway` (`apps/lexiquest`, route `/lexiquest`, Infomaniak).
+Node ≥ 22.5, `node:sqlite`, front vanilla sans build — comme Fée Lezcomptes. **Aucune dépendance propre** : Express est celui de la passerelle (résolu depuis `node_modules` de la racine ; `devDependencies` seulement pour l'essai en autonome), mots de passe en scrypt (`lib/password.js`), sessions signées (`lib/session.js`), Web Push écrit avec `node:crypto` (`lib/webpush.js`, conforme au vecteur de test du RFC 8291). Déployé comme sous-application de `Gatomlo/node-gateway` (`apps/lexiquest`, route `/lexiquest`, Infomaniak).
 
 ## Règles non évidentes
-- L'app **exporte** son app Express (`module.exports = app`) et ne `listen()` que si `require.main === module`.
+- L'app **exporte** son app Express (`module.exports = app`) et ne `listen()` que si `require.main === module` : `server.js` est l'entrée (réparation de `node_modules`, chargement avec nouveaux essais si Node refuse un `package.json` sur le volume réseau), `app.js` contient l'application.
 - Côté navigateur : **chemins relatifs uniquement** (montage sous `/lexiquest`).
 - Aucun déblocage par niveau, mais **rotation** : un jeu (hors Gardien) se verrouille après 3 séances et se rouvre en jouant 2 autres jeux différents. Un **Gardien hebdomadaire** à vaincre (sinon −40 vie, −20 plaisir) ; un Gardien bonus (semaine déjà validée) n'a aucun effet.
 - Monnaie = **gemmes** ; les jeux difficiles en rapportent davantage (1, 2, 3, 4 par bon mot). Le compagnon ne meurt jamais : à 0 de vie il est « à terre », seule la potion de résurrection (150) le relève.

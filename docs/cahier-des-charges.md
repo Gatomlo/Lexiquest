@@ -295,9 +295,9 @@ flowchart LR
 - Cookie de session : `Path` = base, `HttpOnly`, `Secure`, `SameSite=Lax`.
 - Code déposé dans `apps/lexiquest` de la passerelle ; base SQLite dans un dossier `data/` hors dépôt, sauvegardé.
 - **Aucune variable d'environnement obligatoire**, comme les autres outils : secret de session et clés VAPID générés au premier démarrage et gardés en base (table `kv`) ; le premier compte, le compte parent, se crée à la première visite de `/lexiquest/parent` (`POST /api/setup`, refusé dès qu'un compte existe) ; le parent ajoute ensuite l'élève. Un script serveur (`scripts/reset-password.js`) règle le cas du mot de passe oublié.
-- Les dépendances de l'outil sont installées par le `npm install` de la passerelle (`apps/*/package.json`) ; le manifeste s'appelle `manifest.json` pour que la page d'accueil de la passerelle en affiche l'icône.
+- L'outil n'a rien à installer ; au démarrage, il répare un `node_modules` abîmé s'il en a un et recharge ses modules si Node refuse un `package.json` sur le volume réseau. Le manifeste s'appelle `manifest.json` pour que la page d'accueil de la passerelle en affiche l'icône.
 
-**Socle** : Node.js 22.5 ou plus (`node:sqlite`, à vérifier chez l'hébergeur), Express, express-session, bcryptjs, JavaScript vanilla sans build, comme Fée Lezcomptes.
+**Socle** : Node.js 22.5 ou plus (`node:sqlite`, à vérifier chez l'hébergeur), JavaScript vanilla sans build, comme Fée Lezcomptes. **Aucune dépendance propre** (l'installation sur l'hébergeur a déjà été corrompue par des coupures) : Express est celui de la passerelle ; mots de passe scrypt, sessions signées HMAC en base et Web Push (VAPID + chiffrement aes128gcm) écrits avec `node:crypto`.
 
 ## 13. Modèle de données
 
@@ -351,7 +351,7 @@ Règles non évidentes :
 
 Les résultats scolaires d'une mineure sont des données sensibles : collecte minimale, hébergement chez le parent, aucun tiers.
 
-- Mots de passe hachés avec bcrypt ; blocage temporaire après 10 échecs en 15 minutes (par identifiant et adresse).
+- Mots de passe hachés avec scrypt (sel aléatoire) ; blocage temporaire après 10 échecs en 15 minutes (par identifiant et adresse).
 - Cloisonnement côté serveur par identifiant ; routes `/admin` réservées au parent.
 - Pas d'e-mail obligatoire, pas de statistiques tierces, pas de polices ni scripts externes.
 - Journal des connexions, créations de comptes, exports, suppressions.
