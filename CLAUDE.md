@@ -4,7 +4,7 @@
 Jeu pédagogique web (PWA, smartphone first) pour mémoriser le vocabulaire de néerlandais et d'anglais : séances de 5 min, points à dépenser pour soigner un compagnon fantastique (inspiration Tamagotchi), bons de régularité, suivi parent (quand, combien de temps, résultats, difficultés). Public : une adolescente de 3e secondaire. Successeur de « Carnet de Vocabulaire » (artefact v1).
 
 ## État
-**Lots 0, 1, 2 et 3 codés** (serveur, jeux, compagnon, boutique, suivi parent, PWA hors-ligne, notifications push, import CSV, nouveaux compagnons et articles ; pas d'e-mail). Reste : déploiement dans `Gatomlo/node-gateway`, tests sur téléphone réel, calibrage après une semaine d'usage.
+**Lots 0, 1, 2 et 3 codés** (serveur, jeux, compagnon, boutique, suivi parent, PWA hors-ligne, notifications push, import CSV, nouveaux compagnons et articles ; pas d'e-mail). Montage dans `node-gateway` vérifié (`apps/lexiquest`). Reste : déploiement chez Infomaniak, tests sur téléphone réel, calibrage après une semaine d'usage.
 
 ## Fichiers clés
 - `docs/cahier-des-charges.md` : spécification complète (source de vérité).
@@ -30,11 +30,12 @@ Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla 
 - **Hors-ligne** : l'appareil joue avec le dernier état connu et envoie les séances à `POST /sessions/import` (identifiant unique, idempotent) ; le serveur recorrige tout. Rien d'autre ne marche sans réseau (boutique, bons).
 - **Rappels** : Web Push (VAPID), minuterie dans le processus ou cron externe `POST /api/cron/reminders` (`CRON_KEY`) ; iPhone seulement après installation sur l'écran d'accueil.
 - **Le serveur décide** : il choisit les mots, corrige (`public/js/judge.js`), calcule les gemmes et recalcule rotation, Gardien et série depuis les séances terminées. Le client ne fait qu'afficher et déclarer ses réponses.
-- Fuseau fixé par `lib/clock.js` (`Europe/Brussels`) ; en production `SESSION_SECRET` obligatoire ; cookie de session limité au chemin de montage.
+- **Zéro configuration, comme les autres outils de la passerelle** : secret de session et clés VAPID tirés au hasard au premier démarrage et gardés dans la table `kv` ; **premier compte = parent, créé à la première visite de `/parent`** (`POST /api/setup`, refusé dès qu'un compte existe) ; les variables d'environnement (`SESSION_SECRET`, `VAPID_SUBJECT`, `LEXIQUEST_DB`, `CRON_KEY`…) restent facultatives.
+- Fuseau : `Europe/Brussels` par défaut si `TZ` n'est pas défini (`lib/clock.js`) ; cookie de session limité au chemin de montage ; manifestes nommés `manifest.json` (la passerelle en lit l'icône pour son accueil).
 - Dépôt public : aucune donnée réelle d'élève, ni `.env`, ni `*.db`.
 
 ## Commandes
-- `npm install`, `npm test` (node:test, base en mémoire), `npm run seed-demo` (comptes papa/lea), `npm start`.
+- `npm install`, `npm test` (node:test, base en mémoire), `npm run seed-demo` (comptes papa/lea, dev seulement), `npm start`, `node scripts/reset-password.js` (mot de passe oublié).
 - Voir la maquette : ouvrir `maquette/index.html` dans un navigateur (aucune installation).
 - Contrôle de syntaxe du script de la maquette : extraire le `<script>` puis `node --check`.
 

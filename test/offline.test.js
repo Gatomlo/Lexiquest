@@ -156,7 +156,7 @@ test('PWA : manifeste, service worker versionné, redirection de /lexiquest', as
   const base = `http://127.0.0.1:${server.address().port}`;
   const red = await fetch(base + '/lexiquest', { redirect: 'manual' });
   assert.equal(red.status, 301); assert.equal(red.headers.get('location'), '/lexiquest/');
-  const m = await fetch(base + '/lexiquest/manifest.webmanifest');
+  const m = await fetch(base + '/lexiquest/manifest.json');
   assert.equal(m.status, 200);
   const man = await m.json();
   assert.equal(man.start_url, './'); assert.equal(man.display, 'standalone');

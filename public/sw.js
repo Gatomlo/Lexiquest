@@ -2,7 +2,7 @@
 /* Service worker : application utilisable hors-ligne, notifications. __VERSION__ est remplacé par le serveur. */
 const CACHE = 'lexiquest-__VERSION__';
 const SHELL = ['./', 'parent', 'css/fonts.css', 'css/app.css', 'js/common.js', 'js/judge.js', 'js/art.js', 'js/offline.js', 'js/student.js', 'js/parent.js',
-  'manifest.webmanifest', 'manifest-parent.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
+  'manifest.json', 'manifest-parent.json', 'icons/icon-192.png', 'icons/icon-512.png',
   'fonts/lilita-one-latin-400-normal.woff2', 'fonts/nunito-latin-500-normal.woff2', 'fonts/nunito-latin-600-normal.woff2', 'fonts/nunito-latin-700-normal.woff2',
   'fonts/nunito-latin-800-normal.woff2', 'fonts/plus-jakarta-sans-latin-wght-normal.woff2'];
 

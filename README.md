@@ -28,8 +28,19 @@ npm start             # http://localhost:3000  (élève) · http://localhost:300
 npm test
 ```
 
-Comptes réels : `LEXIQUEST_PASSWORD=… node scripts/create-user.js parent <id> "<nom>"` puis `… student <id> "<nom>" <id du parent>`. En production : `NODE_ENV=production`, `SESSION_SECRET` obligatoire, `VAPID_SUBJECT=mailto:vous@exemple.be` (notifications ; `CRON_KEY` si un cron externe déclenche les rappels), base dans `data/` (hors dépôt, à sauvegarder ; `LEXIQUEST_DB` pour changer l'emplacement), fuseau `Europe/Brussels` (`LEXIQUEST_TZ`).
+Aucune variable d'environnement à régler : le secret de session et les clés des notifications sont tirés au hasard au premier démarrage et gardés dans la base (`data/lexiquest.db`, hors dépôt, à sauvegarder).
 
-## Déploiement prévu
+**Première installation** : ouvrir `/parent` ; tant qu'il n'y a aucun compte, la page propose de créer le compte parent (premier arrivé, premier servi : à faire juste après le déploiement). Le parent ajoute ensuite l'élève dans Réglages. Mot de passe oublié : `node scripts/reset-password.js <identifiant> <nouveau mot de passe>` sur le serveur.
 
-Sous-application de [node-gateway](https://github.com/Gatomlo/node-gateway), montée sur `/lexiquest`, avec SQLite pour les données. Détails au §12 du cahier des charges.
+## Déploiement
+
+Comme les autres outils : sous-application de [node-gateway](https://github.com/Gatomlo/node-gateway), sans configuration.
+
+```
+cd <passerelle>/apps
+git clone https://github.com/Gatomlo/Lexiquest.git lexiquest
+cd .. && npm install        # installe aussi les dépendances de apps/lexiquest (Node 22.5 ou plus : node:sqlite)
+# redémarrer la passerelle
+```
+
+Élève : `/lexiquest/` · parent : `/lexiquest/parent`. Mise à jour : `git pull` dans `apps/lexiquest`, `npm install` à la racine, redémarrage. Les rappels par notification tournent dans le processus de la passerelle ; variables facultatives : `SESSION_SECRET`, `VAPID_SUBJECT`, `LEXIQUEST_DB`, `LEXIQUEST_TZ`, `REMINDERS=off` + `CRON_KEY` (cron externe sur `POST /api/cron/reminders`). Détails au §12 du cahier des charges.

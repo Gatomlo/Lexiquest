@@ -9,6 +9,7 @@ const Pets = require('../lib/pets');
 const S = require('../lib/sessions');
 const Stats = require('../lib/stats');
 const Push = require('../lib/push');
+const Kv = require('../lib/kv');
 const Reminders = require('../lib/reminders');
 const { HttpError } = U;
 
@@ -54,6 +55,25 @@ module.exports = function apiRoutes(db) {
     games: C.GAMES, gems: C.GEMS, order: C.ORDER, rot: C.ROT, boss: C.BOSS, vouch: C.VOUCH, resPrice: C.RES_PRICE, realm: C.REALM, stateN: C.STATE_N,
     gauges: C.GAUGES, low: C.LOW, pets: C.PETS, items: C.ITEMS, durable: C.DURABLE, rates: C.RATE, night: C.NIGHT,
   }));
+
+  /* ---------- première installation : le premier compte est le compte parent ---------- */
+  const noUsers = () => Number(db.prepare('SELECT COUNT(*) AS n FROM users').get().n) === 0;
+  r.get('/setup', wrap(() => ({ needed: noUsers() })));
+  r.post('/setup', (req, res, next) => {
+    try {
+      const b = req.body || {};
+      let id;
+      require('../lib/db').tx(db, () => {
+        if (!noUsers()) { throw new HttpError(409, 'L’installation est déjà faite.'); }
+        id = U.createUser(db, { username: b.username, display: b.name, role: 'parent', password: b.password });
+      });
+      req.session.regenerate((err) => {
+        if (err) { return next(err); }
+        req.session.userId = id;
+        res.json({ me: { id, name: String(b.name).trim(), role: 'parent' } });
+      });
+    } catch (e) { next(e); }
+  });
 
   /* ---------- connexion ---------- */
   r.post('/auth/login', (req, res, next) => {
@@ -114,6 +134,7 @@ module.exports = function apiRoutes(db) {
   r.get('/push/key', (req, res) => res.json({ key: Push.publicKey(db) }));
   r.post('/push/subscribe', anyone, wrap((req) => {
     if (!Push.subscribe(db, req.user.id, (req.body || {}).subscription)) { throw new HttpError(400, 'Abonnement invalide.'); }
+    Kv.set(db, 'origin', req.protocol + '://' + req.get('host'));
     return { ok: true };
   }));
   r.post('/push/unsubscribe', anyone, wrap((req) => { Push.unsubscribe(db, req.user.id, (req.body || {}).endpoint); return { ok: true }; }));

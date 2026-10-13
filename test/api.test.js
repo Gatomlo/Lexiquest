@@ -334,3 +334,33 @@ test('un mot raté deux fois ne bloque pas la fin de séance (re-présenté une 
   assert.equal(r.json.bonus.perfect, 0);
   assert.equal(r.json.missed.length, 1);
 });
+
+test('première installation : le premier compte créé est le parent, une seule fois', async (t) => {
+  const http = require('node:http');
+  const { open } = require('../lib/db');
+  const db = open(':memory:');
+  const server = http.createServer(require('../server').createApp(db)); await new Promise((r) => server.listen(0, '127.0.0.1', r)); t.after(() => server.close());
+  const { Client } = await setup().then((E) => { E.close(); return E; });
+  const c = new Client(`http://127.0.0.1:${server.address().port}`);
+  assert.equal((await c.get('/api/setup')).json.needed, true);
+  assert.equal((await c.post('/api/setup', { name: 'Maman', username: 'a', password: 'court' })).status, 400);
+  const r = await c.post('/api/setup', { name: 'Maman', username: 'maman', password: 'motdepasse1' });
+  assert.equal(r.status, 200, r.text);
+  assert.equal(r.json.me.role, 'parent');
+  assert.equal((await c.get('/api/admin/students')).status, 200, 'connectée dès la création');
+  assert.equal((await c.get('/api/setup')).json.needed, false);
+  const again = new Client(c.base);
+  assert.equal((await again.post('/api/setup', { name: 'Intrus', username: 'intrus', password: 'motdepasse1' })).status, 409);
+  // le parent crée ensuite le compte élève
+  const s = await c.post('/api/admin/students', { name: 'Léa', username: 'lea', password: 'motdepasse2' });
+  assert.equal(s.status, 200, s.text);
+});
+
+test('aucune variable d’environnement : secret de session et clés VAPID gardés dans la base', async () => {
+  const { open } = require('../lib/db'), Kv = require('../lib/kv'), Push = require('../lib/push');
+  const db = open(':memory:');
+  const a = Kv.secret(db, 'sessionSecret'), b = Kv.secret(db, 'sessionSecret');
+  assert.equal(a, b); assert.match(a, /^[0-9a-f]{64}$/);
+  const k1 = Push.publicKey(db), k2 = Push.publicKey(db);
+  assert.equal(k1, k2); assert.ok(k1.length > 40);
+});

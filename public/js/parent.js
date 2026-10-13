@@ -25,7 +25,18 @@ function fail(e) {
 }
 function reload() { return load().then(render).catch(fail); }
 
+function viewSetup() {
+  return '<div class="view login"><div class="login-top">' + critter('phenix', 0, 96, 1, null, null)
+   + '<h1>Lexiquest</h1><p>Bienvenue ! Crée le compte parent pour commencer.</p></div>'
+   + '<form class="login-body" id="setupForm"><label class="field">Ton nom<input name="name" autocomplete="name" required></label>'
+   + '<label class="field">Identifiant<input name="username" autocomplete="username" autocapitalize="none" required></label>'
+   + '<label class="field">Mot de passe (8 caractères minimum)<input name="password" type="password" minlength="8" autocomplete="new-password" required></label>'
+   + (P.loginErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(P.loginErr) + '</span></div>' : '')
+   + '<button class="btn wide" type="submit">Créer le compte parent</button>'
+   + '<p class="login-note">Tu ajouteras ensuite le compte de l’élève dans Réglages.</p></form></div>';
+}
 function viewLogin() {
+  if (P.setup) { return viewSetup(); }
   return '<div class="view login"><div class="login-top">' + critter('phenix', 0, 96, 1, null, null)
    + '<h1>Lexiquest</h1><p>Suivi parent</p></div>'
    + '<form class="login-body" id="loginForm"><label class="field">Identifiant<input name="username" autocomplete="username" autocapitalize="none" required></label>'
@@ -209,7 +220,11 @@ document.getElementById('app').addEventListener('change', function (e) {
 document.getElementById('app').addEventListener('submit', function (e) {
   e.preventDefault();
   var f = e.target, id = f.id;
-  if (id === 'loginForm') {
+  if (id === 'setupForm') {
+    api('POST', 'setup', { name: f.name.value, username: f.username.value, password: f.password.value })
+      .then(function (r) { P.me = r.me; P.setup = false; P.loginErr = ''; P.tab = 'overview'; return load().then(loadNotif); }).then(render)
+      .catch(function (err) { P.loginErr = err.message; render(); });
+  } else if (id === 'loginForm') {
     api('POST', 'auth/login', { username: f.username.value, password: f.password.value, portal: 'parent' })
       .then(function (r) { P.me = r.me; P.loginErr = ''; P.tab = 'overview'; return load().then(loadNotif); }).then(render)
       .catch(function (err) { P.loginErr = err.message; render(); });
@@ -226,6 +241,6 @@ document.getElementById('app').addEventListener('submit', function (e) {
 window.onInstallReady = function () { if (P.me) { render(); } };
 loadConfig().then(function (c) { STATE_N = c.stateN; GAMES = c.games; return api('GET', 'me'); })
   .then(function (r) { if (r.me.role !== 'parent') { throw Object.assign(new Error('Compte élève'), { status: 401 }); } P.me = r.me; return load().then(loadNotif); })
-  .catch(function () { P.me = null; })
+  .catch(function () { P.me = null; return api('GET', 'setup').then(function (s) { P.setup = s.needed; }).catch(function () { /* hors-ligne */ }); })
   .then(function () { P.booted = true; render(); });
 })();

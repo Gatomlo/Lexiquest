@@ -94,6 +94,7 @@ function viewLogin() {
    + '<h1>Lexiquest</h1><p>Révise 5 minutes, prends soin de ton compagnon !</p></div>'
    + '<form class="login-body" id="loginForm"><label class="field">Identifiant<input name="username" autocomplete="username" autocapitalize="none" required></label>'
    + '<label class="field">Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>'
+   + (S.setupNeeded ? '<div class="alert">' + ic('alert') + '<span>Lexiquest n’est pas encore installé : le parent doit d’abord créer son compte sur la <a href="parent">page Suivi</a>.</span></div>' : '')
    + (S.loginErr || S.bootErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(S.loginErr || S.bootErr) + '</span></div>' : '')
    + '<button class="btn wide" type="submit">Retrouver mon compagnon</button></form></div>';
 }
@@ -692,7 +693,7 @@ window.addEventListener('offline', function () { S.offline = true; render(); });
 window.onInstallReady = function () { if (S.st && !S.sess) { render(); } };
 
 loadConfig().then(function (c) { applyConfig(c); return api('GET', 'me').then(function () { return refresh(); }).catch(function (e) {
-    if (!e.offline) { S.st = null; return; }
+    if (!e.offline) { S.st = null; return api('GET', 'setup').then(function (s) { S.setupNeeded = s.needed; }).catch(function () { /* rien */ }); }
     var c2 = Offline.loadCache();   // pas de réseau : on repart du dernier état connu
     if (c2) { applyState(c2.st, c2.stats); S.offline = true; } else { S.st = null; S.bootErr = 'Pas de réseau. Connecte-toi une première fois avec Internet pour utiliser Lexiquest hors-ligne.'; }
   }); })

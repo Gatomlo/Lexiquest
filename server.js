@@ -8,6 +8,7 @@ const clock = require('./lib/clock');
 const { open } = require('./lib/db');
 const SqliteStore = require('./lib/session-store');
 const { HttpError } = require('./lib/users');
+const Kv = require('./lib/kv');
 
 const THIRTY_DAYS = 30 * 864e5;
 const PUBLIC = path.join(__dirname, 'public');
@@ -30,8 +31,7 @@ function createApp(db) {
   app.set('trust proxy', 1);
   app.locals.db = db;
 
-  const secret = process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' ? null : 'dev-secret-change-me');
-  if (!secret) { throw new Error('SESSION_SECRET est obligatoire en production.'); }
+  const secret = process.env.SESSION_SECRET || Kv.secret(db, 'sessionSecret'); // tiré au hasard à la première utilisation, gardé dans la base
   const store = new SqliteStore(db), cache = new Map();
   /* le cookie vit sous le chemin où l'application est montée (/lexiquest derrière la passerelle) */
   app.use((req, res, next) => {
@@ -86,12 +86,14 @@ function createApp(db) {
   return app;
 }
 
-const app = createApp(open());
+const db = open();
+const app = createApp(db);
 app.createApp = createApp;
 module.exports = app;
+/* les rappels tournent dans le processus, seul ou monté par la passerelle (pas pendant les tests : base en mémoire) */
+if (process.env.LEXIQUEST_DB !== ':memory:') { require('./lib/reminders').start(db); }
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
-  require('./lib/reminders').start(app.locals.db);
   app.listen(port, () => console.log(`Lexiquest sur http://localhost:${port} (fuseau ${process.env.TZ}, ${clock.now().toISOString()})`));
 }

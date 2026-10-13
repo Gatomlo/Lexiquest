@@ -294,6 +294,8 @@ flowchart LR
 - Elle est montée sur `/lexiquest` : côté navigateur, **aucun chemin absolu** ; la base est déduite à l'exécution (comme `BASE` dans Répétito).
 - Cookie de session : `Path` = base, `HttpOnly`, `Secure`, `SameSite=Lax`.
 - Code déposé dans `apps/lexiquest` de la passerelle ; base SQLite dans un dossier `data/` hors dépôt, sauvegardé.
+- **Aucune variable d'environnement obligatoire**, comme les autres outils : secret de session et clés VAPID générés au premier démarrage et gardés en base (table `kv`) ; le premier compte, le compte parent, se crée à la première visite de `/lexiquest/parent` (`POST /api/setup`, refusé dès qu'un compte existe) ; le parent ajoute ensuite l'élève. Un script serveur (`scripts/reset-password.js`) règle le cas du mot de passe oublié.
+- Les dépendances de l'outil sont installées par le `npm install` de la passerelle (`apps/*/package.json`) ; le manifeste s'appelle `manifest.json` pour que la page d'accueil de la passerelle en affiche l'icône.
 
 **Socle** : Node.js 22.5 ou plus (`node:sqlite`, à vérifier chez l'hébergeur), Express, express-session, bcryptjs, JavaScript vanilla sans build, comme Fée Lezcomptes.
 
@@ -359,7 +361,7 @@ Les résultats scolaires d'une mineure sont des données sensibles : collecte mi
 
 ## 16. Hors-ligne et synchronisation
 
-- **Application installable** : manifeste (`manifest.webmanifest`, `manifest-parent.webmanifest`), icônes, service worker versionné par l'empreinte des fichiers (un changement du site renouvelle le cache). Réseau d'abord avec repli sur le cache ; `/api` jamais intercepté ni mis en cache.
+- **Application installable** : manifeste (`manifest.json`, `manifest-parent.json`), icônes, service worker versionné par l'empreinte des fichiers (un changement du site renouvelle le cache). Réseau d'abord avec repli sur le cache ; `/api` jamais intercepté ni mis en cache.
 - **Jouer sans réseau** : après une première connexion, l'appareil garde le dernier état (listes, compagnon, rotation, Gardien) et le barème. Hors-ligne, il choisit les mots avec les mêmes règles que le serveur (une langue, rotation, langue interdite du Gardien), fait jouer la séance et la range dans une file locale avec un identifiant unique. Une séance commencée en ligne et coupée en route suit le même chemin.
 - **Synchronisation** : au retour du réseau (et toutes les minutes tant que la file n'est pas vide), les séances partent de la plus ancienne à la plus récente vers `POST /sessions/import`. Le serveur **corrige et recalcule tout** (réponses, gemmes, bon du jour du jour réel de la séance, rotation, série) ; il ignore un identifiant déjà reçu ; l'heure de début est ramenée dans les 14 derniers jours et jamais dans le futur ; une séance refusée (mots inconnus, séance incomplète) est abandonnée.
 - **Hors-ligne, les gemmes affichées sont une estimation** (bandeau « séance gardée sur ton appareil ») ; la boutique, les bons et la connexion demandent le réseau.
