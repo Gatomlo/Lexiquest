@@ -364,3 +364,20 @@ test('aucune variable d’environnement : secret de session et clés VAPID gard�
   const k1 = Push.publicKey(db), k2 = Push.publicKey(db);
   assert.equal(k1, k2); assert.ok(k1.length > 40);
 });
+
+test('auto-réparation : un package.json illisible dans node_modules est supprimé puis réinstallé', () => {
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+  const { repairIfNeeded } = require('../lib/repair-modules');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lq-repair-'));
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ dependencies: { express: '*', bcryptjs: '*' } }));
+  fs.mkdirSync(path.join(dir, 'node_modules/express'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'node_modules/express/package.json'), '{"name": "expr');   // écriture interrompue
+  fs.mkdirSync(path.join(dir, 'node_modules/bcryptjs'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'node_modules/bcryptjs/package.json'), '{"name":"bcryptjs"}');
+  let installed = 0;
+  const log = { warn() {}, log() {} };
+  const fixed = repairIfNeeded(dir, { log, install: () => { installed++; fs.mkdirSync(path.join(dir, 'node_modules/express'), { recursive: true }); fs.writeFileSync(path.join(dir, 'node_modules/express/package.json'), '{"name":"express"}'); } });
+  assert.deepEqual(fixed, ['express']); assert.equal(installed, 1);
+  assert.deepEqual(repairIfNeeded(dir, { log, install: () => assert.fail('rien à réparer') }), []);
+  fs.rmSync(dir, { recursive: true, force: true });
+});

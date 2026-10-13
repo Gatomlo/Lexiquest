@@ -1,4 +1,7 @@
 'use strict';
+/* avant de charger express : répare un node_modules abîmé par une installation interrompue */
+try { require('./lib/repair-modules').repairIfNeeded(__dirname); } catch (e) { console.error(e.message); }
+
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
