@@ -74,6 +74,9 @@ function createApp(db) {
 }
 
 const db = open();
+/* comptes créés avec l'ancien format de mot de passe (bcrypt) : illisibles, à réinitialiser */
+const legacy = db.prepare("SELECT username FROM users WHERE hash NOT LIKE 'scrypt$%'").all();
+if (legacy.length) { console.warn(`Lexiquest : ${legacy.length} compte(s) à l'ancien format de mot de passe (${legacy.map((u) => u.username).join(', ')}) : lance « node scripts/reset-password.js <identifiant> <nouveau mot de passe> » dans apps/lexiquest.`); }
 const app = createApp(db);
 app.createApp = createApp;
 module.exports = app;
