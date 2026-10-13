@@ -32,5 +32,5 @@ Node ≥ 22.5, Express, express-session, bcryptjs, `node:sqlite`, front vanilla 
 - Contrôle de syntaxe du script de la maquette : extraire le `<script>` puis `node --check`.
 
 ## Méthode de travail
-- Répondre en français, concis. Lire des extraits ciblés plutôt que `maquette/index.html` en entier (≈ 1000 lignes).
+- Répondre en français, **concis** (réponses courtes), sauf demande explicite de détail, d’analyse ou de réponse complète. Lire des extraits ciblés plutôt que `maquette/index.html` en entier (≈ 1000 lignes).
 - Garder cahier des charges et maquette cohérents : toute décision de jeu (barème, jeux, états du compagnon) se change aux deux endroits.
