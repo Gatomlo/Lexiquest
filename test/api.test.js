@@ -1,0 +1,278 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { setup, play, beatBoss, clock } = require('./helpers');
+
+test('connexion : portails séparés, accès cloisonnés', async (t) => {
+  const E = await setup(); t.after(E.close);
+  let r = await E.student.post('/api/auth/login', { username: 'lea', password: 'faux', portal: 'student' });
+  assert.equal(r.status, 401);
+  r = await E.student.post('/api/auth/login', { username: 'papa', password: 'motdepasse1', portal: 'student' });
+  assert.equal(r.status, 401, 'un parent ne se connecte pas par le portail élève');
+  assert.equal((await E.student.get('/api/state')).status, 401);
+  await E.loginAll();
+  assert.equal((await E.student.get('/api/state')).status, 200);
+  assert.equal((await E.student.get('/api/admin/students')).status, 403, 'élève sans accès /admin');
+  assert.equal((await E.parent.get('/api/state')).status, 403, 'parent sans accès élève');
+  const ov = await E.parent.get(`/api/admin/students/${E.studentId}/overview`);
+  assert.equal(ov.status, 200);
+  assert.equal(ov.json.student.name, 'Léa');
+  // un autre parent ne voit pas cet élève
+  const { createUser } = require('../lib/users');
+  createUser(E.db, { username: 'autre', display: 'Autre', role: 'parent', password: 'motdepasse3' });
+  const o = new E.Client(E.base); await o.post('/api/auth/login', { username: 'autre', password: 'motdepasse3', portal: 'parent' });
+  assert.equal((await o.get(`/api/admin/students/${E.studentId}/overview`)).status, 404);
+  assert.equal((await E.student.req('POST', '/api/lists', undefined)).status, 400);
+});
+
+test('JSON obligatoire pour modifier (anti-CSRF)', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  const res = await fetch(E.base + '/api/lists', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: E.student.cookie }, body: 'lang=nl' });
+  assert.equal(res.status, 415);
+});
+
+test('listes : une langue par liste, au moins 2 mots', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  assert.equal((await E.student.post('/api/lists', { lang: 'de', name: 'x', text: 'a = b\nc = d' })).status, 400);
+  assert.equal((await E.student.post('/api/lists', { lang: 'nl', name: 'x', text: 'seul = un' })).status, 400);
+  await E.addLists();
+  const st = (await E.student.get('/api/state')).json;
+  assert.equal(st.lists.length, 2);
+  assert.deepEqual(st.lists.map((l) => l.lang).sort(), ['en', 'nl']);
+});
+
+test('séance : une seule langue, gemmes calculées par le serveur', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const r = await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'forge', dir: 'toFr' });
+  assert.equal(r.end.status, 200, r.end.text);
+  assert.ok(r.session.words.length === 8 && r.session.words.every((w) => /^(de|het) /.test(w.term)), 'mots néerlandais seulement');
+  assert.equal(r.session.dir, 'toTarget', 'La Forge impose français → langue étudiée');
+  const e = r.end.json;
+  // 8 mots × 4 gemmes (1er coup) + combo +1 dès la 4e bonne réponse (4e à 8e = 5 mots) + fin 5 + sans faute 10 + bon du jour 10
+  assert.equal(e.points, 8 * 4 + 5);
+  assert.equal(e.bonus.fin, 5); assert.equal(e.bonus.perfect, 10); assert.equal(e.bonus.daily, 10);
+  assert.equal(e.gems, 37 + 5 + 10 + 10);
+  assert.equal((await E.student.get('/api/wallet')).json.gems, e.gems);
+  // 2e séance du jour : pas de nouveau bon du jour
+  const r2 = await play(E.student, { lang: 'en', scope: 'all', listIds: [], game: 'duel' });
+  assert.equal(r2.end.json.bonus.daily, 0);
+  assert.ok(r2.session.words.every((w) => !/^(de|het) /.test(w.term)));
+});
+
+test('séance : faute au premier essai = pas de « sans faute », demi-gemmes au second', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const r = await play(E.student, { lang: 'en', scope: 'all', listIds: [], game: 'scramble', dir: 'toFr' }, { miss: true });
+  const e = r.end.json;
+  assert.equal(e.bonus.perfect, 0);
+  assert.equal(e.first, 7);
+  assert.ok(e.missed.length === 1);
+  // la faute n'est pas comptée au même titre : 7 premiers coups (3 gemmes + combo) + 1 second essai (⌈3/2⌉ = 2)
+  // (la faute remet le combo à 0 ; le retry le relance à 1 ; bonus +1 dès que le combo atteint 3 : 5 derniers mots)
+  assert.equal(e.points, 2 + 7 * 3 + 5);
+});
+
+test('séance incomplète ou vide refusée ; mot hors séance refusé', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const s = (await E.student.post('/api/sessions', { lang: 'nl', scope: 'all', listIds: [], game: 'cards' })).json;
+  assert.equal((await E.student.post(`/api/sessions/${s.id}/end`, {})).status, 400, 'aucune réponse');
+  const en = (await E.student.get('/api/state')).json.lists.find((l) => l.lang === 'en').words[0];
+  assert.equal((await E.student.post(`/api/sessions/${s.id}/events`, { events: [{ type: 'answer', wordId: en.id, qtype: 'cards', ok: true }] })).status, 400, 'mot anglais dans une séance néerlandaise');
+  await E.student.post(`/api/sessions/${s.id}/events`, { events: [{ type: 'answer', wordId: s.words[0].id, qtype: 'cards', ok: true }] });
+  assert.equal((await E.student.post(`/api/sessions/${s.id}/end`, {})).status, 400, 'il reste des mots');
+  assert.equal((await E.student.post(`/api/sessions/${s.id}/events`, { events: [{ type: 'answer', wordId: s.words[1].id, qtype: 'forge', given: 'x' }] })).status, 400, 'type de question invalide');
+});
+
+test('correction côté serveur : accents et articles selon les réglages du parent', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  await E.student.post('/api/lists', { lang: 'en', name: 'Café', text: 'café = coffee\nto wake up = se réveiller' });
+  const s = (await E.student.post('/api/sessions', { lang: 'en', scope: 'all', listIds: [], game: 'forge' })).json;
+  const w = s.words.find((x) => x.fr === 'café' || x.term === 'to wake up');
+  const ev = (given) => E.student.post(`/api/sessions/${s.id}/events`, { events: [{ type: 'answer', wordId: w.id, qtype: 'forge', given, ok: true }] });
+  const exp = w.term; // forge : français → langue étudiée
+  assert.equal((await ev(exp.normalize('NFD').replace(/[̀-ͯ]/g, ''))).json.results[0].ok, true, 'accents tolérés par défaut');
+  await E.parent.post('/api/auth/login', { username: 'papa', password: 'motdepasse1', portal: 'parent' });
+  await E.parent.req('PATCH', `/api/admin/students/${E.studentId}`, { accents: false });
+  const strict = await ev(exp.normalize('NFD').replace(/[̀-ͯ]/g, '') + '!');
+  assert.equal(strict.json.results[0].ok, false);
+  assert.ok(['presque', 'oubli'].includes(strict.json.results[0].kind));
+});
+
+test('rotation : verrouillage après 3 séances, retour après 2 autres jeux différents', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const o = (game) => ({ lang: 'nl', scope: 'all', listIds: [], game });
+  await play(E.student, o('cards')); await play(E.student, o('cards'));
+  const third = await play(E.student, o('cards'));
+  assert.equal(third.end.json.rotation.locked, true);
+  assert.equal((await E.student.post('/api/sessions', o('cards'))).status, 409);
+  assert.equal((await E.student.get('/api/games')).json.cards.locked, true);
+  await play(E.student, o('duel'));
+  assert.equal((await E.student.post('/api/sessions', o('cards'))).status, 409, 'un seul autre jeu ne suffit pas');
+  await play(E.student, o('duel'));
+  assert.equal((await E.student.post('/api/sessions', o('cards'))).status, 409, 'deux séances du même jeu ne comptent qu’une fois');
+  const r = await play(E.student, o('scramble'));
+  assert.deepEqual(r.end.json.rotation.unlocked, ['cards']);
+  assert.equal((await E.student.post('/api/sessions', o('cards'))).status, 200);
+});
+
+test('Gardien : bonus de 20 une fois par semaine, bonus sans effet, jamais 3 semaines de suite dans la même langue', async (t) => {
+  const E = await setup(); t.after(E.close); t.after(() => clock.reset());
+  await E.loginAll(); await E.addLists();
+  const first = await beatBoss(E.student, 'nl');
+  assert.equal(first.end.json.win, true);
+  assert.equal(first.end.json.bonus.boss, 20);
+  assert.equal(first.end.json.bonusBoss, false);
+  const bonus = await beatBoss(E.student, 'en');
+  assert.equal(bonus.end.json.bonusBoss, true);
+  assert.equal(bonus.end.json.bonus.boss, 0, 'Gardien bonus : pas de +20');
+  const B = (await E.student.get('/api/weekly-boss')).json;
+  assert.equal(B.wonLang, 'nl', 'le Gardien bonus ne change pas la langue de la semaine');
+  clock.advance(7 * 864e5);
+  assert.equal((await beatBoss(E.student, 'nl')).end.status, 200, 'deuxième semaine de suite en néerlandais : permis');
+  clock.advance(7 * 864e5);
+  assert.equal((await E.student.get('/api/weekly-boss')).json.ban, 'nl');
+  const refused = await E.student.post('/api/sessions', { lang: 'nl', scope: 'all', listIds: [], game: 'boss' });
+  assert.equal(refused.status, 409);
+  assert.equal((await beatBoss(E.student, 'en')).end.json.win, true);
+});
+
+test('Gardien perdu : 3 cœurs, séance de 2 gemmes de fin', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const s = (await E.student.post('/api/sessions', { lang: 'nl', scope: 'all', listIds: [], game: 'boss' })).json;
+  for (let i = 0; i < 3; i++) { await E.student.post(`/api/sessions/${s.id}/events`, { events: [{ type: 'answer', wordId: s.words[i].id, qtype: 'forge', given: 'faux' }] }); }
+  const e = (await E.student.post(`/api/sessions/${s.id}/end`, {})).json;
+  assert.equal(e.win, false); assert.equal(e.bonus.fin, 2); assert.equal(e.bonus.boss, 0);
+});
+
+test('compagnon : baisse horaire, nuit à mi-vitesse, à terre, résurrection', async (t) => {
+  const E = await setup(); t.after(E.close); t.after(() => clock.reset());
+  await E.loginAll();
+  const day = async () => (await E.student.get('/api/state')).json.pet;
+  const p0 = await day();
+  assert.equal(p0.care, 80); assert.equal(p0.ko, false);
+  clock.advance(6 * 36e5);
+  const p6 = await day();
+  assert.ok(p6.joy < p0.joy && p6.food < p0.food);
+  clock.advance(7 * 864e5);
+  const p7 = await day();
+  assert.equal(p7.ko, true); assert.equal(p7.lvl, 4);
+  // à terre : seule la résurrection fonctionne
+  await E.db.prepare('INSERT INTO gem_events (user_id, delta, reason, at) VALUES (?,?,?,?)').run(E.studentId, 500, 'test', Date.now());
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'pomme' })).status, 409);
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'couronne' })).status, 200, 'les achats durables restent possibles');
+  const r = await E.student.post('/api/shop/buy', { item: 'resur' });
+  assert.equal(r.status, 200, r.text);
+  const after = await day();
+  assert.equal(after.ko, false);
+  assert.equal(Math.round(after.care), 50);
+  assert.equal((await E.student.get('/api/wallet')).json.gems, 500 - 300 - 150);
+});
+
+test('compagnon : la nuit, les jauges baissent deux fois moins vite', () => {
+  const Pets = require('../lib/pets'), C = require('../lib/config');
+  const mid = new Date(2026, 5, 10, 12, 0, 0), night = new Date(2026, 5, 10, 22, 0, 0);
+  const sim = (from) => Pets.simulate({ food: 100, care: 100, joy: 100, anchor_hour: Math.floor(from.getTime() / 36e5) },
+    { seed: 1, createdHour: 0, wins: [], createdWeek: 0, nowHour: Math.floor(from.getTime() / 36e5) + 4 });
+  const d = sim(mid), n = sim(night);
+  assert.equal(Math.round((100 - d.joy) * 10) / 10, 4 * C.RATE.joy);
+  assert.equal(Math.round((100 - n.joy) * 10) / 10, 4 * C.RATE.joy * 0.5);
+});
+
+test('événements aléatoires : un tous les 1 à 3 jours, déterministes', () => {
+  const Pets = require('../lib/pets');
+  const a = Pets.eventSchedule(42, 1000, 1000 + 24 * 60), b = Pets.eventSchedule(42, 1000, 1000 + 24 * 60);
+  assert.deepEqual([...a], [...b]);
+  const hours = [1000, ...a.keys()];
+  for (let i = 1; i < hours.length; i++) { const gap = hours[i] - hours[i - 1]; assert.ok(gap >= 24 && gap <= 72, 'écart ' + gap); }
+  assert.ok(a.size >= 20 && a.size <= 60);
+});
+
+test('Gardien manqué : −40 de vie au lundi', () => {
+  const Pets = require('../lib/pets'), C = require('../lib/config');
+  const clockM = require('../lib/clock');
+  // un lundi à 0 h local, compagnon créé la semaine d'avant
+  const monday = new Date(2026, 5, 8, 0, 0, 0), h = Math.floor(monday.getTime() / 36e5);
+  const week = clockM.weekStart(clockM.dayIdx(monday));
+  const base = { food: 100, care: 100, joy: 100, anchor_hour: h - 1 };
+  const miss = Pets.simulate(base, { seed: 1, createdHour: 0, wins: [], createdWeek: week - 7, nowHour: h });
+  assert.equal(miss.hits.length, 1);
+  assert.equal(Math.round(miss.care), 100 - C.BOSS.penCare);
+  const won = Pets.simulate(base, { seed: 1, createdHour: 0, wins: [{ day: week - 3, lang: 'nl' }], createdWeek: week - 7, nowHour: h });
+  assert.equal(won.hits.length, 0);
+  const fresh = Pets.simulate(base, { seed: 1, createdHour: 0, wins: [], createdWeek: week, nowHour: h });
+  assert.equal(fresh.hits.length, 0, 'pas de pénalité pour une semaine antérieure à l’inscription');
+});
+
+test('série et bons de régularité', async (t) => {
+  const E = await setup(); t.after(E.close); t.after(() => clock.reset());
+  await E.loginAll(); await E.addLists();
+  const o = { lang: 'nl', scope: 'all', listIds: [], game: 'duel' };
+  for (let i = 0; i < 3; i++) { const games = ['duel', 'forge', 'scramble']; await play(E.student, { ...o, game: games[i] }); clock.advance(864e5); }
+  clock.advance(-864e5);
+  const s = (await E.student.get('/api/streak')).json;
+  assert.equal(s.streak, 3);
+  assert.equal(s.vouchers[0].can, true);
+  const before = (await E.student.get('/api/wallet')).json.gems;
+  assert.equal((await E.student.post('/api/vouchers/3/claim')).json.gems, 15);
+  assert.equal((await E.student.get('/api/wallet')).json.gems, before + 15);
+  assert.equal((await E.student.post('/api/vouchers/3/claim')).status, 409, 'une seule fois par série');
+  assert.equal((await E.student.post('/api/vouchers/7/claim')).status, 409, 'série trop courte');
+});
+
+test('boutique : gemmes insuffisantes, achats durables portés puis retirés', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'pomme' })).status, 402);
+  E.db.prepare('INSERT INTO gem_events (user_id, delta, reason, at) VALUES (?,?,?,?)').run(E.studentId, 1000, 'test', Date.now());
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'balle' })).status, 200);
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'resur' })).status, 409, 'pas à terre');
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'chapeau' })).status, 200);
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'chapeau' })).status, 409);
+  assert.equal((await E.student.get('/api/state')).json.inv.equip.acc, 'chapeau');
+  await E.student.post('/api/shop/equip', { item: 'chapeau' });
+  assert.equal((await E.student.get('/api/state')).json.inv.equip.acc, null);
+  assert.equal((await E.student.post('/api/pets/dragon/adopt')).status, 200);
+  assert.equal((await E.student.post('/api/pets/dragon/adopt')).status, 409);
+  assert.equal((await E.student.post('/api/pets/dragon/activate')).status, 200);
+  assert.equal((await E.student.get('/api/state')).json.pet.id, 'dragon');
+});
+
+test('parent : séances, détail, difficultés, export CSV, réglages', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'duel' }, { miss: true });
+  const base = `/api/admin/students/${E.studentId}`;
+  const ses = (await E.parent.get(base + '/sessions')).json.sessions;
+  assert.equal(ses.length, 1);
+  const det = (await E.parent.get(`${base}/sessions/${ses[0].id}`)).json;
+  assert.ok(det.answers.length >= 9 && det.answers.some((a) => !a.ok));
+  const csv = await E.parent.get(base + '/export.csv');
+  assert.equal(csv.status, 200);
+  assert.match(csv.text, /seance;debut;langue/);
+  const patched = (await E.parent.req('PATCH', base, { goalDays: 3, articles: false })).json.settings;
+  assert.equal(patched.goalDays, 3); assert.equal(patched.articles, false);
+  assert.equal((await E.student.get('/api/state')).json.settings.goalDays, 3);
+  const made = await E.parent.post(base + '/lists', { lang: 'nl', name: 'Donnée', text: 'a = b\nc = d' });
+  assert.equal(made.status, 200);
+  assert.equal((await E.student.get('/api/state')).json.lists.find((l) => l.name === 'Donnée').by, 'parent');
+});
+
+test('statistiques élève et parent', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'duel' });
+  const st = (await E.student.get('/api/stats')).json;
+  assert.equal(st.days7, 1); assert.equal(st.streak, 1); assert.equal(st.acc7, 1);
+  assert.equal(st.games30.duel, 1);
+  assert.ok(st.minutes7 > 0);
+  const ov = (await E.parent.get(`/api/admin/students/${E.studentId}/overview`)).json;
+  assert.equal(ov.goneDays, 0);
+  assert.equal(ov.stats.days7, 1);
+});
