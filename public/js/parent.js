@@ -46,7 +46,8 @@ function viewLogin() {
 }
 function who() {
   var sel = P.students.length > 1 ? '<select class="txt" id="studentSel" style="width:auto;margin-right:8px">' + P.students.map(function (s) { return '<option value="' + s.id + '"' + (s.id === P.sid ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select>' : '';
-  return '<div class="who">' + sel + '</div>';
+  var peek = P.sid ? '<button class="btn sm alt" data-act="viewas">Voir comme l’élève</button>' : '';
+  return '<div class="who">' + sel + peek + '</div>';
 }
 function noStudent() {
   return '<div class="ptitle"><h1>Suivi</h1></div><div class="pcard"><p class="muted">Aucun élève pour l’instant.</p><button class="btn sm wide" style="margin-top:10px" data-act="addstudent">' + ic('plus') + ' Ajouter un élève</button></div>' + footer();
@@ -138,6 +139,7 @@ function pSettings() {
   h += '<div class="pcard s6"><h2>Listes de l’élève</h2>';
   P.lists.forEach(function (l) { h += '<div class="row"><div>' + esc(l.name) + '<small>' + REALM[l.lang].s + ' · ' + l.words.length + ' mots' + (l.by === 'parent' ? ' · donnée' : '') + (l.headers ? ' · ' + l.headers.length + ' colonnes' : '') + '</small></div>' + '<div class="row-actions"><button class="btn sm alt" data-act="editlist" data-id="' + l.id + '">Modifier</button><button class="btn sm alt" data-act="dellist" data-id="' + l.id + '" data-own="' + (l.by === 'parent' ? '' : '1') + '">Retirer</button></div></div>'; });
   if (!P.lists.length) { h += '<p class="muted">Aucune liste.</p>'; }
+  if (P.students.length > 1 && P.lists.length) { h += '<button class="btn sm alt wide" style="margin-top:10px" data-act="copylists">Copier des listes vers un autre élève</button>'; }
   h += '<button class="btn sm wide" style="margin-top:10px" data-act="newlist">' + ic('plus') + ' Donner une liste</button></div>';
   h += '<div class="pcard s6"><h2>Régularité et récompenses</h2><div class="row"><div>Bon du jour<small>à la première séance du jour</small></div><b class="disp">+10 gemmes</b></div>';
   C.vouch.forEach(function (v) { h += '<div class="row"><div>' + v.d + ' jours de suite</div><b class="disp">+' + v.p + ' gemmes</b></div>'; });
@@ -175,6 +177,17 @@ function viewSheet() {
      + '<label class="field" style="margin-bottom:10px">Prénom de l’élève<input class="txt" name="name" autocomplete="off" required></label>'
      + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Créer le lien</button></div>'
      + '<button class="ad-link" type="button" data-act="directstudent" style="margin-top:12px">Je préfère créer le compte moi-même</button></form>';
+  }
+  if (s.t === 'copylists') {
+    var others = P.students.filter(function (x) { return x.id !== P.sid; });
+    var nm = (P.students.filter(function (x) { return x.id === P.sid; })[0] || {}).name || 'l’élève';
+    return '<div class="scrim" data-act="closesheet"></div><form class="sheet" id="copyForm"><h3>Copier des listes</h3>'
+     + '<p class="muted" style="margin:4px 0 12px">Les mots sont copiés sans la progression de ' + esc(nm) + '. Les copies apparaissent comme listes données.</p>'
+     + '<p class="muted" style="margin-bottom:6px"><b>Listes à copier</b></p>'
+     + P.lists.map(function (l) { return '<label class="row" style="cursor:pointer"><span><input type="checkbox" name="list" value="' + l.id + '"> ' + esc(l.name) + '<small>' + REALM[l.lang].s + ' · ' + l.words.length + ' mots</small></span></label>'; }).join('')
+     + '<p class="muted" style="margin:12px 0 6px"><b>Vers</b></p>'
+     + others.map(function (x) { return '<label class="row" style="cursor:pointer"><span><input type="checkbox" name="to" value="' + x.id + '"' + (others.length === 1 ? ' checked' : '') + '> ' + esc(x.name) + '</span></label>'; }).join('')
+     + '<div style="display:flex;gap:10px;margin-top:14px"><button class="btn alt" type="button" data-act="closesheet">Annuler</button><button class="btn good" style="flex:1" type="submit">Copier</button></div></form>';
   }
   if (s.t === 'editlist') {
     var el = P.lists.filter(function (x) { return String(x.id) === String(s.id); })[0]; if (!el) { return ''; }
@@ -262,6 +275,8 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'delinvite': api('DELETE', 'admin/invites/' + t.dataset.id).then(reload).catch(fail); break;
     case 'resetpw': P.sheet = { t: 'password' }; render(); break;
     case 'newlist': P.sheet = { t: 'list' }; render(); break;
+    case 'copylists': P.sheet = { t: 'copylists' }; render(); break;
+    case 'viewas': api('POST', base() + '/view-as', {}).then(function () { location.href = './'; }).catch(fail); break;
     case 'editlist': P.sheet = { t: 'editlist', id: t.dataset.id }; render(); break;
     case 'closesheet': P.sheet = null; render(); break;
     case 'dellist':
@@ -288,7 +303,12 @@ document.getElementById('app').addEventListener('change', function (e) {
 document.getElementById('app').addEventListener('submit', function (e) {
   e.preventDefault();
   var f = e.target, id = f.id;
-  if (id === 'editListForm') {
+  if (id === 'copyForm') {
+    var pick = function (n) { return Array.prototype.slice.call(f.querySelectorAll('input[name=' + n + ']:checked')).map(function (i) { return +i.value; }); };
+    var ls = pick('list'), to = pick('to');
+    if (!ls.length || !to.length) { toast('Coche au moins une liste et un élève.'); return; }
+    api('POST', base() + '/lists/copy', { listIds: ls, to: to }).then(function (r) { P.sheet = null; toast(r.copied + ' liste' + (r.copied > 1 ? 's' : '') + ' copiée' + (r.copied > 1 ? 's' : '') + '.'); }).catch(function (err) { toast(err.message); });
+  } else if (id === 'editListForm') {
     api('PUT', base() + '/lists/' + f.dataset.id, { name: f.name.value, text: f.text.value }).then(function () { P.sheet = null; toast('Liste enregistrée.'); return reload(); }).catch(function (err) { toast(err.message); });
   } else if (id === 'inviteForm') {
     api('POST', 'admin/invites', { name: f.name.value }).then(function (r) {

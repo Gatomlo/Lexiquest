@@ -37,6 +37,12 @@ module.exports = function adminRoutes(db) {
   r.get('/invites', wrap((req) => ({ invites: Invites.pending(db, req.parent.id) })));
   r.post('/invites', wrap((req) => { const i = Invites.create(db, req.parent.id, (req.body || {}).name); return { id: i.id, token: i.token, expiresAt: i.expiresAt }; }));
   r.delete('/invites/:iid', wrap((req) => { Invites.revoke(db, req.parent.id, req.params.iid); return { ok: true }; }));
+  /* aperçu : la session devient celle de l'élève ; POST /api/auth/unview ramène au compte parent */
+  r.post('/students/:id/view-as', wrap((req) => {
+    req.session.viewAs = req.parent.id;
+    req.session.userId = req.student.id;
+    return { ok: true };
+  }));
   r.get('/students/:id/overview', wrap((req) => Stats.adminOverview(db, req.student)));
   r.get('/students/:id/sessions', wrap((req) => ({ sessions: Stats.sessionList(db, req.student.id, Number(req.query.range) || 0) })));
   r.get('/students/:id/sessions/:sid', wrap((req) => {
@@ -53,6 +59,19 @@ module.exports = function adminRoutes(db) {
   }));
   r.get('/students/:id/lists', wrap((req) => ({ lists: require('../lib/lists').listsOf(db, req.student.id) })));
   r.post('/students/:id/lists', wrap((req) => ({ id: Lists.createList(db, req.student.id, { ...(req.body || {}), assignedBy: req.parent.id }) })));
+  /* copie de listes d'un élève vers un ou plusieurs autres élèves du même parent */
+  r.post('/students/:id/lists/copy', wrap((req) => {
+    const b = req.body || {};
+    const ids = [...new Set((Array.isArray(b.listIds) ? b.listIds : []).map(Number))];
+    const to = [...new Set((Array.isArray(b.to) ? b.to : []).map(Number))].filter((x) => x !== req.student.id);
+    if (!ids.length || !to.length) { throw new HttpError(400, 'Choisis des listes et un élève de destination.'); }
+    for (const t of to) {
+      if (!db.prepare("SELECT 1 FROM users WHERE id = ? AND role = 'student' AND parent_id = ? AND active = 1").get(t, req.parent.id)) { throw new HttpError(404, 'Élève introuvable.'); }
+    }
+    let n = 0;
+    for (const t of to) { n += Lists.copyLists(db, req.student.id, ids, t, req.parent.id).length; }
+    return { copied: n };
+  }));
   r.put('/students/:id/lists/:lid', wrap((req) => {
     const own = db.prepare('SELECT id FROM lists WHERE id = ? AND owner_id = ?').get(Number(req.params.lid), req.student.id);
     if (!own) { throw new HttpError(404, 'Liste introuvable.'); }

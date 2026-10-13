@@ -591,6 +591,22 @@ function viewHome(){
 }
 
 
+/* ---------- aperçu « comme l'élève » (compte parent) : bandeau hors de l'application, qui descend d'autant ---------- */
+function previewBar(on) {
+  var bar = document.getElementById('pvbar'), app = document.getElementById('app');
+  if (!on) { if (bar) { bar.remove(); } app.classList.remove('pv'); return; }
+  if (!bar) {
+    bar = document.createElement('div'); bar.id = 'pvbar'; bar.className = 'previewbar'; bar.setAttribute('role', 'status');
+    bar.innerHTML = '<span>Aperçu du compte de <b></b> : tes actions comptent dans sa progression.</span><button class="btn sm" type="button">Retour parent</button>';
+    bar.querySelector('button').addEventListener('click', function () {
+      api('POST', 'auth/unview', {}).then(function () { Offline.clearCache(); location.href = 'parent'; }).catch(fail);
+    });
+    document.body.insertBefore(bar, app);
+  }
+  bar.querySelector('b').textContent = S.st.me.name;
+  app.classList.add('pv');
+}
+
 /* ---------- rendu ---------- */
 function render() {
   var app = document.getElementById('app'), h;
@@ -603,6 +619,7 @@ function render() {
   if (S.toast) { h += '<div class="toast">' + esc(S.toast) + '</div>'; }
   app.className = 'app adult';
   app.innerHTML = h;
+  previewBar(!!(S.st && S.st.me.preview && !S.invite));
   S.enter = false;
   bindSwipe();
   var f = document.getElementById('fin'); if (f && !f.disabled) { f.focus(); }

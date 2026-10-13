@@ -573,3 +573,33 @@ test('listes à plusieurs colonnes : formes, en-têtes, correction par forme', a
   const t3 = await E.student.post('/api/lists', { lang: 'nl', name: 'Trois', text: 'gaan;ging;aller\nzijn;was;être' });
   assert.equal(t3.status, 200);
 });
+
+test('copie de listes entre élèves du même parent ; aperçu « comme l’élève » et retour', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  const { createUser } = require('../lib/users');
+  const sid2 = createUser(E.db, { username: 'max', display: 'Max', role: 'student', password: 'motdepasse3', parentId: E.parentId });
+  const other = createUser(E.db, { username: 'zoe', display: 'Zoé', role: 'student', password: 'motdepasse4', parentId: null });
+  const c = await E.student.post('/api/lists', { lang: 'nl', name: 'Verbes', text: '# Infinitif = Participe = Traduction\ngaan = gegaan = aller\nkomen = gekomen = venir' });
+  assert.equal(c.status, 200);
+  // copie : listes, formes, en-têtes ; refus vers un élève d'un autre parent
+  const ok = await E.parent.post(`/api/admin/students/${E.studentId}/lists/copy`, { listIds: [c.json.id], to: [sid2] });
+  assert.equal(ok.status, 200); assert.equal(ok.json.copied, 1);
+  const bad = await E.parent.post(`/api/admin/students/${E.studentId}/lists/copy`, { listIds: [c.json.id], to: [other] });
+  assert.equal(bad.status, 404);
+  const max = new E.Client(E.base);
+  assert.equal((await max.post('/api/auth/login', { username: 'max', password: 'motdepasse3', portal: 'student' })).status, 200);
+  const L = (await max.get('/api/state')).json.lists.find((l) => l.name === 'Verbes');
+  assert.deepEqual(L.headers, ['Infinitif', 'Participe', 'Traduction']);
+  assert.deepEqual(L.words[0].forms, ['gegaan']);
+  assert.equal(L.by, 'parent');
+  // aperçu : la session parent voit l'application de l'élève, puis revient
+  assert.equal((await E.parent.get('/api/state')).status, 403, 'parent : pas d’état élève');
+  assert.equal((await E.parent.post(`/api/admin/students/${sid2}/view-as`, {})).status, 200);
+  const st = await E.parent.get('/api/state');
+  assert.equal(st.status, 200); assert.equal(st.json.me.name, 'Max'); assert.equal(st.json.me.preview, true);
+  assert.equal((await E.parent.get('/api/admin/students')).status, 403, 'en aperçu : plus d’accès parent');
+  assert.equal((await E.parent.post('/api/auth/unview', {})).status, 200);
+  assert.equal((await E.parent.get('/api/admin/students')).status, 200);
+  assert.equal((await E.student.post('/api/auth/unview', {})).status, 400, 'pas d’aperçu en cours');
+});
