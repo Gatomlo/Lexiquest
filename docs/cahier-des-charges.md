@@ -14,7 +14,7 @@ La v1 était un artefact autonome : listes et progression dans le navigateur d'u
 - **Un Gardien par semaine** à vaincre pour sauver le compagnon (§4.4).
 - **Gemmes** : monnaie gagnée en réussissant les exercices, plus abondante dans les jeux difficiles.
 - **Une seule langue par séance** : néerlandais et anglais ne se mélangent jamais.
-- **Retour quotidien encouragé** : bons de régularité et compagnon qui dépérit si l'on ne revient pas.
+- **Retour quotidien encouragé** : bons de régularité et compagnon dont les jauges baissent heure par heure si l'on ne revient pas.
 - **Comptes et centralisation** : listes, séances et résultats stockés sur le serveur.
 - **Statistiques** pour l'élève et suivi détaillé pour le parent : quand, combien de temps, quels résultats, quelles difficultés.
 - **Smartphone first**, design moderne et fluide.
@@ -30,7 +30,7 @@ Hors périmètre : classes et enseignants, classement entre élèves, achats ré
 | Un Gardien à vaincre chaque semaine, sinon le compagnon souffre | Une échéance hebdomadaire qui ramène aux épreuves les plus exigeantes |
 | Les gemmes ne s'obtiennent qu'en réussissant, davantage dans les jeux difficiles | Récompenser l'effort réel |
 | Les gemmes ne servent qu'au compagnon (soins, nourriture, nouveaux compagnons) | Une seule économie, simple à équilibrer |
-| Le compagnon ne meurt jamais | Il décrépit visiblement ; un soin le rétablit : pression douce, jamais de perte définitive |
+| Le compagnon ne meurt jamais | Il décrépit visiblement ; à 0 de vie, il est « à terre » et une potion de résurrection le relève : pression réelle, jamais de perte définitive |
 | Un seul compagnon actif | Les autres se reposent et ne décrépissent pas |
 | Une séance = une seule langue | Éviter toute confusion entre néerlandais et anglais |
 
@@ -98,9 +98,9 @@ Un mot raté est re-présenté une fois dans la séance (sauf contre le Gardien)
 
 - Chaque semaine (du lundi au dimanche), l'élève doit **vaincre au moins un Gardien** pour sauver son compagnon.
 - **L'élève choisit la langue** du Gardien, avec une règle : jamais la même langue **3 semaines de suite**. Si les deux semaines précédentes ont été validées dans la même langue, l'autre langue est imposée pour la semaine courante.
-- Une fois la semaine validée, d'autres Gardiens restent jouables dans n'importe quelle langue (ils n'ont plus d'effet sur la règle).
-- **Si aucun Gardien n'est vaincu** au passage du lundi : le compagnon perd 40 de forme et 20 d'humeur (« Le Gardien a frappé »).
-- Un Gardien vaincu rapporte 20 gemmes de bonus, plus l'état « sauvé » sur l'accueil.
+- Une fois la semaine validée, d'autres Gardiens restent jouables dans n'importe quelle langue : c'est un **Gardien bonus**. Victoire ou défaite, il n'a **aucun effet** : ni sur le compagnon, ni sur la règle des langues, ni bonus de 20 gemmes ; seules les gemmes des bonnes réponses et de fin de séance comptent.
+- **Si aucun Gardien n'est vaincu** au passage du lundi : le compagnon perd 40 de vie et 20 de plaisir (« Le Gardien a frappé »).
+- Le premier Gardien vaincu de la semaine rapporte 20 gemmes de bonus, plus l'état « sauvé » sur l'accueil.
 - L'accueil affiche le Gardien de la semaine avec les jours restants ; il devient urgent le dernier jour.
 
 ## 5. Économie de gemmes
@@ -113,7 +113,7 @@ Un mot raté est re-présenté une fois dans la séance (sauf contre le Gardien)
 | Bonne réponse avec indice, ou au second essai | moitié de la valeur du jeu, arrondie au-dessus |
 | Séance terminée | +5 (+2 si le Gardien résiste) |
 | Séance sans faute (hors Gardien) | +10 |
-| Gardien vaincu | +20 |
+| Gardien de la semaine vaincu (pas un Gardien bonus) | +20 |
 | Bon du jour (première séance du jour) | +10 |
 | Bons de régularité | 3 jours +15 · 7 jours +40 · 14 jours +100 · 30 jours +250 |
 
@@ -123,26 +123,37 @@ Une séance rapporte environ 20 gemmes en Chasse aux cartes, 35 en Duel, 40 en L
 
 | Article | Prix (gemmes) | Effet |
 | --- | --- | --- |
-| Pomme dorée | 5 | +25 faim |
-| Gâteau au miel | 12 | +50 faim |
-| Grand festin | 25 | +100 faim, +10 humeur |
-| Potion de soin | 8 | +35 forme |
-| Bain moussant | 6 | +20 forme, +5 humeur |
-| Balle magique | 4 | +25 humeur |
+| Pomme dorée | 5 | +25 énergie |
+| Gâteau au miel | 12 | +50 énergie |
+| Grand festin | 25 | +100 énergie, +10 plaisir |
+| Potion de soin | 8 | +35 vie |
+| Bain moussant | 6 | +20 vie, +5 plaisir |
+| Balle magique | 4 | +25 plaisir |
+| Potion de résurrection | 30 | Seulement si le compagnon est à terre : vie, énergie et plaisir à 50 |
 
 **Compagnons** : Lexi le phénix (offert), Pyro le dragonnet (150), Étoile la licorne (220), Griff le griffon (300), Glouglou le bébé kraken (400).
 
-Équilibre visé : l'entretien quotidien coûte environ 15 gemmes ; le reste s'épargne pour de nouveaux compagnons.
+Équilibre visé : l'entretien quotidien coûte environ 10 gemmes (une balle et une demi-pomme) ; le reste s'épargne pour de nouveaux compagnons.
 
 ## 6. Compagnon (inspiration Tamagotchi)
 
-- Trois jauges de 0 à 100 : **faim**, **forme**, **humeur**.
-- Décroissance chaque jour, jouée ou non : −15 faim, −8 forme, −12 humeur ; −40 forme et −20 humeur pour chaque semaine sans Gardien vaincu. Seules les gemmes dépensées en soins les remontent.
-- Quatre états selon la moyenne : **radieux** (65 et plus), **content** (45 à 64), **fatigué** (25 à 44), **décrépit** (moins de 25).
-- Rendu : radieux = couleurs vives, animé ; fatigué = désaturé, paupières lourdes ; décrépit = gris, poussière, toiles d'araignée, yeux ternes.
+- Trois jauges de 0 à 100 : **vie**, **énergie** (nourriture), **plaisir** (amusement).
+- **Baisse heure par heure**, jouée ou non :
+
+| Jauge | Baisse | Remède |
+| --- | --- | --- |
+| Plaisir | −1 par heure (−24 par jour) | Balle magique, bain, festin |
+| Énergie | −0,6 par heure (≈ −14 par jour) | Pomme, gâteau, festin |
+| Vie | Pas de baisse propre ; −0,5 par heure **tant que l'énergie est sous 20** (faim) et −0,5 par heure **tant que le plaisir est sous 20** (ennui), soit jusqu'à −24 par jour ; −40 pour chaque semaine sans Gardien vaincu | Potion de soin, bain |
+
+- **Événement aléatoire** tous les 1 à 3 jours (intervalle tiré entre 24 et 72 h), qui touche une seule jauge, en bien ou en mal : baies sauvages (+15 énergie), luciole (+15 plaisir), source magique (+10 vie), orage (−15 énergie), journée de pluie (−15 plaisir), rhume (−10 vie). Le dernier événement s'affiche sous les jauges (« Il y a 5 h : Lexi a trouvé des baies sauvages, +15 énergie ») et dans le suivi parent.
+- **À terre** : quand la vie atteint 0, le compagnon tombe (gris, couché, « zzz »). Ses jauges sont figées (plus de baisse ni d'événement), les autres articles de la boutique sont refusés et on ne peut pas changer de compagnon actif. Seule la **potion de résurrection** (30 gemmes) le relève, à 50 dans les trois jauges. S'il manque des gemmes, une séance suffit à les gagner.
+- Ordre de grandeur : sans soin, le plaisir passe sous 20 en 2 à 3 jours, l'énergie en 3 à 4 jours ; une absence d'une semaine (avec un Gardien manqué) met le compagnon à terre.
+- Cinq états : **radieux** (moyenne 65 et plus), **content** (45 à 64), **fatigué** (25 à 44), **décrépit** (moins de 25), **à terre** (vie à 0, prioritaire).
+- Rendu : radieux = couleurs vives, animé ; fatigué = désaturé, paupières lourdes ; décrépit = gris, poussière, toiles d'araignée, yeux ternes ; à terre = entièrement gris, penché, immobile, « zzz ».
 - Le compagnon exprime son besoin le plus urgent dans une bulle.
 - Stades de croissance selon les jours de présence : bébé (0 à 6), jeune (7 à 20), adulte (21 et plus).
-- Il ne meurt jamais ; un soin suffit à le rétablir. Le parent voit son état.
+- Il ne meurt jamais définitivement ; la potion de résurrection le relève. Le parent voit son état et le dernier événement.
 
 ## 7. Régularité
 
@@ -161,9 +172,9 @@ Une séance rapporte environ 20 gemmes en Chasse aux cartes, 35 en Duel, 40 en L
 | E3 | Choix langue puis portée | Langue obligatoire ; listes et mots à revoir filtrés par langue ; durée estimée | 1 |
 | E4 | Cinq jeux | Une langue par séance ; ≈ 5 min ; gemmes par jeu affichées | 1 |
 | E5 | Rotation des jeux | Verrouillage après 3 séances, déblocage par 2 autres jeux, état visible | 1 |
-| E6 | Gardien hebdomadaire | Statut et jours restants ; pénalité au passage du lundi si non vaincu | 1 |
+| E6 | Gardien hebdomadaire | Statut et jours restants ; pénalité au passage du lundi si non vaincu ; Gardien bonus sans effet | 1 |
 | E7 | Récap de séance | Gemmes détaillées, durée active, mots ratés, jeux verrouillés ou retrouvés | 1 |
-| E8 | Boutique, soins, compagnons | Acheter, adopter, choisir le compagnon actif | 1 |
+| E8 | Boutique, soins, compagnons | Acheter, adopter, choisir le compagnon actif ; jauges horaires, événements aléatoires, résurrection | 1 |
 | E9 | Mes mots | Listes par langue, création par collage « mot = traduction », maîtrise par mot | 1 |
 | E10 | Mes stats | Jours joués, temps, réussite, jeux utilisés, maîtrise par langue, calendrier, mots coriaces | 1 |
 | E11 | Régularité | Bon du jour, bons de palier, série | 2 |
@@ -180,7 +191,7 @@ L'élève et le parent partagent les mêmes indicateurs ; le parent y ajoute le 
 | Jeux et langues | Séances par jeu sur 30 jours, maîtrise par langue, Gardiens vaincus | Oui | Oui |
 | Mots difficiles | Mots les plus ratés avec essais et taux d'échec ; filtre par langue | Oui | Oui, avec dernière erreur |
 | Séances | Liste filtrable, détail réponse par réponse (mot, réponse donnée, juste ou non, temps, type d'erreur), langue de chaque séance | Non | Oui |
-| Alertes et compagnon | Absence de 2 jours ou plus, compagnon fatigué ou décrépit, Gardien non vaincu, objectif de jours | Non | Oui |
+| Alertes et compagnon | Absence de 2 jours ou plus, compagnon fatigué, décrépit ou à terre, dernier événement, Gardien non vaincu, objectif de jours | Non | Oui |
 | Réglages | Jours de jeu par semaine, tolérance accents et articles, listes assignées, comptes, export CSV | Non | Oui |
 
 ## 10. Définitions des indicateurs
@@ -196,7 +207,7 @@ L'élève et le parent partagent les mêmes indicateurs ; le parent y ajoute le 
 | Jour joué | Jour avec au moins une séance terminée |
 | Semaine | Du lundi au dimanche |
 | Jeu verrouillé | Jeu dont le compteur a atteint 3 et qui attend 2 autres jeux différents |
-| État du compagnon | Moyenne des trois jauges, après décroissance des jours écoulés et pénalités de Gardien |
+| État du compagnon | Moyenne des trois jauges après simulation heure par heure (baisses, faim, ennui, événements, pénalités de Gardien) ; « à terre » si la vie est à 0 |
 
 ## 11. Design et expérience
 
@@ -247,7 +258,8 @@ flowchart LR
 | `word_stats` | élève, mot, essais, échecs, série, dernière réponse | Cache recalculable |
 | `daily_activity` | élève, jour, temps actif, séances, réponses | Cache recalculable |
 | `gem_events` | id, élève, delta, motif, séance, date | Registre des gemmes ; solde = somme |
-| `user_pets` | élève, espèce, faim, forme, humeur, jour de référence, actif, adopté le | Compagnons |
+| `user_pets` | élève, espèce, vie, énergie, plaisir, heure de référence, actif, adopté le | Compagnons |
+| `pet_events` | id, élève, compagnon, heure, type (événement aléatoire, Gardien, résurrection), jauge, delta | Journal du compagnon (écrit quand les jauges sont figées) |
 | `game_rotation` | élève, jeu, séances depuis déblocage, verrouillé, autres jeux joués | Rotation (recalculable depuis `sessions`) |
 | `weekly_boss` | élève, semaine, langue choisie, vaincu le, pénalité appliquée | Gardien hebdomadaire |
 | `vouchers` | élève, palier, série, encaissé le | Bons encaissés |
@@ -255,7 +267,8 @@ flowchart LR
 
 Règles non évidentes :
 
-- La décrépitude et la pénalité du Gardien se calculent à la lecture à partir du jour de référence des jauges ; pas de tâche planifiée.
+- La décrépitude se calcule à la lecture : le serveur rejoue heure par heure depuis l'heure de référence (baisses, faim, ennui, pénalité du lundi, événements), arrête la simulation à 0 de vie, puis fige le résultat et l'heure de référence à chaque achat ou séance. Pas de tâche planifiée.
+- Les événements aléatoires sont tirés d'un générateur pseudo-aléatoire initialisé par élève : la même heure donne toujours le même événement, quel que soit le moment de la lecture.
 - Les gemmes sont calculées **côté serveur** à partir des événements reçus ; le client affiche de façon optimiste.
 - Le serveur refuse une séance contenant des mots de deux langues et un jeu verrouillé.
 - Le catalogue des compagnons et de la boutique est en configuration, pas en base.
@@ -271,7 +284,7 @@ Règles non évidentes :
 | `POST /sessions` (langue, portée, jeu, sens), `POST /sessions/:id/events`, `POST /sessions/:id/end` | Séance par lots ; renvoie gemmes, verrouillages, bons | Élève |
 | `GET /weekly-boss` | Statut du Gardien de la semaine et langue interdite éventuelle | Élève |
 | `GET /wallet`, `GET /shop`, `POST /shop/buy` | Solde, catalogue, achat | Élève |
-| `GET /pets`, `POST /pets/:id/adopt`, `POST /pets/:id/activate` | Compagnons | Élève |
+| `GET /pets`, `POST /pets/:id/adopt`, `POST /pets/:id/activate` | Compagnons, jauges à l'heure, dernier événement ; activation refusée si l'actif est à terre | Élève |
 | `GET /streak`, `POST /vouchers/:palier/claim` | Régularité et bons | Élève |
 | `GET /stats`, `GET /review-queue?lang=` | Statistiques de l'élève, mots à revoir | Élève |
 | `GET /admin/students`, `.../overview`, `.../sessions`, `.../difficulties`, `.../calendar`, `.../export.csv` | Suivi | Parent |
@@ -311,7 +324,9 @@ Critères d'acceptation du lot 1 :
 - [ ] Impossible de lancer une séance sans choisir une langue ; aucun mot de l'autre langue n'apparaît, en QCM comme ailleurs.
 - [ ] Les listes se choisissent par langue : une liste, plusieurs listes ou toutes les listes de la langue.
 - [ ] Après 3 séances du même jeu, il est verrouillé ; il se rouvre après 2 séances de 2 autres jeux différents.
-- [ ] Le Gardien de la semaine s'affiche avec ses jours restants ; sans victoire, le compagnon perd 40 de forme au lundi.
+- [ ] Le Gardien de la semaine s'affiche avec ses jours restants ; sans victoire, le compagnon perd 40 de vie au lundi ; un Gardien bonus ne change rien.
+- [ ] Le plaisir baisse chaque heure, l'énergie aussi ; la vie baisse quand l'énergie ou le plaisir est sous 20 ; un événement aléatoire survient tous les 1 à 3 jours.
+- [ ] À 0 de vie, le compagnon est à terre et seule la potion de résurrection le relève.
 - [ ] La langue du Gardien est au choix, mais après deux semaines de suite dans la même langue, la troisième impose l'autre.
 - [ ] Les gemmes correspondent au barème et un jeu difficile rapporte plus qu'un jeu facile.
 - [ ] Une séance dure en moyenne 5 minutes (4 à 6) avec le nombre de mots prévu.
@@ -324,7 +339,8 @@ Critères d'acceptation du lot 1 :
 
 - [ ] **Thème visuel** : « Jeu » ou « Adulte » (maquette complète dans les deux styles), ou une version intermédiaire.
 - [ ] **Rotation** : 3 séances avant verrouillage et 2 autres jeux pour le rouvrir, trop ou trop peu ?
-- [ ] **Gardien** : langue au choix mais jamais 3 semaines de suite la même, pénalité de 40 de forme et 20 d'humeur, adaptées ?
+- [ ] **Gardien** : langue au choix mais jamais 3 semaines de suite la même, pénalité de 40 de vie et 20 de plaisir, adaptées ?
+- [ ] **Jauges** : −1 plaisir et −0,6 énergie par heure, −0,5 vie par heure et par jauge sous 20, potion de résurrection à 30 gemmes : trop dur ou trop doux ? Les baisses continuent-elles la nuit ? (recommandé : oui, plus simple et prévisible)
 - [ ] **Barème** : gemmes par jeu (1 à 4), bonus et prix des compagnons, à calibrer après une semaine d'usage.
 - [ ] **Compagnons** : tous décroissent ou seul l'actif ? (recommandé : seul l'actif)
 - [ ] **Hébergement** : version de Node chez Infomaniak (`node:sqlite` demande 22.5 ou plus), emplacement persistant de `data/`.
