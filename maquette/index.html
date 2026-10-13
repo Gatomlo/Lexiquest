@@ -228,6 +228,14 @@ svg.ic{width:24px;height:24px;flex:none}
 .item svg{width:42px;height:42px}
 .item.on{background:var(--grass-soft)}
 .swatch{width:46px;height:42px;border-radius:10px;border:2.5px solid var(--edge)}
+.d-prairie{background:radial-gradient(circle at 20% 82%,#FF8FB1 0 2px,transparent 3px),radial-gradient(circle at 70% 88%,#FFC62E 0 2px,transparent 3px),radial-gradient(circle at 45% 76%,#fff 0 2px,transparent 3px),linear-gradient(180deg,color-mix(in srgb,var(--surface) 62%,#8FD0FF) 0 55%,color-mix(in srgb,var(--surface) 50%,#5FBF6A) 55%)}
+.d-nuages{background:radial-gradient(60% 22% at 25% 85%,#fff 0 98%,transparent),radial-gradient(55% 20% at 78% 90%,#fff 0 98%,transparent),linear-gradient(180deg,color-mix(in srgb,var(--surface) 62%,#FF8FB1),color-mix(in srgb,var(--surface) 55%,#8FD0FF))}
+.d-desert{background:radial-gradient(circle at 80% 18%,#FFE08A 0 10px,transparent 11px),linear-gradient(180deg,color-mix(in srgb,var(--surface) 60%,#FFB36B) 0 58%,color-mix(in srgb,var(--surface) 48%,#E2A658) 58%)}
+.d-montagne{background:linear-gradient(135deg,transparent 0 55%,color-mix(in srgb,var(--surface) 35%,#8D9CC0) 55%) bottom left/50% 45% no-repeat,linear-gradient(225deg,transparent 0 55%,color-mix(in srgb,var(--surface) 35%,#8D9CC0) 55%) bottom right/50% 45% no-repeat,linear-gradient(180deg,color-mix(in srgb,var(--surface) 60%,#8FD0FF),var(--surface))}
+.d-automne{background:radial-gradient(circle at 15% 30%,#FF9418 0 3px,transparent 4px),radial-gradient(circle at 85% 55%,#FF6150 0 3px,transparent 4px),radial-gradient(circle at 60% 20%,#FFC62E 0 3px,transparent 4px),linear-gradient(180deg,color-mix(in srgb,var(--surface) 60%,#FFB36B),color-mix(in srgb,var(--surface) 50%,#B9772E))}
+.d-ocean{background:radial-gradient(circle at 20% 70%,rgba(255,255,255,.7) 0 3px,transparent 4px),radial-gradient(circle at 26% 55%,rgba(255,255,255,.6) 0 2px,transparent 3px),radial-gradient(circle at 80% 40%,rgba(255,255,255,.6) 0 2.5px,transparent 3.5px),linear-gradient(180deg,color-mix(in srgb,var(--surface) 55%,#2E8CFF),color-mix(in srgb,var(--surface) 45%,#1B4F8F))}
+.d-volcan{background:linear-gradient(125deg,transparent 0 58%,color-mix(in srgb,var(--surface) 30%,#5B3B3B) 58%) bottom left/50% 50% no-repeat,linear-gradient(235deg,transparent 0 58%,color-mix(in srgb,var(--surface) 30%,#5B3B3B) 58%) bottom right/50% 50% no-repeat,linear-gradient(180deg,color-mix(in srgb,var(--surface) 58%,#FF6150),color-mix(in srgb,var(--surface) 45%,#5B3B3B))}
+.d-aurore{background:linear-gradient(160deg,transparent 20%,rgba(76,195,138,.45) 35%,transparent 50%,rgba(194,139,255,.4) 62%,transparent 78%),linear-gradient(180deg,color-mix(in srgb,var(--surface) 45%,#23305E),color-mix(in srgb,var(--surface) 50%,#2E4F7A))}
 .d-foret{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 62%,#2F8F5B),color-mix(in srgb,var(--surface) 55%,#A3D977))}
 .d-plage{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 55%,#8FD0FF) 0 58%,color-mix(in srgb,var(--surface) 45%,#FFD98A) 58%)}
 .d-chateau{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 60%,#C28BFF),color-mix(in srgb,var(--surface) 55%,#E8D9C4))}
@@ -595,14 +603,30 @@ var ITEMS=[
    la nuit (20 h à 8 h) il dort : toutes les baisses sont multipliées par NIGHT.f */
 /* achats durables : gardés pour toujours, un accessoire et un décor portés à la fois, valables pour tous les compagnons */
 var DURABLE=[
+  {id:'fleur',n:'Fleur des champs',cat:'acc',price:50},
   {id:'noeud',n:'Nœud papillon',cat:'acc',price:60},
+  {id:'collier',n:'Collier de perles',cat:'acc',price:80},
   {id:'echarpe',n:'Écharpe',cat:'acc',price:90},
+  {id:'bonnet',n:'Bonnet à pompon',cat:'acc',price:100},
+  {id:'casquette',n:'Casquette',cat:'acc',price:110},
   {id:'lunettes',n:'Lunettes rondes',cat:'acc',price:120},
+  {id:'soleil',n:'Lunettes de soleil',cat:'acc',price:130},
+  {id:'bandeau',n:'Bandeau de pirate',cat:'acc',price:140},
+  {id:'medaille',n:'Médaille d’or',cat:'acc',price:160},
   {id:'chapeau',n:'Chapeau de magicien',cat:'acc',price:180},
+  {id:'aureole',n:'Auréole',cat:'acc',price:250},
   {id:'couronne',n:'Couronne dorée',cat:'acc',price:300},
+  {id:'prairie',n:'Prairie fleurie',cat:'decor',price:100},
+  {id:'nuages',n:'Mer de nuages',cat:'decor',price:120},
   {id:'foret',n:'Forêt enchantée',cat:'decor',price:150},
+  {id:'desert',n:'Désert doré',cat:'decor',price:160},
+  {id:'montagne',n:'Montagne enneigée',cat:'decor',price:180},
+  {id:'automne',n:'Verger d’automne',cat:'decor',price:200},
   {id:'plage',n:'Plage',cat:'decor',price:220},
+  {id:'ocean',n:'Fond marin',cat:'decor',price:260},
   {id:'chateau',n:'Château',cat:'decor',price:320},
+  {id:'volcan',n:'Volcan',cat:'decor',price:340},
+  {id:'aurore',n:'Aurore boréale',cat:'decor',price:400},
   {id:'etoiles',n:'Ciel étoilé',cat:'decor',price:450}
 ];
 var RATE={food:1.2,care:.75,joy:1.5},LOW=20,NIGHT={from:20,to:8,f:.5};
@@ -940,12 +964,21 @@ function critter(kind,lvl,size,stg,react,acc){
   return s+'</svg>';
 }
 function accSvg(id,R,cy,ey,sw){
-  var X=50+R*.6,Y=cy-R*.75,y;
+  var X=50+R*.6,Y=cy-R*.75,y,i,o='',E='var(--edge)';
+  function rot(a,inner){return '<g transform="rotate('+a+' '+X+' '+Y+')">'+inner+'</g>';}
   if(id==='noeud'){y=cy+R*.62;return '<path d="M50 '+y+' l-10 -6 v12z M50 '+y+' l10 -6 v12z" fill="#FF6150" '+sw+'/><circle cx="50" cy="'+y+'" r="2.8" fill="#FFC62E" '+sw+'/>';}
   if(id==='echarpe'){y=cy+R*.38;return '<path d="M'+(50+R*.35)+' '+(y+5)+' l3 16 l8 -2 l-4 -15z" fill="#FFC62E" '+sw+'/><path d="M'+(50-R*.9)+' '+y+' q'+(R*.9)+' 10 '+(R*1.8)+' 0 v8 q'+(-R*.9)+' 10 '+(-R*1.8)+' 0z" fill="#2E8CFF" '+sw+'/>';}
+  if(id==='collier'){for(i=0;i<=8;i++){var t=i/8;o+='<circle cx="'+(50-R*.72+t*R*1.44)+'" cy="'+(cy+R*.4+Math.sin(t*Math.PI)*7)+'" r="2.5" fill="#FFF8F0" stroke="'+E+'" stroke-width="1.4"/>';}return o;}
+  if(id==='medaille'){y=cy+R*.3;return '<path d="M'+(50-R*.45)+' '+y+' L50 '+(y+R*.42)+' L'+(50+R*.45)+' '+y+'" fill="none" stroke="#2E8CFF" stroke-width="4" stroke-linejoin="round"/><circle cx="50" cy="'+(y+R*.42+5)+'" r="6" fill="#FFC62E" '+sw+'/><circle cx="50" cy="'+(y+R*.42+5)+'" r="2.6" fill="none" stroke="#B9772E" stroke-width="1.4"/>';}
   if(id==='lunettes'){return '<circle cx="41" cy="'+ey+'" r="8.6" fill="rgba(255,255,255,.18)" '+sw+'/><circle cx="59" cy="'+ey+'" r="8.6" fill="rgba(255,255,255,.18)" '+sw+'/><path d="M49.6 '+ey+' h0.8" '+sw+'/>';}
-  if(id==='chapeau'){return '<g transform="rotate(26 '+X+' '+Y+')"><path d="M'+(X-8)+' '+Y+' L'+X+' '+(Y-24)+' L'+(X+8)+' '+Y+'z" fill="#8F72E8" '+sw+'/><ellipse cx="'+X+'" cy="'+Y+'" rx="13" ry="3.6" fill="#5B3FC0" '+sw+'/><circle cx="'+(X-1)+'" cy="'+(Y-11)+'" r="2" fill="#FFC62E"/></g>';}
-  if(id==='couronne'){return '<g transform="rotate(20 '+X+' '+Y+')"><path d="M'+(X-10)+' '+Y+' v-11 l5 6 l5 -9 l5 9 l5 -6 v11z" fill="#FFC62E" '+sw+'/><circle cx="'+X+'" cy="'+(Y-4)+'" r="1.8" fill="#FF6150"/></g>';}
+  if(id==='soleil'){return '<rect x="32" y="'+(ey-6)+'" width="17" height="11" rx="4.5" fill="#23305E" '+sw+'/><rect x="51" y="'+(ey-6)+'" width="17" height="11" rx="4.5" fill="#23305E" '+sw+'/><path d="M49 '+(ey-3)+' h2" '+sw+'/><path d="M35 '+(ey-3)+' l4 0" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>';}
+  if(id==='bandeau'){return '<path d="M'+(50-R*.92)+' '+(ey-11)+' L'+(50+R*.96)+' '+(ey+1)+'" stroke="'+E+'" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="59" cy="'+ey+'" rx="7.6" ry="7" fill="#23305E" '+sw+'/><path d="M56 '+(ey-2)+' l3 3 l3 -3" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>';}
+  if(id==='fleur'){for(i=0;i<5;i++){var an=i*72*Math.PI/180;o+='<circle cx="'+(X+Math.cos(an)*4.4)+'" cy="'+(Y-4+Math.sin(an)*4.4)+'" r="3.4" fill="#FF8FB1" stroke="'+E+'" stroke-width="1.6"/>';}return o+'<circle cx="'+X+'" cy="'+(Y-4)+'" r="2.6" fill="#FFC62E" stroke="'+E+'" stroke-width="1.6"/>';}
+  if(id==='bonnet'){return rot(22,'<path d="M'+(X-11)+' '+Y+' q0 -17 11 -17 q11 0 11 17z" fill="#FF6150" '+sw+'/><rect x="'+(X-12.5)+'" y="'+(Y-3.5)+'" width="25" height="7" rx="3.5" fill="#fff" '+sw+'/><circle cx="'+X+'" cy="'+(Y-18)+'" r="4.4" fill="#fff" '+sw+'/>');}
+  if(id==='casquette'){return rot(18,'<ellipse cx="'+(X+11)+'" cy="'+Y+'" rx="10" ry="2.8" fill="#1B5FB0" '+sw+'/><path d="M'+(X-10)+' '+Y+' q0 -14 10 -14 q10 0 10 14z" fill="#2E8CFF" '+sw+'/><circle cx="'+X+'" cy="'+(Y-14)+'" r="1.8" fill="#1B5FB0"/>');}
+  if(id==='chapeau'){return rot(26,'<path d="M'+(X-8)+' '+Y+' L'+X+' '+(Y-24)+' L'+(X+8)+' '+Y+'z" fill="#8F72E8" '+sw+'/><ellipse cx="'+X+'" cy="'+Y+'" rx="13" ry="3.6" fill="#5B3FC0" '+sw+'/><circle cx="'+(X-1)+'" cy="'+(Y-11)+'" r="2" fill="#FFC62E"/>');}
+  if(id==='couronne'){return rot(20,'<path d="M'+(X-10)+' '+Y+' v-11 l5 6 l5 -9 l5 9 l5 -6 v11z" fill="#FFC62E" '+sw+'/><circle cx="'+X+'" cy="'+(Y-4)+'" r="1.8" fill="#FF6150"/>');}
+  if(id==='aureole'){y=cy-R-13;return '<ellipse cx="50" cy="'+y+'" rx="14" ry="4" fill="none" stroke="'+E+'" stroke-width="6"/><ellipse cx="50" cy="'+y+'" rx="14" ry="4" fill="none" stroke="#FFE08A" stroke-width="3"/>';}
   return '';
 }
 function decorCls(){return S.equip&&S.equip.decor?' d-'+S.equip.decor:'';}

@@ -135,15 +135,33 @@ Une séance moyenne (75 % de réussite du premier coup, +5 de fin compris) rappo
 
 | Article | Prix (gemmes) | Effet |
 | --- | --- | --- |
-| Nœud papillon | 60 | Accessoire |
-| Écharpe | 90 | Accessoire |
-| Lunettes rondes | 120 | Accessoire |
-| Chapeau de magicien | 180 | Accessoire |
-| Couronne dorée | 300 | Accessoire |
-| Forêt enchantée | 150 | Décor (fond de la carte du compagnon) |
-| Plage | 220 | Décor |
-| Château | 320 | Décor |
-| Ciel étoilé | 450 | Décor |
+| **Accessoires** (13), dessinés sur le compagnon | | |
+| Fleur des champs | 50 | Sur la tête |
+| Nœud papillon | 60 | Au cou |
+| Collier de perles | 80 | Au cou |
+| Écharpe | 90 | Au cou |
+| Bonnet à pompon | 100 | Sur la tête |
+| Casquette | 110 | Sur la tête |
+| Lunettes rondes | 120 | Sur les yeux |
+| Lunettes de soleil | 130 | Sur les yeux |
+| Bandeau de pirate | 140 | Sur un œil |
+| Médaille d'or | 160 | Au cou |
+| Chapeau de magicien | 180 | Sur la tête |
+| Auréole | 250 | Au-dessus de la tête |
+| Couronne dorée | 300 | Sur la tête |
+| **Décors** (12), fond de la carte du compagnon | | |
+| Prairie fleurie | 100 | Ciel bleu, herbe et fleurs |
+| Mer de nuages | 120 | Aube rose, nuages blancs |
+| Forêt enchantée | 150 | Dégradé vert |
+| Désert doré | 160 | Soleil, dunes |
+| Montagne enneigée | 180 | Sommet sur ciel clair |
+| Verger d'automne | 200 | Feuilles orange et rouges |
+| Plage | 220 | Ciel et sable |
+| Fond marin | 260 | Bleu profond, bulles |
+| Château | 320 | Violet et pierre |
+| Volcan | 340 | Ciel rouge, cône sombre |
+| Aurore boréale | 400 | Voiles vert et violet sur ciel nocturne |
+| Ciel étoilé | 450 | Nuit et étoiles |
 
 Purement décoratifs : aucun effet sur les jauges. Lot 3 : nouveaux accessoires et décors pour garder un objectif d'épargne.
 
@@ -157,7 +175,7 @@ Purement décoratifs : aucun effet sur les jauges. Lot 3 : nouveaux accessoires 
 | Entretien : plaisir −27 (≈ 1,1 balle, 22) + énergie −22 (≈ 0,45 gâteau, 16) + usure de la vie par les événements (≈ 2) | ≈ 40 |
 | Bonus réguliers : Gardien de la semaine (+20 par semaine) et bons de série (405 sur le premier mois) | ≈ 3, et ≈ 13 le premier mois |
 
-Avec une seule séance, il ne reste presque rien à épargner. Chaque séance de plus rapporte environ 33 gemmes nettes : Pyro en 12 jours environ à deux séances par jour, une couronne en 9 jours. Tous les compagnons et articles (≈ 5 500 gemmes) représentent une année scolaire à deux séances par jour.
+Avec une seule séance, il ne reste presque rien à épargner. Chaque séance de plus rapporte environ 33 gemmes nettes : Pyro en 12 jours environ à deux séances par jour, une couronne en 9 jours. Tous les compagnons et articles (≈ 8 300 gemmes : 3 600 de compagnons, 1 770 d'accessoires, 2 900 de décors) représentent plus d'une année scolaire à deux séances par jour, un semestre à trois : il reste toujours un objectif d'épargne, avec des petits prix (50 à 120) atteignables en quelques jours.
 
 ## 6. Compagnon (inspiration Tamagotchi)
 
