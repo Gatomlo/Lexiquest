@@ -547,6 +547,7 @@ function bindSwipe(){
   card.addEventListener('pointerup',function(){
     if(!drag){return;}drag=false;card.style.transition='transform .25s';
     if(!moved){card.style.transform='';flip.classList.toggle('flipped');return;}
+    if(!flip.classList.contains('flipped')){card.style.transform='';hr.style.opacity=0;hl.style.opacity=0;return;}
     if(Math.abs(dx)>90){card.style.transform='translateX('+(dx>0?500:-500)+'px) rotate('+(dx>0?30:-30)+'deg)';var ok=dx>0;setTimeout(function(){flashAnswer(ok);},180);}
     else{card.style.transform='';hr.style.opacity=0;hl.style.opacity=0;}
   });
@@ -770,6 +771,8 @@ document.getElementById('app').addEventListener('submit', function (e) {
 });
 function flashAnswer(ok) {
   var s = S.sess; if (!s || s.cur.type !== 'cards' || s.fb) { return; }
+  var fl = document.getElementById('fflip');
+  if (fl && !fl.classList.contains('flipped')) { return; }
   resolve(ok, '', false);
   if (ok && s.lastP) { pop('+' + s.lastP); }
   s.fb = null; advance();
