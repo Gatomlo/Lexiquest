@@ -626,7 +626,7 @@ test('gestion des élèves : renommer, suppression confirmée par l’identifian
 test('réveil affamé : l’énergie est divisée par deux à 8 h, sans baisse heure par heure la nuit', () => {
   const Pets = require('../lib/pets');
   const eve = new Date(2026, 5, 10, 19, 0, 0), h0 = Math.floor(eve.getTime() / 36e5);
-  const run = (hours) => Pets.simulate({ food: 100, care: 100, joy: 100, anchor_hour: h0 }, { seed: 1, createdHour: 0, wins: [{ day: 0, lang: 'nl' }], createdWeek: 1e9, nowHour: h0 + hours });
+  const run = (hours) => Pets.simulate({ food: 100, care: 100, joy: 100, anchor_hour: h0 }, { seed: 1, createdHour: h0 + 24 * 50, wins: [{ day: 0, lang: 'nl' }], createdWeek: 1e9, nowHour: h0 + hours });
   assert.equal(Math.round(run(1).food), 99, '19 h → 20 h : −0,6 (le jour)');
   assert.equal(Math.round(run(12).food), 99, 'à 7 h : rien n’a baissé pendant le sommeil');
   assert.equal(Math.round(run(13).food), 50, 'à 8 h : moitié');
