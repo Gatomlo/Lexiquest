@@ -95,6 +95,8 @@ svg.ic{width:24px;height:24px;flex:none}
 .login-top p{color:#0B3B22;font-weight:800}
 .login-body{padding:22px 20px;display:flex;flex-direction:column;gap:14px}
 .field{display:flex;flex-direction:column;gap:6px;font-weight:800;font-size:13px}
+.check{display:flex;align-items:center;gap:10px;font-weight:800;font-size:14px}
+.check input{width:20px;height:20px;accent-color:var(--brand,currentColor)}
 .field input{height:52px;border-radius:16px;border:2.5px solid var(--edge);background:var(--surface);color:var(--ink);padding:0 14px;font:700 16px 'Nunito'}
 .login-note{font-size:12.5px;color:var(--ink-2);text-align:center}
 

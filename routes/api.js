@@ -100,7 +100,7 @@ module.exports = function apiRoutes(db) {
 
   /* ---------- connexion ---------- */
   r.post('/auth/login', (req, res, next) => {
-    const { username, password, portal } = req.body || {};
+    const { username, password, portal, remember } = req.body || {};
     const key = req.ip + '|' + String(username || '').toLowerCase();
     if (tooMany(key)) { return next(new HttpError(429, 'Trop d’essais. Réessaie dans quelques minutes.')); }
     let u;
@@ -110,6 +110,7 @@ module.exports = function apiRoutes(db) {
     req.session.regenerate((err) => {
       if (err) { return next(err); }
       req.session.userId = u.id;
+      req.session.remember = remember !== false;
       res.json({ me: { id: u.id, name: u.display, role: u.role } });
     });
   });

@@ -44,6 +44,7 @@ function viewLogin() {
    + '<form class="login-body" id="loginForm"><label class="field">Identifiant<input name="username" autocomplete="username" autocapitalize="none" required></label>'
    + '<label class="field">Mot de passe' + pwInput('name="password" autocomplete="current-password" required') + '</label>'
    + (P.loginErr ? '<div class="alert bad">' + ic('alert') + '<span>' + esc(P.loginErr) + '</span></div>' : '')
+   + '<label class="check"><input type="checkbox" name="remember" checked> Garder la connexion</label>'
    + '<button class="btn wide" type="submit">Se connecter</button></form></div>';
 }
 function who() {
@@ -359,8 +360,8 @@ document.getElementById('app').addEventListener('submit', function (e) {
       .then(function (r) { P.me = r.me; P.setup = false; P.loginErr = ''; P.tab = 'overview'; return load().then(loadNotif); }).then(render)
       .catch(function (err) { P.loginErr = err.message; render(); });
   } else if (id === 'loginForm') {
-    api('POST', 'auth/login', { username: f.username.value, password: f.password.value, portal: 'parent' })
-      .then(function (r) { P.me = r.me; P.loginErr = ''; P.tab = 'overview'; return load().then(loadNotif); }).then(render)
+    api('POST', 'auth/login', { username: f.username.value, password: f.password.value, remember: f.remember.checked })
+      .then(function (r) { if (r.me.role !== 'parent') { location.href = './'; return new Promise(function () { /* redirection en cours */ }); } P.me = r.me; P.loginErr = ''; P.tab = 'overview'; return load().then(loadNotif); }).then(render)
       .catch(function (err) { P.loginErr = err.message; render(); });
   } else if (id === 'studentForm') {
     api('POST', 'admin/students', { name: f.name.value, username: f.username.value, password: f.password.value })
@@ -374,7 +375,7 @@ document.getElementById('app').addEventListener('submit', function (e) {
 
 window.onInstallReady = function () { if (P.me) { render(); } };
 loadConfig().then(function (c) { STATE_N = c.stateN; GAMES = c.games; return api('GET', 'me'); })
-  .then(function (r) { if (r.me.role !== 'parent') { throw Object.assign(new Error('Compte élève'), { status: 401 }); } P.me = r.me; return load().then(loadNotif); })
+  .then(function (r) { if (r.me.role !== 'parent') { location.replace('./'); return new Promise(function () { /* redirection en cours */ }); } P.me = r.me; return load().then(loadNotif); })
   .catch(function () { P.me = null; return api('GET', 'setup').then(function (s) { P.setup = s.needed; }).catch(function () { /* hors-ligne */ }); })
   .then(function () { P.booted = true; render(); });
 })();

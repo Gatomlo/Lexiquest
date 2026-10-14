@@ -319,6 +319,11 @@ test('montage sous /lexiquest : cookie limité à ce chemin, tout fonctionne en 
   const st = await fetch(base + '/api/state', { headers: { Cookie: cookie.split(';')[0] } });
   assert.equal(st.status, 200);
   assert.equal((await fetch(base + '/')).status, 200);
+  assert.match(cookie, /Max-Age=/);
+  const brief = await fetch(base + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'lea', password: 'motdepasse2', remember: false }) });
+  const cookies = brief.headers.getSetCookie(); const last = cookies[cookies.length - 1];
+  assert.doesNotMatch(last, /Max-Age=/);
+  assert.equal((await fetch(base + '/api/state', { headers: { Cookie: last.split(';')[0] } })).status, 200);
 });
 
 test('un mot raté deux fois ne bloque pas la fin de séance (re-présenté une seule fois)', async (t) => {
