@@ -525,3 +525,11 @@ svg.ic{width:24px;height:24px;flex:none}
   .app.adult .view:not(.login){padding-right:32px}
   .app.adult .view:not(.login) > *{max-width:1080px;margin-left:auto;margin-right:auto}
 }
+/* petits téléphones : rien ne doit dépasser de l'écran (une carte plus large que l'écran paraît collée à droite) */
+.pgrid{grid-template-columns:minmax(0,1fr)}
+.pcard,.chunk,.ad-card{min-width:0;overflow-wrap:anywhere}
+.row{flex-wrap:wrap}
+.row>div{min-width:0}
+.stepper{flex-wrap:nowrap;margin-left:auto}
+.stepper b{min-width:0;padding:0 4px}
+@container app (min-width:760px){.pgrid{grid-template-columns:repeat(12,1fr)}}
