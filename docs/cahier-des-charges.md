@@ -123,9 +123,9 @@ Une séance moyenne (75 % de réussite du premier coup, +5 de fin compris) rappo
 
 | Article | Prix (gemmes) | Effet |
 | --- | --- | --- |
-| Pomme dorée | 20 | +25 énergie |
-| Gâteau au miel | 36 | +50 énergie |
-| Grand festin | 70 | +100 énergie, +10 plaisir |
+| Pomme dorée | 10 | +25 énergie |
+| Gâteau au miel | 18 | +50 énergie |
+| Grand festin | 35 | +100 énergie, +10 plaisir |
 | Potion de soin | 40 | +35 vie |
 | Bain moussant | 30 | +20 vie, +5 plaisir |
 | Balle magique | 20 | +25 plaisir |
@@ -178,7 +178,7 @@ Purement décoratifs : aucun effet sur les jauges.
 | | Gemmes par jour |
 | --- | --- |
 | Revenu : 1 séance (≈ 33) + bon du jour (10) | ≈ 43 (33 si la séance est faible) |
-| Entretien : plaisir −27 (≈ 1,1 balle, 22) + énergie −22 (≈ 0,45 gâteau, 16) + usure de la vie par les événements (≈ 2) | ≈ 40 |
+| Entretien : plaisir −27 (≈ 1,1 balle, 22) + énergie ≈ −57 (la moitié de la jauge chaque nuit, puis −0,6 par heure : ≈ 1,1 gâteau, 20) + usure de la vie par les événements (≈ 2) | ≈ 40 |
 | Bonus réguliers : Gardien de la semaine (+20 par semaine) et bons de série (405 sur le premier mois) | ≈ 3, et ≈ 13 le premier mois |
 
 Avec une seule séance, il ne reste presque rien à épargner. Chaque séance de plus rapporte environ 33 gemmes nettes : Pyro en 12 jours environ à deux séances par jour, une couronne en 9 jours. Tous les compagnons et articles (≈ 8 300 gemmes : 3 600 de compagnons, 1 770 d'accessoires, 2 900 de décors) représentent plus d'une année scolaire à deux séances par jour, un semestre à trois : il reste toujours un objectif d'épargne, avec des petits prix (50 à 120) atteignables en quelques jours.
@@ -186,12 +186,12 @@ Avec une seule séance, il ne reste presque rien à épargner. Chaque séance de
 ## 6. Compagnon (inspiration Tamagotchi)
 
 - Trois jauges de 0 à 100 : **vie**, **énergie** (nourriture), **plaisir** (amusement).
-- **Baisse heure par heure**, jouée ou non, **nuit comprise**. La nuit (de 20 h à 8 h), le compagnon dort : toutes les baisses sont **divisées par deux**, sauf l'énergie (faim) qui ne baisse pas pendant le sommeil ; en contrepartie, il se réveille affamé : **−8 d'énergie à 8 h**, comme un humain après sa nuit.
+- **Baisse heure par heure**, jouée ou non, **nuit comprise**. La nuit (de 20 h à 8 h), le compagnon dort : toutes les baisses sont **divisées par deux**, sauf l'énergie (faim) qui ne baisse pas heure par heure pendant le sommeil ; en contrepartie, il se réveille affamé : **il perd la moitié de son énergie à 8 h**, comme un humain après sa nuit (un compagnon rassasié à 100 se réveille à 50).
 
 | Jauge | Jour (8 h – 20 h) | Nuit (20 h – 8 h) | Sur 24 h | Remède |
 | --- | --- | --- | --- | --- |
 | Plaisir | −1,5 par heure | −0,75 par heure | −27 | Balle magique, bain, festin |
-| Énergie | −1,2 par heure | −0,6 par heure | ≈ −22 | Pomme, gâteau, festin |
+| Énergie | −0,6 par heure | 0 pendant le sommeil, puis **−50 % de sa valeur à 8 h** | ≈ −57 si l'on part de 100 | Pomme, gâteau, festin |
 | Vie | −0,75 par heure **tant que l'énergie est sous 20** (faim), et autant **tant que le plaisir est sous 20** (ennui) | moitié | jusqu'à −27 | Potion de soin, bain |
 
 La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans Gardien vaincu (au passage du lundi).
@@ -407,7 +407,7 @@ Critères d'acceptation du lot 1 :
 - [x] **Thème visuel** : style « Adulte » retenu.
 - [ ] **Rotation** : 3 séances avant verrouillage et 2 autres jeux pour le rouvrir, trop ou trop peu ?
 - [ ] **Gardien** : langue au choix mais jamais 3 semaines de suite la même, pénalité de 40 de vie et 20 de plaisir, adaptées ?
-- [ ] **Jauges et prix** : −1,5 plaisir et −1,2 énergie par heure, −0,75 vie par heure et par jauge sous 20, nuit (20 h – 8 h) à mi-vitesse, résurrection à 150 gemmes : une séance par jour suffit-elle *tout juste* en usage réel ?
+- [ ] **Jauges et prix** : −1,5 plaisir et −0,6 énergie par heure (jour), énergie divisée par deux au réveil, −0,75 vie par heure et par jauge sous 20, nuit (20 h – 8 h) à mi-vitesse, résurrection à 150 gemmes : une séance par jour suffit-elle *tout juste* en usage réel ?
 - [ ] **Barème** : gemmes par jeu (1 à 4), bonus et prix des compagnons, à calibrer après une semaine d'usage.
 - [ ] **Compagnons** : tous décroissent ou seul l'actif ? (recommandé : seul l'actif)
 - [ ] **Hébergement** : version de Node chez Infomaniak (`node:sqlite` demande 22.5 ou plus), emplacement persistant de `data/`.
