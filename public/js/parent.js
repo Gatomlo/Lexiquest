@@ -269,7 +269,21 @@ function render() {
   if (P.toast) { h += '<div class="toast">' + esc(P.toast) + '</div>'; }
   app.className = 'app adult';
   app.innerHTML = h; P.enter = false;
+  if (P.me && P.tab === 'settings') { accordion(app); }
 }
+/** Réglages : chaque carte devient un accordéon, fermé par défaut ; l'état ouvert survit aux redessins */
+function accordion(root) {
+  P.open = P.open || {};
+  Array.prototype.slice.call(root.querySelectorAll('.pcard')).forEach(function (card) {
+    var h2 = card.querySelector('h2'); if (!h2 || h2.parentNode !== card) { return; }
+    var d = document.createElement('details'), sm = document.createElement('summary'), key = h2.textContent;
+    d.className = card.className + ' acc'; d.setAttribute('style', card.getAttribute('style') || ''); d.dataset.k = key; d.open = !!P.open[key];
+    sm.textContent = key; card.removeChild(h2);
+    while (card.firstChild) { d.appendChild(card.firstChild); }
+    d.insertBefore(sm, d.firstChild); card.parentNode.replaceChild(d, card);
+  });
+}
+document.addEventListener('toggle', function (e) { var d = e.target; if (d && d.classList && d.classList.contains('acc')) { P.open = P.open || {}; P.open[d.dataset.k] = d.open; } }, true);
 /** message éphémère ; si une fenêtre est ouverte, on ne redessine pas (render() effacerait les champs en cours de saisie) */
 function toast(m) {
   var app = document.getElementById('app');

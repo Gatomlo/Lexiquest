@@ -317,6 +317,12 @@ svg.ic{width:24px;height:24px;flex:none}
   .pgrid>.s12{grid-column:span 12}.pgrid>.s8{grid-column:span 8}.pgrid>.s6{grid-column:span 6}.pgrid>.s4{grid-column:span 4}
 }
 .pcard{background:var(--surface);border:2.5px solid var(--edge);border-radius:20px;box-shadow:0 4px 0 var(--edge);padding:14px}
+.pcard.acc>summary{font:400 18px 'Lilita One';cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:28px}
+.pcard.acc>summary::-webkit-details-marker{display:none}
+.pcard.acc>summary::after{content:'';width:8px;height:8px;border:solid currentColor;border-width:0 2.5px 2.5px 0;transform:rotate(45deg);margin:-4px 4px 0 10px;transition:transform .15s}
+.pcard.acc[open]>summary{margin-bottom:10px}
+.pcard.acc[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+.app.adult .pcard.acc>summary{font:800 18px 'Nunito';letter-spacing:-.005em}
 .pcard h2{font:400 18px 'Lilita One';margin-bottom:10px}
 .status{display:flex;gap:12px;align-items:center}
 .sdot{width:14px;height:14px;border-radius:50%;background:var(--grass);border:2.5px solid var(--edge);flex:none}

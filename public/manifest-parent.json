@@ -1,7 +1,7 @@
 {
   "id": "parent",
   "name": "Lexiquest · Suivi",
-  "short_name": "Suivi",
+  "short_name": "Lexiquest",
   "description": "Suivi parent de Lexiquest.",
   "lang": "fr",
   "start_url": "parent",
