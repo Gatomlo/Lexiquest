@@ -629,7 +629,7 @@ var DURABLE=[
   {id:'aurore',n:'Aurore boréale',cat:'decor',price:400},
   {id:'etoiles',n:'Ciel étoilé',cat:'decor',price:450}
 ];
-var RATE={food:1.2,care:.75,joy:1.5},LOW=20,NIGHT={from:20,to:8,f:.5};
+var RATE={food:1.2,care:.75,joy:1.5},LOW=20,NIGHT={from:20,to:8,f:.5,foodF:0,wake:8};
 function isNight(hr){return hr>=NIGHT.from||hr<NIGHT.to;}
 var STATN={food:'Énergie',care:'Vie',joy:'Plaisir'},GAUGES=['care','food','joy'];
 /* événements aléatoires : un tous les 1 à 3 jours, sur une seule jauge */
@@ -801,7 +801,7 @@ function petNow(id){
     o.hours=Math.max(0,H-p.anchor);
     for(var h=p.anchor+1;h<=H&&o.care>0;h++){
       var d=new Date(h*36e5),f=isNight(new Date((h-1)*36e5).getHours())?NIGHT.f:1;
-      o.food=Math.max(0,o.food-RATE.food*f);o.joy=Math.max(0,o.joy-RATE.joy*f);
+      o.food=Math.max(0,o.food-RATE.food*(f<1?NIGHT.foodF:1));if(d.getHours()===NIGHT.to){o.food=Math.max(0,o.food-NIGHT.wake);}o.joy=Math.max(0,o.joy-RATE.joy*f);
       if(o.food<LOW){o.care-=RATE.care*f;o.hunger++;}
       if(o.joy<LOW){o.care-=RATE.care*f;o.bored++;}
       if(d.getDay()===1&&d.getHours()===0&&!bossWonIn(dayIdxOf(d)-7)){o.hits++;o.care-=BOSS_PEN.care;o.joy-=BOSS_PEN.joy;}
@@ -1210,7 +1210,7 @@ function viewPet(){
      +(own?(act?'<span class="state s0">Actif</span>':'<button class="btn sm alt" data-act="choose" data-id="'+id+'">Choisir</button>')
           :'<button class="btn sm" data-act="adopt" data-id="'+id+'"'+(S.points<P.price?' disabled':'')+'>'+ic('gem','var(--sky)')+P.price+'</button>')+'</div>';
   });
-  h+='<p class="muted" style="font-size:12.5px;margin-top:6px">Chaque heure, l’énergie et le plaisir baissent (deux fois moins vite la nuit, de 20 h à 8 h, pendant qu’il dort) ; la vie baisse quand il a faim ou s’ennuie trop. Seul le compagnon actif est concerné, les autres se reposent.</p>';
+  h+='<p class="muted" style="font-size:12.5px;margin-top:6px">Chaque heure, l’énergie et le plaisir baissent (deux fois moins vite la nuit, de 20 h à 8 h, pendant qu’il dort ; il se réveille affamé) ; la vie baisse quand il a faim ou s’ennuie trop. Seul le compagnon actif est concerné, les autres se reposent.</p>';
   return '<div class="view'+(S.enter?' enter':'')+'">'+h+'</div>';
 }
 

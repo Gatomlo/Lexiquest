@@ -2,7 +2,7 @@
 /* Service worker : application utilisable hors-ligne, notifications. __VERSION__ est remplacé par le serveur. */
 const CACHE = 'lexiquest-__VERSION__';
 const SHELL = ['./', 'parent', 'css/fonts.css', 'css/app.css', 'js/common.js', 'js/judge.js', 'js/art.js', 'js/offline.js', 'js/student.js', 'js/parent.js',
-  'manifest.json', 'manifest-parent.json', 'icons/icon-192.png', 'icons/icon-512.png',
+  'manifest.json', 'manifest-parent.json', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/badge-96.png',
   'fonts/lilita-one-latin-400-normal.woff2', 'fonts/nunito-latin-500-normal.woff2', 'fonts/nunito-latin-600-normal.woff2', 'fonts/nunito-latin-700-normal.woff2',
   'fonts/nunito-latin-800-normal.woff2', 'fonts/plus-jakarta-sans-latin-wght-normal.woff2'];
 
@@ -38,7 +38,7 @@ self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(d.title || 'Lexiquest', {
-    body: d.body || '', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: d.tag || 'lexiquest', data: { url: d.url || './' },
+    body: d.body || '', icon: 'icons/icon-192.png', badge: 'icons/badge-96.png', tag: d.tag || 'lexiquest', data: { url: d.url || './' },
   }));
 });
 self.addEventListener('notificationclick', (e) => {

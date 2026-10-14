@@ -378,7 +378,7 @@ function viewPet(){
      +(own?(act?'<span class="state s0">Actif</span>':'<button class="btn sm alt" data-act="choose" data-id="'+id+'">Choisir</button>')
           :'<button class="btn sm" data-act="adopt" data-id="'+id+'"'+(S.points<P.price?' disabled':'')+'>'+ic('gem','var(--sky)')+P.price+'</button>')+'</div>';
   });
-  h+='<p class="muted" style="font-size:12.5px;margin-top:6px">Chaque heure, l’énergie et le plaisir baissent (deux fois moins vite la nuit, de 20 h à 8 h, pendant qu’il dort) ; la vie baisse quand il a faim ou s’ennuie trop. Seul le compagnon actif est concerné, les autres se reposent.</p>';
+  h+='<p class="muted" style="font-size:12.5px;margin-top:6px">Chaque heure, l’énergie et le plaisir baissent (deux fois moins vite la nuit, de 20 h à 8 h, pendant qu’il dort ; il se réveille affamé) ; la vie baisse quand il a faim ou s’ennuie trop. Seul le compagnon actif est concerné, les autres se reposent.</p>';
   return '<div class="view'+(S.enter?' enter':'')+'">'+h+'</div>';
 }
 function viewWords(){

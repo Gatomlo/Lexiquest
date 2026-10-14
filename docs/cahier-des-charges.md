@@ -186,7 +186,7 @@ Avec une seule séance, il ne reste presque rien à épargner. Chaque séance de
 ## 6. Compagnon (inspiration Tamagotchi)
 
 - Trois jauges de 0 à 100 : **vie**, **énergie** (nourriture), **plaisir** (amusement).
-- **Baisse heure par heure**, jouée ou non, **nuit comprise**. La nuit (de 20 h à 8 h), le compagnon dort : toutes les baisses sont **divisées par deux**.
+- **Baisse heure par heure**, jouée ou non, **nuit comprise**. La nuit (de 20 h à 8 h), le compagnon dort : toutes les baisses sont **divisées par deux**, sauf l'énergie (faim) qui ne baisse pas pendant le sommeil ; en contrepartie, il se réveille affamé : **−8 d'énergie à 8 h**, comme un humain après sa nuit.
 
 | Jauge | Jour (8 h – 20 h) | Nuit (20 h – 8 h) | Sur 24 h | Remède |
 | --- | --- | --- | --- | --- |
