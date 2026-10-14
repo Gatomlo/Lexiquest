@@ -28,7 +28,11 @@ module.exports = function adminRoutes(db) {
 
   r.get('/students', wrap((req) => ({
     students: db.prepare("SELECT id, display, username FROM users WHERE role = 'student' AND parent_id = ? AND active = 1 ORDER BY id").all(req.parent.id)
-      .map((s) => ({ id: s.id, name: s.display, username: s.username })),
+      .map((s) => ({
+        id: s.id, name: s.display, username: s.username,
+        lastAt: db.prepare('SELECT MAX(ended_at) AS t FROM sessions WHERE user_id = ? AND done = 1').get(s.id).t || null,
+        lists: Number(db.prepare('SELECT COUNT(*) AS n FROM lists WHERE owner_id = ?').get(s.id).n),
+      })),
   })));
   r.post('/students', wrap((req) => {
     const b = req.body || {};
@@ -37,6 +41,12 @@ module.exports = function adminRoutes(db) {
   r.get('/invites', wrap((req) => ({ invites: Invites.pending(db, req.parent.id) })));
   r.post('/invites', wrap((req) => { const i = Invites.create(db, req.parent.id, (req.body || {}).name); return { id: i.id, token: i.token, expiresAt: i.expiresAt }; }));
   r.delete('/invites/:iid', wrap((req) => { Invites.revoke(db, req.parent.id, req.params.iid); return { ok: true }; }));
+  /* aperçu : la session devient celle de l'élève ; POST /api/auth/unview ramène au compte parent */
+  r.post('/students/:id/view-as', wrap((req) => {
+    req.session.viewAs = req.parent.id;
+    req.session.userId = req.student.id;
+    return { ok: true };
+  }));
   r.get('/students/:id/overview', wrap((req) => Stats.adminOverview(db, req.student)));
   r.get('/students/:id/sessions', wrap((req) => ({ sessions: Stats.sessionList(db, req.student.id, Number(req.query.range) || 0) })));
   r.get('/students/:id/sessions/:sid', wrap((req) => {
@@ -49,10 +59,28 @@ module.exports = function adminRoutes(db) {
   r.patch('/students/:id', wrap((req) => {
     const b = req.body || {};
     if (typeof b.password === 'string' && b.password) { U.setPassword(db, req.student.id, b.password); }
+    if (typeof b.name === 'string') {
+      const n = b.name.trim().slice(0, 40);
+      if (!n) { throw new HttpError(400, 'Le nom ne peut pas être vide.'); }
+      db.prepare('UPDATE users SET display = ? WHERE id = ?').run(n, req.student.id);
+    }
     return { settings: U.setSettings(db, req.student.id, b) };
   }));
   r.get('/students/:id/lists', wrap((req) => ({ lists: require('../lib/lists').listsOf(db, req.student.id) })));
   r.post('/students/:id/lists', wrap((req) => ({ id: Lists.createList(db, req.student.id, { ...(req.body || {}), assignedBy: req.parent.id }) })));
+  /* copie de listes d'un élève vers un ou plusieurs autres élèves du même parent */
+  r.post('/students/:id/lists/copy', wrap((req) => {
+    const b = req.body || {};
+    const ids = [...new Set((Array.isArray(b.listIds) ? b.listIds : []).map(Number))];
+    const to = [...new Set((Array.isArray(b.to) ? b.to : []).map(Number))].filter((x) => x !== req.student.id);
+    if (!ids.length || !to.length) { throw new HttpError(400, 'Choisis des listes et un élève de destination.'); }
+    for (const t of to) {
+      if (!db.prepare("SELECT 1 FROM users WHERE id = ? AND role = 'student' AND parent_id = ? AND active = 1").get(t, req.parent.id)) { throw new HttpError(404, 'Élève introuvable.'); }
+    }
+    let n = 0;
+    for (const t of to) { n += Lists.copyLists(db, req.student.id, ids, t, req.parent.id).length; }
+    return { copied: n };
+  }));
   r.put('/students/:id/lists/:lid', wrap((req) => {
     const own = db.prepare('SELECT id FROM lists WHERE id = ? AND owner_id = ?').get(Number(req.params.lid), req.student.id);
     if (!own) { throw new HttpError(404, 'Liste introuvable.'); }
@@ -68,7 +96,13 @@ module.exports = function adminRoutes(db) {
     res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="lexiquest-${req.student.username}.csv"` });
     res.send(Stats.exportCsv(db, req.student.id));
   });
-  r.delete('/students/:id', wrap((req) => { db.prepare('DELETE FROM users WHERE id = ?').run(req.student.id); return { ok: true }; }));
+  /* suppression définitive : le corps doit répéter l'identifiant de l'élève */
+  r.delete('/students/:id', wrap((req) => {
+    const c = String((req.body || {}).confirm || '').trim().toLowerCase();
+    if (c !== req.student.username.toLowerCase()) { throw new HttpError(400, 'Recopie l’identifiant de l’élève pour confirmer la suppression.'); }
+    db.prepare('DELETE FROM users WHERE id = ?').run(req.student.id);
+    return { ok: true };
+  }));
 
   return r;
 };

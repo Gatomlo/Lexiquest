@@ -170,6 +170,36 @@ function readCsvInto(input, say) {
   r.onerror = function () { say('Lecture du fichier impossible.'); };
   r.readAsText(f, 'utf-8');
 }
+/** texte d'édition d'une liste : « mot = traduction », ou une ligne d'en-têtes puis « mot = forme = forme = traduction » */
+function listText(l) {
+  var rows = l.words.map(function (w) { return [w.term].concat(w.forms || [], [w.fr]).join(' = '); });
+  return (l.headers ? ['# ' + l.headers.join(' = ')] : []).concat(rows).join('\n');
+}
+/** « went · gone » : les formes d'un mot à plusieurs formes */
+function formsText(w) { return w.forms ? w.forms.join(' · ') : ''; }
+/** texte d'un fichier : UTF-8, sinon Windows-1252 (CSV exporté d'Excel) */
+function readFileText(f) {
+  return f.arrayBuffer().then(function (buf) {
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(buf).replace(/^﻿/, ''); }
+    catch (e) { return new TextDecoder('windows-1252').decode(buf); }
+  });
+}
+/** une liste par fichier, nommée d'après le fichier sans extension ; post(corps) crée la liste. Renvoie { ok, errors } */
+function importCsvFiles(files, lang, post) {
+  var out = { ok: 0, errors: [] }, seq = Promise.resolve();
+  Array.prototype.slice.call(files).forEach(function (f) {
+    seq = seq.then(function () {
+      if (f.size > 400000) { out.errors.push(f.name + ' : fichier trop gros'); return; }
+      return readFileText(f).then(function (text) {
+        return post({ lang: lang, name: f.name.replace(/\.[^.]*$/, '').trim() || 'Liste', text: text });
+      }).then(function () { out.ok++; }).catch(function (e) { out.errors.push(f.name + ' : ' + e.message); });
+    });
+  });
+  return seq.then(function () { return out; });
+}
+function importSummary(r) {
+  return r.ok + ' liste' + (r.ok > 1 ? 's' : '') + ' importée' + (r.ok > 1 ? 's' : '') + (r.errors.length ? ' · ' + r.errors.length + ' refusée' + (r.errors.length > 1 ? 's' : '') + ' (' + r.errors.join(' ; ') + ')' : '') + '.';
+}
 function notifCard(who) {
   var i = Notif.info, h = '<div class="pcard" style="margin-top:14px"><h2>Application et notifications</h2>';
   if (!isStandalone() && installPrompt) { h += '<p class="muted" style="font-size:12.5px;margin-bottom:8px">Installe Lexiquest sur l’écran d’accueil : elle s’ouvre comme une application et marche sans réseau.</p><button class="btn sm wide" data-act="notif-install" style="margin-bottom:12px">Installer l’application</button>'; }

@@ -24,13 +24,13 @@ const wrap = (fn) => (req, res, next) => {
   try { const r = fn(req, res, next); if (r && typeof r.then === 'function') { r.then(send, next); } else { send(r); } } catch (e) { next(e); }
 };
 
-function buildState(db, user) {
+function buildState(db, user, preview) {
   const days = P.playedDays(db, user.id), st = P.streakOf(days), t = clock.dayIdx();
   const inv = Pets.inventory(db, user.id);
   const played7 = []; for (let i = 6; i >= 0; i--) { played7.push(days.has(t - i)); }
   const weak = {}; for (const l of C.LANGS) { weak[l] = S.weakWords(db, user.id, l).length; }
   return {
-    me: { id: user.id, name: user.display, role: user.role },
+    me: { id: user.id, name: user.display, role: user.role, preview: !!preview },
     now: clock.nowMs(), gems: U.balance(db, user.id), streak: st.count, played7,
     dailyDone: P.dailyOn(db, user.id, t),
     vouchers: P.vouchersOf(db, user.id, days),
@@ -117,11 +117,20 @@ module.exports = function apiRoutes(db) {
     if (!req.session) { return res.json({ ok: true }); }
     req.session.destroy((err) => { if (err) { return next(err); } res.clearCookie('lexiquest.sid', { path: req.baseUrl || '/' }); res.json({ ok: true }); });
   });
-  r.get('/me', auth(), wrap((req) => ({ me: { id: req.user.id, name: req.user.display, role: req.user.role } })));
+  r.get('/me', auth(), wrap((req) => ({ me: { id: req.user.id, name: req.user.display, role: req.user.role, preview: !!req.session.viewAs } })));
+  /* fin de l'aperçu « comme l'élève » : retour au compte parent */
+  r.post('/auth/unview', (req, res, next) => {
+    const pid = req.session && req.session.viewAs;
+    const parent = pid && U.getUser(db, pid);
+    if (!parent || parent.role !== 'parent') { return next(new HttpError(400, 'Aucun aperçu en cours.')); }
+    req.session.viewAs = null;
+    req.session.userId = parent.id;
+    res.json({ me: { id: parent.id, name: parent.display, role: 'parent' } });
+  });
 
   /* ---------- élève ---------- */
   const stu = auth('student');
-  r.get('/state', stu, wrap((req) => buildState(db, req.user)));
+  r.get('/state', stu, wrap((req) => buildState(db, req.user, req.session && req.session.viewAs)));
   r.get('/games', stu, wrap((req) => P.rotationOf(db, req.user.id)));
   r.get('/weekly-boss', stu, wrap((req) => P.bossStatus(db, req.user.id)));
   r.get('/wallet', stu, wrap((req) => ({ gems: U.balance(db, req.user.id) })));

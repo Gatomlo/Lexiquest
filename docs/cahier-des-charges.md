@@ -304,8 +304,8 @@ flowchart LR
 | Table | Champs clés | Rôle |
 | --- | --- | --- |
 | `users` | id, identifiant, nom affiché, rôle, hash, actif | Comptes |
-| `lists` | id, propriétaire, **langue**, nom, assignée par, version | Listes (une langue chacune) |
-| `words` | id, liste, terme, traduction, position | Paires de mots |
+| `lists` | id, propriétaire, **langue**, nom, assignée par, version, **en-têtes** (JSON, listes à 3-5 colonnes) | Listes (une langue chacune) |
+| `words` | id, liste, terme, traduction, position, **formes** (JSON : colonnes intermédiaires) | Paires de mots ; pour les verbes irréguliers : terme = infinitif, formes = prétérit, participe…, traduction = dernière colonne |
 | `sessions` | id, élève, **langue**, portée, jeu, sens, début, fin, temps actif, mots, bonnes réponses, victoire, identifiant client | Une ligne par séance (l'identifiant client rend l'import hors-ligne idempotent) |
 | `answers` | id, séance, mot, essai, réponse donnée, juste, type d'erreur, temps (ms), horodatage | Événements en ajout seul |
 | `word_stats` | élève, mot, essais, échecs, série, dernière réponse | Cache recalculable |
@@ -415,3 +415,10 @@ Critères d'acceptation du lot 1 :
 - [ ] **Durée** : le parent peut-il ajuster le nombre de mots par séance ?
 - [ ] **Correction en écriture** : articles `de` et `het` obligatoires, accents tolérés ?
 - [ ] **Import des listes** : collage de texte suffisant, ou CSV et photo plus tard ?
+
+## Annexe — Listes à plusieurs colonnes (verbes irréguliers)
+
+- **Format** : « infinitif = prétérit = participe passé = traduction » (3 à 5 colonnes ; séparateur « = », « ; » ou tabulation ; CSV accepté). Première colonne = mot, dernière = traduction, les autres = formes à retenir. Une ligne « # Infinitif = Prétérit = … » nomme les colonnes (sinon noms par défaut). Une liste est « à colonnes » si au moins 60 % de ses lignes ont le même nombre de colonnes (≥ 3) ; les autres lignes sont ignorées.
+- **Jeux** (mêmes cinq jeux, questions adaptées, même barème) : Chasse aux cartes = infinitif + traduction au recto, formes au verso ; Duel = une forme demandée au hasard, distracteurs pris dans la même colonne des autres verbes ; Lettres folles = une forme à reconstituer ; Forge et Gardien (écriture) = toutes les formes saisies dans des champs séparés, la ligne entière doit être juste.
+- **Suivi** : la forme demandée et l'attendu sont enregistrés avec chaque réponse (détail de séance du parent).
+- **Hors maquette** : la maquette interactive n'a pas encore ces listes.

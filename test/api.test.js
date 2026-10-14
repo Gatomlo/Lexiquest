@@ -544,3 +544,81 @@ test('modifier une liste : mots conservés gardent leur historique, ajouts et re
   await o.post('/api/auth/login', { username: 'max', password: 'motdepasse5', portal: 'student' });
   assert.equal((await o.req('PUT', `/api/lists/${list.id}`, { name: 'pirate', text: 'a = b\nc = d' })).status, 404);
 });
+
+test('listes à plusieurs colonnes : formes, en-têtes, correction par forme', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  const txt = '# Infinitif = Prétérit = Participe passé = Traduction\ngo = went = gone = aller\nbe = was = been = être\nsee = saw = seen = voir';
+  const c = await E.student.post('/api/lists', { lang: 'en', name: 'Irréguliers', text: txt });
+  assert.equal(c.status, 200);
+  const lists = (await E.student.get('/api/state')).json.lists || (await E.student.get('/api/lists')).json.lists;
+  const L = lists.find((l) => l.name === 'Irréguliers');
+  assert.deepEqual(L.headers, ['Infinitif', 'Prétérit', 'Participe passé', 'Traduction']);
+  assert.deepEqual(L.words.find((w) => w.term === 'go').forms, ['went', 'gone']);
+  const s = (await E.student.post('/api/sessions', { lang: 'en', scope: 'all', listIds: [], game: 'forge' })).json;
+  const w = s.words.find((x) => x.term === 'go');
+  const ev = (e) => E.student.post(`/api/sessions/${s.id}/events`, { events: [{ type: 'answer', wordId: w.id, qtype: 'forge', ...e }] });
+  assert.equal((await ev({ given: 'went | gone', form: -1 })).json.results[0].ok, true, 'ligne entière');
+  assert.equal((await ev({ given: 'went | goed', form: -1 })).json.results[0].ok, false);
+  assert.equal((await ev({ given: 'went' })).status, 400, 'forme demandée obligatoire');
+  assert.equal((await ev({ given: 'gone', form: 5 })).status, 400, 'forme hors liste');
+  const d = await E.student.post('/api/sessions', { lang: 'en', scope: 'all', listIds: [], game: 'duel' });
+  const dw = d.json.words.find((x) => x.term === 'be');
+  const r = await E.student.post(`/api/sessions/${d.json.id}/events`, { events: [{ type: 'answer', wordId: dw.id, qtype: 'duel', given: 'been', form: 1 }] });
+  assert.equal(r.json.results[0].ok, true, 'QCM : participe passé');
+  const bad = await E.student.post(`/api/sessions/${d.json.id}/events`, { events: [{ type: 'answer', wordId: dw.id, qtype: 'duel', given: 'x', form: -1 }] });
+  assert.equal(bad.status, 400, 'toute la ligne seulement à l’écriture');
+  // une liste à 2 colonnes reste inchangée, et un tableau de 3 colonnes donne 3 colonnes
+  await E.student.post('/api/lists', { lang: 'nl', name: 'Simple', text: 'a = b\nc = d' });
+  const t3 = await E.student.post('/api/lists', { lang: 'nl', name: 'Trois', text: 'gaan;ging;aller\nzijn;was;être' });
+  assert.equal(t3.status, 200);
+});
+
+test('copie de listes entre élèves du même parent ; aperçu « comme l’élève » et retour', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  const { createUser } = require('../lib/users');
+  const sid2 = createUser(E.db, { username: 'max', display: 'Max', role: 'student', password: 'motdepasse3', parentId: E.parentId });
+  const other = createUser(E.db, { username: 'zoe', display: 'Zoé', role: 'student', password: 'motdepasse4', parentId: null });
+  const c = await E.student.post('/api/lists', { lang: 'nl', name: 'Verbes', text: '# Infinitif = Participe = Traduction\ngaan = gegaan = aller\nkomen = gekomen = venir' });
+  assert.equal(c.status, 200);
+  // copie : listes, formes, en-têtes ; refus vers un élève d'un autre parent
+  const ok = await E.parent.post(`/api/admin/students/${E.studentId}/lists/copy`, { listIds: [c.json.id], to: [sid2] });
+  assert.equal(ok.status, 200); assert.equal(ok.json.copied, 1);
+  const bad = await E.parent.post(`/api/admin/students/${E.studentId}/lists/copy`, { listIds: [c.json.id], to: [other] });
+  assert.equal(bad.status, 404);
+  const max = new E.Client(E.base);
+  assert.equal((await max.post('/api/auth/login', { username: 'max', password: 'motdepasse3', portal: 'student' })).status, 200);
+  const L = (await max.get('/api/state')).json.lists.find((l) => l.name === 'Verbes');
+  assert.deepEqual(L.headers, ['Infinitif', 'Participe', 'Traduction']);
+  assert.deepEqual(L.words[0].forms, ['gegaan']);
+  assert.equal(L.by, 'parent');
+  // aperçu : la session parent voit l'application de l'élève, puis revient
+  assert.equal((await E.parent.get('/api/state')).status, 403, 'parent : pas d’état élève');
+  assert.equal((await E.parent.post(`/api/admin/students/${sid2}/view-as`, {})).status, 200);
+  const st = await E.parent.get('/api/state');
+  assert.equal(st.status, 200); assert.equal(st.json.me.name, 'Max'); assert.equal(st.json.me.preview, true);
+  assert.equal((await E.parent.get('/api/admin/students')).status, 403, 'en aperçu : plus d’accès parent');
+  assert.equal((await E.parent.post('/api/auth/unview', {})).status, 200);
+  assert.equal((await E.parent.get('/api/admin/students')).status, 200);
+  assert.equal((await E.student.post('/api/auth/unview', {})).status, 400, 'pas d’aperçu en cours');
+});
+
+test('gestion des élèves : renommer, suppression confirmée par l’identifiant, données liées effacées', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  const list = await E.parent.get('/api/admin/students');
+  assert.equal(list.json.students[0].lists, 2);
+  assert.equal(list.json.students[0].lastAt, null);
+  const base = `/api/admin/students/${E.studentId}`;
+  assert.equal((await E.parent.req('PATCH', base, { name: '  ' })).status, 400, 'nom vide refusé');
+  assert.equal((await E.parent.req('PATCH', base, { name: 'Léa-Rose' })).status, 200);
+  assert.equal((await E.parent.get('/api/admin/students')).json.students[0].name, 'Léa-Rose');
+  assert.equal((await E.parent.req('DELETE', base, {})).status, 400, 'confirmation obligatoire');
+  assert.equal((await E.parent.req('DELETE', base, { confirm: 'autre' })).status, 400);
+  assert.equal((await E.parent.req('DELETE', base, { confirm: 'LEA' })).status, 200, 'identifiant, sans tenir compte de la casse');
+  assert.equal((await E.parent.get('/api/admin/students')).json.students.length, 0);
+  assert.equal(E.db.prepare('SELECT COUNT(*) AS n FROM lists WHERE owner_id = ?').get(E.studentId).n, 0);
+  assert.equal(E.db.prepare('SELECT COUNT(*) AS n FROM words').get().n, 0, 'mots effacés avec les listes');
+  assert.equal((await E.student.get('/api/state')).status, 401, 'la session de l’élève supprimé n’ouvre plus rien');
+});
