@@ -758,7 +758,7 @@ function init(){
      careDays:9,lastCareDay:t,dailyDay:t,claimed:{3:false,7:false,14:false,30:false},
      rot:{cards:{n:2,locked:false,seen:[]},duel:{n:3,locked:true,seen:['cards']},scramble:{n:1,locked:false,seen:[]},forge:{n:0,locked:false,seen:[]}},
      goalMin:5,goalDays:5,lang:'all',range:30,dlang:'all',
-     plang:'nl',scope:'all',one:'nl1',pick:['nl1'],game:'forge',dir:'toFr',bestCombo:7,
+     plang:'nl',scope:'all',one:'nl1',pick:['nl1'],game:'forge',dir:'auto',bestCombo:7,
      set:{accents:true,articles:true},sessions:sess,enter:true,name:'Léa',sayPet:null,munch:0};
 }
 
@@ -1141,7 +1141,9 @@ function viewPlay(){
   });
   h+='</div>';
   var fixed=S.game==='scramble'||S.game==='forge'||S.game==='boss';
-  h+='<div class="step"><i>4</i>Dans quel sens ?</div><div class="seg" style="display:flex"><button style="flex:1" data-act="dir" data-v="toFr" aria-pressed="'+(S.dir==='toFr'&&!fixed)+'"'+(fixed?' disabled':'')+'>'+R2.tag+' → français</button><button style="flex:1" data-act="dir" data-v="toTarget" aria-pressed="'+(S.dir==='toTarget'||fixed)+'">Français → '+R2.tag+'</button></div>';
+  var adv=dirAdvice(L),pd=fixed?'toTarget':S.dir==='auto'?adv.dir:S.dir;
+  h+='<div class="step"><i>4</i>Dans quel sens ?</div><div class="seg" style="display:flex"><button style="flex:1" data-act="dir" data-v="auto" aria-pressed="'+(S.dir==='auto'&&!fixed)+'"'+(fixed?' disabled':'')+'>Auto</button><button style="flex:1" data-act="dir" data-v="toFr" aria-pressed="'+(S.dir==='toFr'&&!fixed)+'"'+(fixed?' disabled':'')+'>'+R2.tag+' → FR</button><button style="flex:1" data-act="dir" data-v="toTarget" aria-pressed="'+(S.dir==='toTarget'||fixed)+'">FR → '+R2.tag+'</button></div>';
+  h+='<p class="muted" style="font-size:13px;margin-top:6px">'+(fixed?'Ce jeu se joue toujours en français → '+R2.tag+'.':S.dir==='auto'?'Auto : le sens le moins travaillé ces 30 jours, ici '+(adv.dir==='toFr'?R2.tag+' → français':'français → '+R2.tag)+'.':'')+(adv.deficit&&pd===adv.dir?' <b>+1 gemme par bon mot</b> dans ce sens.':'')+'</p>';
   var BS2=bossStatus(),nq=Math.min(GAMES[S.game].q,pool.length),locked=(S.rot[S.game]&&S.rot[S.game].locked)||(S.game==='boss'&&!BS2.won&&BS2.ban===L);
   h+='<div class="chunk summary">'+ic('clock')+'<span>≈ 5 min · '+nq+' mots · '+esc(scopeLabel(S.scope,S.one,S.pick,L))+'</span></div>';
   h+='<button class="btn wide" data-act="launch"'+(pool.length<2||locked?' disabled':'')+'>'+ic('play','currentColor')+' Lancer la séance</button>';
@@ -1259,17 +1261,23 @@ function viewSheet(){
 /* ================= moteur de séance ================= */
 function stripAcc(x){return x.normalize('NFD').replace(/[̀-ͯ]/g,'');}
 function normAns(x){x=x.toLowerCase().replace(/[’']/g,"'").replace(/\s+/g,' ').trim();if(S.set.accents){x=stripAcc(x);}if(!S.set.articles){x=x.replace(/^(de|het|een|the|a|an|to|le|la|les|l'|un|une)\s+/,'');}return x;}
+/* sens le moins travaillé (30 jours, premier essai) : proposé par « Auto », +1 gemme par bon mot du premier coup */
+function dirAdvice(lang){
+  var cut=Date.now()-30*864e5,t={toFr:0,toTarget:0};
+  S.sessions.forEach(function(s){if(s.lang!==lang||s.start.getTime()<cut){return;}s.answers.forEach(function(x){if(x.attempt===1){t[s.dir]++;}});});
+  return {dir:t.toTarget<t.toFr?'toTarget':'toFr',deficit:t.toFr!==t.toTarget,totals:t};
+}
 function launch(game,pool,meta){
   var lang=meta.lang;
   pool=pool.filter(function(w){return w.lang===lang;});
   if(S.rot[game]&&S.rot[game].locked){return;}
   var BSn=bossStatus();if(game==='boss'&&!BSn.won&&BSn.ban===lang){return;}
-  var dir=(game==='scramble'||game==='forge'||game==='boss')?'toTarget':S.dir;
+  var adv=dirAdvice(lang),dir=(game==='scramble'||game==='forge'||game==='boss')?'toTarget':S.dir==='auto'?adv.dir:S.dir;
   var n=GAMES[game].q,src=pool.slice();
   if(game==='scramble'){var short=src.filter(function(w){return w.term.replace(/\s/g,'').length<=14;});if(short.length>=4){src=short;}}
   var q=sh(sh(src).sort(function(a,b){return a.streak-b.streak;}).slice(0,n)).slice(0,n);
   if(game==='boss'){var b=q.slice();while(b.length<14&&src.length){b=b.concat(sh(src));}q=b.slice(0,14);}
-  S.sess={ep:game,pool:pool,meta:meta,dir:dir,queue:q,total:q.length,first:0,tries:{},wrong:{},answers:[],combo:0,maxCombo:0,pts:0,
+  S.sess={ep:game,pool:pool,meta:meta,dir:dir,dirBonus:adv.totals[dir]<adv.totals[dir==='toFr'?'toTarget':'toFr'],queue:q,total:q.length,first:0,tries:{},wrong:{},answers:[],combo:0,maxCombo:0,pts:0,
           hearts:3,hp:8,hpMax:8,qi:0,activeMs:0,t0:NOW().getTime(),done:false,fb:null,cur:null,win:null,lang:lang};
   nextQ();S.sheet=null;S.enter=false;render();
 }
@@ -1296,7 +1304,7 @@ function resolve(ok,given,hinted){
   s.answers.push({wid:w.id,term:w.term,fr:w.fr,lang:w.lang,ok:ok,ms:Date.now()-s.cur.t,attempt:attempt,given:given||'',kind:kind});
   var p=0,base=GAMES[s.cur.type].g;
   if(ok){
-    if(attempt===1){p=hinted?Math.ceil(base/2):base+(s.combo>=3?1:0);s.first++;}else{p=Math.ceil(base/2);}
+    if(attempt===1){p=hinted?Math.ceil(base/2):base+(s.combo>=3?1:0)+(s.dirBonus?1:0);s.first++;}else{p=Math.ceil(base/2);}
     s.combo++;s.maxCombo=Math.max(s.maxCombo,s.combo);
     w.streak=Math.min(3,w.streak+1);
     if(s.ep==='boss'){s.hp--;}

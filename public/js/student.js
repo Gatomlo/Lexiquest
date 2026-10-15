@@ -2,7 +2,7 @@
 'use strict';
 /* Application élève. L'état vient du serveur (GET state / stats) ; la séance se joue ici et se déclare au serveur. */
 var S = { st: null, stats: null, tab: 'home', sub: null, sheet: null, sess: null, toast: null, lang: 'all',
-  plang: 'nl', scope: 'all', one: null, pick: [], game: 'forge', dir: 'toFr', enter: true, sayPet: null, munch: 0, booted: false,
+  plang: 'nl', scope: 'all', one: null, pick: [], game: 'forge', dir: 'auto', enter: true, sayPet: null, munch: 0, booted: false,
   points: 0, rot: {}, owned: {}, inv: {}, equip: { acc: null, decor: null }, set: { accents: true, articles: true }, active: 'phenix', name: '', loginErr: '' };
 var GAMES, ORDER, ROT, BOSS_PEN, PETS, ITEMS, DURABLE, VOUCH, STATE_N, REALM, RES_PRICE;
 var LISTS = [], LB = {}, WB = {};
@@ -40,6 +40,7 @@ function applyState(st, stats) {
   S.st = st; if (stats) { S.stats = stats; }
   ['cards', 'duel', 'scramble', 'forge'].forEach(function (g) { GAMES[g].g = st.rules.gems[g]; });
   ROT.max = st.rules.rot.max; ROT.need = st.rules.rot.need; BOSS_PEN.care = st.rules.pen.care; BOSS_PEN.joy = st.rules.pen.joy;
+  S.gemDir = st.rules.gems.dir;
   S.points = st.gems; S.rot = st.rotation; S.active = st.pet.id; S.name = st.me.name; S.set = st.settings; S.equip = st.inv.equip;
   S.owned = {}; st.pet.owned.forEach(function (o) { S.owned[o.id] = true; });
   S.inv = {}; st.inv.owned.forEach(function (id) { S.inv[id] = true; });
@@ -137,6 +138,9 @@ function viewStats() {
   var mx = 1; ORDER.forEach(function (g) { mx = Math.max(mx, st.games30[g]); });
   h += '<div class="pcard" style="margin-bottom:14px"><h2>Mes jeux · 30 jours</h2>' + ORDER.map(function (g) { return '<div class="hbar"><span class="l" style="width:128px">' + GAMES[g].n + '</span><div class="t"><i style="width:' + Math.round(st.games30[g] / mx * 100) + '%;background:' + GAMES[g].col + '"></i></div><span class="v tnum">' + st.games30[g] + '</span></div>'; }).join('')
     + '<p class="muted" style="font-size:13px;margin-top:6px">Gardiens vaincus : <b>' + st.bossWins30 + '</b></p></div>';
+  h += '<div class="pcard" style="margin-bottom:14px"><h2>Mes deux sens · 30 jours</h2>' + ['nl', 'en'].map(function (l) {
+    var d = st.dirs.langs[l]; return d.toFr.n + d.toTarget.n ? '<p class="muted" style="margin:8px 0 2px"><span class="tag">' + REALM[l].tag + '</span> ' + REALM[l].s + '</p>' + dirBars(d, REALM[l].tag) : '';
+  }).join('') + '<p class="muted" style="font-size:12.5px;margin-top:6px">Pour bien retenir un mot, travaille-le dans les deux sens. Le sens « Auto » te propose celui que tu as le moins joué, avec un petit bonus de gemmes.</p></div>';
   h += '<div class="pcard" style="margin-bottom:14px"><h2>Où j’en suis, par langue</h2>';
   ['nl', 'en'].forEach(function (l) {
     h += '<div class="hbar ' + REALM[l].cls + '"><span class="l" style="width:100px"><span class="tag">' + REALM[l].tag + '</span> ' + REALM[l].s + '</span><div class="t"><i style="width:' + Math.round(st.mastery[l] * 100) + '%;background:var(--acc)"></i></div><span class="v tnum" style="width:40px">' + Math.round(st.mastery[l] * 100) + ' %</span></div>';
@@ -170,7 +174,7 @@ function begin(r, body, offline) {
   var q = r.words.map(function (w) { return { id: w.id, term: w.term, fr: w.fr, streak: w.streak, lang: r.lang, forms: w.forms || null, hdr: w.hdr || null }; });
   S.sess = { id: r.id, ep: r.game, params: body, meta: { label: r.label, lang: r.lang }, dir: r.dir, queue: q, total: q.length, first: 0, tries: {}, wrong: {}, answers: [], combo: 0, maxCombo: 0, pts: 0,
     hearts: CFG.boss.hearts, hp: CFG.boss.hp, hpMax: CFG.boss.hp, qi: 0, activeMs: 0, done: false, fb: null, cur: null, win: null, lang: r.lang, pending: [], allEvents: [], flushing: null, saving: false, err: null,
-    offline: !!offline, clientId: Offline.uuid(), startedAt: Date.now(), wordIds: q.map(function (w) { return w.id; }).filter(function (id, i, a) { return a.indexOf(id) === i; }) };
+    dirBonus: r.dirBonus ? 1 : 0, offline: !!offline, clientId: Offline.uuid(), startedAt: Date.now(), wordIds: q.map(function (w) { return w.id; }).filter(function (id, i, a) { return a.indexOf(id) === i; }) };
   nextQ(); S.sheet = null; S.enter = false; render();
 }
 /** même choix de mots que le serveur, avec ce que l'appareil connaît (le serveur revérifie tout au retour du réseau) */
@@ -183,13 +187,23 @@ function startLocal(body) {
   else if (body.scope === 'weak') { pool = (S.stats.weak || []).filter(function (w) { return w.lang === lang; }).map(function (w) { return WB[w.wordId]; }).filter(Boolean); }
   else { pool = wordsFor(body.scope, body.listIds[0], body.listIds, lang); }
   if (pool.length < 2) { toast('Pas assez de mots dans cette sélection.'); return; }
-  var dir = ['scramble', 'forge', 'boss'].indexOf(game) >= 0 ? 'toTarget' : (body.dir === 'toTarget' ? 'toTarget' : 'toFr');
+  var adv = dirAdvice(lang, body.scope === 'one' || body.scope === 'pick' ? body.listIds : null);
+  var dir = ['scramble', 'forge', 'boss'].indexOf(game) >= 0 ? 'toTarget' : body.dir === 'auto' ? adv.dir : (body.dir === 'toTarget' ? 'toTarget' : 'toFr');
   var n = GAMES[game].q, src = pool.slice();
   if (game === 'scramble') { var short = src.filter(function (w) { return w.term.replace(/\s/g, '').length <= 14; }); if (short.length >= 4) { src = short; } }
   var q = sh(sh(src).sort(function (a, b) { return a.streak - b.streak; }).slice(0, n)).slice(0, n);
   if (game === 'boss') { var b = q.slice(); while (b.length < CFG.boss.queue) { b = b.concat(sh(src)); } q = b.slice(0, CFG.boss.queue); }
   var label = body.scope === 'words' ? 'Mots à retravailler · ' + REALM[lang].s : scopeLabel(body.scope, body.listIds[0], body.listIds, lang);
-  begin({ id: null, game: game, lang: lang, dir: dir, label: label, words: q }, body, true);
+  begin({ id: null, game: game, lang: lang, dir: dir, dirBonus: adv.totals[dir] < adv.totals[dir === 'toFr' ? 'toTarget' : 'toFr'], label: label, words: q }, body, true);
+}
+/** sens le moins travaillé (30 jours, premier essai) pour une langue ou des listes ; le serveur recompte tout */
+function dirAdvice(lang, listIds) {
+  var D = S.stats && S.stats.dirs, t = { toFr: 0, toTarget: 0 };
+  if (D) {
+    if (listIds && listIds.length) { D.lists.forEach(function (l) { if (listIds.indexOf(l.listId) >= 0) { t.toFr += l.toFr.n; t.toTarget += l.toTarget.n; } }); }
+    else if (D.langs[lang]) { t.toFr = D.langs[lang].toFr.n; t.toTarget = D.langs[lang].toTarget.n; }
+  }
+  return { dir: t.toTarget < t.toFr ? 'toTarget' : 'toFr', deficit: t.toFr !== t.toTarget, totals: t };
 }
 function expOf(w, dir, form) { return Judge.expected(w, dir, form); }
 /** forme demandée à cette question : une colonne au hasard (QCM, lettres), toute la ligne à l'écriture ; null pour un mot ordinaire */
@@ -231,7 +245,7 @@ function resolve(ok, given, hinted) {
   s.pending.push(ev); s.allEvents.push(ev);
   var p = 0, base = GAMES[s.cur.type].g;
   if (ok) {
-    if (attempt === 1) { p = hinted ? Math.ceil(base / 2) : base + (s.combo >= 3 ? 1 : 0); s.first++; } else { p = Math.ceil(base / 2); }
+    if (attempt === 1) { p = hinted ? Math.ceil(base / 2) : base + (s.combo >= 3 ? 1 : 0) + (s.dirBonus ? S.gemDir : 0); s.first++; } else { p = Math.ceil(base / 2); }
     s.combo++; s.maxCombo = Math.max(s.maxCombo, s.combo);
     if (s.ep === 'boss') { s.hp--; }
   } else {
@@ -354,7 +368,9 @@ function viewPlay(){
   });
   h+='</div>';
   var fixed=S.game==='scramble'||S.game==='forge'||S.game==='boss';
-  h+='<div class="step"><i>4</i>Dans quel sens ?</div><div class="seg" style="display:flex"><button style="flex:1" data-act="dir" data-v="toFr" aria-pressed="'+(S.dir==='toFr'&&!fixed)+'"'+(fixed?' disabled':'')+'>'+R2.tag+' → français</button><button style="flex:1" data-act="dir" data-v="toTarget" aria-pressed="'+(S.dir==='toTarget'||fixed)+'">Français → '+R2.tag+'</button></div>';
+  var adv=dirAdvice(L,S.scope==='one'?[S.one]:S.scope==='pick'?S.pick:null),dn=function(d){return d==='toFr'?R2.tag+' → français':'français → '+R2.tag;},pickDir=fixed?'toTarget':S.dir==='auto'?adv.dir:S.dir,gain=adv.deficit&&pickDir===(adv.dir)&&S.gemDir>0;
+  h+='<div class="step"><i>4</i>Dans quel sens ?</div><div class="seg" style="display:flex"><button style="flex:1" data-act="dir" data-v="auto" aria-pressed="'+(S.dir==='auto'&&!fixed)+'"'+(fixed?' disabled':'')+'>Auto</button><button style="flex:1" data-act="dir" data-v="toFr" aria-pressed="'+(S.dir==='toFr'&&!fixed)+'"'+(fixed?' disabled':'')+'>'+R2.tag+' → FR</button><button style="flex:1" data-act="dir" data-v="toTarget" aria-pressed="'+(S.dir==='toTarget'||fixed)+'">FR → '+R2.tag+'</button></div>';
+  h+='<p class="muted" style="font-size:13px;margin-top:6px">'+(fixed?'Ce jeu se joue toujours en français → '+R2.tag+'.':S.dir==='auto'?'Auto : le sens le moins travaillé ces 30 jours, ici '+dn(adv.dir)+'.':'')+(gain?' <b>+'+S.gemDir+' gemme par bon mot</b> dans ce sens.':'')+'</p>';
   var BS2=bossStatus(),nq=Math.min(GAMES[S.game].q,pool.length),locked=(S.rot[S.game]&&S.rot[S.game].locked)||(S.game==='boss'&&!BS2.won&&BS2.ban===L);
   h+='<div class="chunk summary">'+ic('clock')+'<span>≈ 5 min · '+nq+' mots · '+esc(scopeLabel(S.scope,S.one,S.pick,L))+'</span></div>';
   h+='<button class="btn wide" data-act="launch"'+(pool.length<2||locked?' disabled':'')+'>'+ic('play','currentColor')+' Lancer la séance</button>';
@@ -521,6 +537,7 @@ function viewRecap(){
     +'<div class="chunk rcell"><b class="tnum">'+(boss?s.answers.filter(function(a){return a.ok;}).length+'/'+s.hpMax:s.first+'/'+s.total)+'</b><span>'+(boss?'coups portés':'du premier coup')+'</span></div>'
     +'<div class="chunk rcell"><b class="tnum">'+dur(s.activeSec)+'</b><span>temps actif</span></div></div>';
   h+='<div class="chunk lines"><div class="row"><span>Bonnes réponses ('+GAMES[s.ep].g+' par mot)</span><b>+'+s.pts+'</b></div><div class="row"><span>Séance terminée</span><b>+'+b.fin+'</b></div>'
+    +(s.dirBonus&&S.gemDir>0?'<div class="row"><span>dont sens à travailler (+'+S.gemDir+' par bon mot du 1er coup)</span><b>inclus</b></div>':'')
     +(b.perfect?'<div class="row"><span>Sans faute</span><b>+'+b.perfect+'</b></div>':'')
     +(b.boss?'<div class="row"><span>Gardien vaincu</span><b>+'+b.boss+'</b></div>':'')
     +(b.daily?'<div class="row"><span>Bon du jour</span><b>+'+b.daily+'</b></div>':'')

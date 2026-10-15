@@ -68,7 +68,9 @@ Un parent au départ, plusieurs élèves possibles ; un élève n'accède jamais
 | Ma sélection | Plusieurs listes de la langue, cochées |
 | Mots à revoir | Mots difficiles de la langue, détectés sur 30 jours |
 
-3. **Jeu**, puis **sens** (langue → français ou français → langue).
+3. **Jeu**, puis **sens** : *Auto* (par défaut), langue → français ou français → langue.
+
+**Équilibre des deux sens.** Pour que l'élève ne travaille pas son vocabulaire dans un seul sens, le serveur compte les réponses du premier essai de chaque sens sur 30 jours (les jeux d'écriture comptent en français → langue). « Auto » choisit le sens le moins travaillé de la sélection (égalité : langue → français) et tire en priorité, dans ce sens, les mots qu'on y a le moins joués. Une séance jouée dans le sens en retard (en auto ou choisi à la main) rapporte un **bonus de +1 gemme par bon mot du premier coup sans indice** (règle `gemDir`, 0 à 3, réglable par le parent). Quand les deux sens sont à égalité, il n'y a pas de bonus. L'élève voit son équilibre dans ses stats ; le parent voit, par liste, la part et la réussite de chaque sens, avec une alerte si un sens pèse moins de 25 %. Le client reçoit `dirBonus` au lancement ; hors-ligne, il estime le sens et le bonus avec les compteurs reçus, le serveur recompte à l'import.
 
 **Jamais de mélange de langues** : une séance, un QCM, un gardien ou un tirage de mots ne contiennent que la langue choisie ; les mauvaises réponses proposées en QCM viennent de la même langue ; l'écran de séance porte en permanence un bandeau de la langue (nom, pastille, couleur).
 
@@ -250,7 +252,7 @@ L'élève et le parent partagent les mêmes indicateurs ; le parent y ajoute le 
 | Mots difficiles | Mots les plus ratés avec essais et taux d'échec ; filtre par langue | Oui | Oui, avec dernière erreur |
 | Séances | Liste filtrable, détail réponse par réponse (mot, réponse donnée, juste ou non, temps, type d'erreur), langue de chaque séance | Non | Oui |
 | Alertes et compagnon | Absence de 2 jours ou plus, compagnon fatigué, décrépit ou à terre, dernier événement, Gardien non vaincu, objectif de jours | Non | Oui |
-| Réglages | Jours de jeu par semaine, tolérance accents et articles, **règles du jeu** (rotation : séances avant verrouillage 1 à 10 et jeux différents pour rouvrir 1 à 4 ; Gardien : perte de vie et de plaisir 0 à 100 ; gemmes par bon mot de chaque jeu 0 à 9, avec retour aux valeurs d'origine), listes données, invitations et comptes, notifications, export CSV | Non | Oui |
+| Réglages | Jours de jeu par semaine, tolérance accents et articles, **règles du jeu** (rotation : séances avant verrouillage 1 à 10 et jeux différents pour rouvrir 1 à 4 ; Gardien : perte de vie et de plaisir 0 à 100 ; gemmes par bon mot de chaque jeu 0 à 9, bonus du sens le moins travaillé 0 à 3, avec retour aux valeurs d'origine), listes données, invitations et comptes, notifications, export CSV | Non | Oui |
 
 ## 10. Définitions des indicateurs
 
@@ -306,7 +308,7 @@ flowchart LR
 | `users` | id, identifiant, nom affiché, rôle, hash, actif | Comptes |
 | `lists` | id, propriétaire, **langue**, nom, assignée par, version, **en-têtes** (JSON, listes à 3-5 colonnes) | Listes (une langue chacune) |
 | `words` | id, liste, terme, traduction, position, **formes** (JSON : colonnes intermédiaires) | Paires de mots ; pour les verbes irréguliers : terme = infinitif, formes = prétérit, participe…, traduction = dernière colonne |
-| `sessions` | id, élève, **langue**, portée, jeu, sens, début, fin, temps actif, mots, bonnes réponses, victoire, identifiant client | Une ligne par séance (l'identifiant client rend l'import hors-ligne idempotent) |
+| `sessions` | id, élève, **langue**, portée, jeu, sens, **bonus de sens**, début, fin, temps actif, mots, bonnes réponses, victoire, identifiant client | Une ligne par séance (l'identifiant client rend l'import hors-ligne idempotent) |
 | `answers` | id, séance, mot, essai, réponse donnée, juste, type d'erreur, temps (ms), horodatage | Événements en ajout seul |
 | `word_stats` | élève, mot, essais, échecs, série, dernière réponse | Cache recalculable |
 | `http_sessions` | identifiant, contenu, expiration | Sessions de connexion (30 jours, survivent aux redémarrages) |
@@ -336,7 +338,7 @@ Règles non évidentes :
 | `POST /auth/login`, `POST /auth/logout`, `GET /me` | Session et profil | Tous |
 | `GET/POST /lists`, `PUT/DELETE /lists/:id` | Listes et mots (la langue d'une liste ne change pas) | Élève |
 | `GET /games` | Jeux, compteurs et verrouillages | Élève |
-| `POST /sessions` (langue, portée, jeu, sens), `POST /sessions/:id/events`, `POST /sessions/:id/end` | Séance par lots ; renvoie gemmes, verrouillages, bons | Élève |
+| `POST /sessions` (langue, portée, jeu, sens : `auto`, `toFr` ou `toTarget` ; renvoie `dir` et `dirBonus`), `POST /sessions/:id/events`, `POST /sessions/:id/end` | Séance par lots ; renvoie gemmes, verrouillages, bons | Élève |
 | `POST /sessions/import` | Séance jouée hors-ligne (identifiant unique, mots, réponses, heure) ; corrigée et valorisée comme une séance en ligne | Élève |
 | `GET /push/key`, `POST /push/subscribe`, `POST /push/unsubscribe`, `POST /push/test`, `GET/PUT /reminder`, `POST /cron/reminders` | Notifications et rappel (heure, activation) ; le cron exige `x-cron-key` | Élève, parent |
 | `GET /weekly-boss` | Statut du Gardien de la semaine et langue interdite éventuelle | Élève |

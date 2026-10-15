@@ -8,6 +8,14 @@ var STATN = { food: 'Énergie', care: 'Vie', joy: 'Plaisir' };
 var GAUGES = ['care', 'food', 'joy'];
 
 function pad(n) { return String(n).padStart(2, '0'); }
+/** jauge « deux sens » (30 jours, premier essai) pour { toFr:{n,ok}, toTarget:{n,ok} } ; tag = NL / EN */
+function dirBars(d, tag) {
+  var tot = d.toFr.n + d.toTarget.n;
+  return [['toFr', tag + ' → français'], ['toTarget', 'Français → ' + tag]].map(function (x) {
+    var v = d[x[0]], share = tot ? Math.round(v.n / tot * 100) : 0;
+    return '<div class="hbar"><span class="l" style="width:150px">' + x[1] + '</span><div class="t"><i style="width:' + share + '%;background:var(--acc)"></i></div><span class="v tnum" style="width:120px">' + v.n + ' rép. · ' + (v.n ? Math.round(v.ok / v.n * 100) + ' %' : '–') + '</span></div>';
+  }).join('');
+}
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
 function sh(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }

@@ -80,6 +80,11 @@ function pOverview() {
   h += '<div class="pcard s6"><h2>À surveiller</h2><div class="alerts">' + al + '</div></div>';
   h += '<div class="pcard s6"><h2>Son compagnon</h2><div class="petrow">' + critter(pet.id, pet.lvl, 96, pet.stage, null, null) + '<div style="flex:1"><b>' + esc(pet.name) + ' · ' + pet.kind + '</b><p class="muted" style="margin-bottom:6px">' + STATE_N[pet.lvl] + (pet.days > 0 ? ' · ' + pet.days + ' jour' + (pet.days > 1 ? 's' : '') + ' sans soins' : '') + '</p>' + bars(pet) + evtLine(pet)
     + '<p class="muted" style="margin-top:10px;font-size:13px">Gardien de la semaine : <b>' + (B.won ? 'vaincu en ' + REALM[B.wonLang].s.toLowerCase() : (B.left === 0 ? 'à vaincre aujourd’hui' : 'à vaincre, ' + B.left + ' j restants')) + '</b></p></div></div></div>';
+  var lg = st.dirs.lists.filter(function (l) { return l.toFr.n + l.toTarget.n > 0; });
+  h += '<div class="pcard s6"><h2>Équilibre des deux sens</h2><p class="muted" style="margin-bottom:8px">Réponses du premier essai, 30 derniers jours</p>' + (lg.length ? lg.map(function (l) {
+    var tot = l.toFr.n + l.toTarget.n, lop = Math.min(l.toFr.n, l.toTarget.n) / tot < 0.25;
+    return '<p style="margin:10px 0 2px"><span class="tag ' + REALM[l.lang].cls + '">' + REALM[l.lang].tag + '</span> <b>' + esc(l.name) + '</b>' + (lop ? ' <small class="down">sens déséquilibré</small>' : '') + '</p>' + dirBars(l, REALM[l.lang].tag);
+  }).join('') : '<p class="muted">Pas encore de séance.</p>') + '</div>';
   h += '<div class="pcard s6"><h2>Minutes par jour</h2>' + barChart(st) + '</div>';
   h += '<div class="pcard s6"><h2>Taux de réussite par semaine</h2>' + lineChart(st) + '</div>';
   h += '<div class="pcard s6"><h2>Jours travaillés · 8 semaines</h2>' + heatmap(st) + '</div>';
@@ -173,6 +178,7 @@ function pSettings() {
    + stepper('rotNeed', 1, ' jeux', 'Pour le rouvrir : jouer', 'jeux différents (le Gardien compte)')
    + stepper('penCare', 5, '', 'Gardien non vaincu : perte de vie', 'Chaque semaine sans Gardien vaincu, au passage du lundi ; langue au choix mais jamais 3 semaines de suite la même ; un Gardien bonus ne change rien')
    + stepper('penJoy', 5, '', 'Gardien non vaincu : perte de plaisir', '')
+   + stepper('gemDir', 1, '', 'Bonus du sens le moins travaillé', 'Gemmes en plus par bon mot du premier coup quand la séance est jouée dans le sens (langue → français ou français → langue) le moins travaillé ; 0 pour supprimer')
    + '<h2 style="margin-top:16px">Gemmes par bon mot</h2>'
    + stepper('gemCards', 1, '', GAMES.cards.n, 'Du premier coup ; moitié (arrondie au-dessus) avec indice ou au second essai ; +1 au combo de 3')
    + stepper('gemDuel', 1, '', GAMES.duel.n, '')
@@ -310,7 +316,7 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'goal': api('PATCH', base(), { goalDays: P.settings.goalDays + (+v) }).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break;
     case 'rule': { var rp = {}; rp[t.dataset.k] = P.settings[t.dataset.k] + (+t.dataset.d); api('PATCH', base(), rp).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break; }
     case 'rulesreset': {
-      var d0 = CFG.rulesDefault, rp2 = { rotMax: d0.rot.max, rotNeed: d0.rot.need, penCare: d0.pen.care, penJoy: d0.pen.joy, gemCards: d0.gems.cards, gemDuel: d0.gems.duel, gemScramble: d0.gems.scramble, gemForge: d0.gems.forge };
+      var d0 = CFG.rulesDefault, rp2 = { rotMax: d0.rot.max, rotNeed: d0.rot.need, penCare: d0.pen.care, penJoy: d0.pen.joy, gemCards: d0.gems.cards, gemDuel: d0.gems.duel, gemScramble: d0.gems.scramble, gemForge: d0.gems.forge, gemDir: d0.gems.dir };
       api('PATCH', base(), rp2).then(function (r) { P.settings = r.settings; render(); toast('Valeurs d’origine rétablies.'); }).catch(fail); break;
     }
     case 'toggle': { var patch = {}; patch[v] = !P.settings[v]; api('PATCH', base(), patch).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break; }
