@@ -178,6 +178,7 @@ function pSettings() {
    + stepper('rotNeed', 1, ' jeux', 'Pour le rouvrir : jouer', 'jeux différents (le Gardien compte)')
    + stepper('penCare', 5, '', 'Gardien non vaincu : perte de vie', 'Chaque semaine sans Gardien vaincu, au passage du lundi ; langue au choix mais jamais 3 semaines de suite la même ; un Gardien bonus ne change rien')
    + stepper('penJoy', 5, '', 'Gardien non vaincu : perte de plaisir', '')
+   + '<div class="row"><div>Imposer le sens le moins travaillé<small>L’élève ne choisit plus le sens des Cartes et du Duel : le serveur prend celui qu’elle a le moins travaillé (30 jours)</small></div><button class="switch" role="switch" aria-checked="' + !!S.dirForce + '" data-act="toggle" data-v="dirForce" aria-label="Imposer le sens"></button></div>'
    + stepper('gemDir', 1, '', 'Bonus du sens le moins travaillé', 'Gemmes en plus par bon mot du premier coup quand la séance est jouée dans le sens (langue → français ou français → langue) le moins travaillé ; 0 pour supprimer')
    + '<h2 style="margin-top:16px">Gemmes par bon mot</h2>'
    + stepper('gemCards', 1, '', GAMES.cards.n, 'Du premier coup ; moitié (arrondie au-dessus) avec indice ou au second essai ; +1 au combo de 3')
@@ -316,7 +317,7 @@ document.getElementById('app').addEventListener('click', function (e) {
     case 'goal': api('PATCH', base(), { goalDays: P.settings.goalDays + (+v) }).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break;
     case 'rule': { var rp = {}; rp[t.dataset.k] = P.settings[t.dataset.k] + (+t.dataset.d); api('PATCH', base(), rp).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break; }
     case 'rulesreset': {
-      var d0 = CFG.rulesDefault, rp2 = { rotMax: d0.rot.max, rotNeed: d0.rot.need, penCare: d0.pen.care, penJoy: d0.pen.joy, gemCards: d0.gems.cards, gemDuel: d0.gems.duel, gemScramble: d0.gems.scramble, gemForge: d0.gems.forge, gemDir: d0.gems.dir };
+      var d0 = CFG.rulesDefault, rp2 = { rotMax: d0.rot.max, rotNeed: d0.rot.need, penCare: d0.pen.care, penJoy: d0.pen.joy, gemCards: d0.gems.cards, gemDuel: d0.gems.duel, gemScramble: d0.gems.scramble, gemForge: d0.gems.forge, gemDir: d0.gems.dir, dirForce: d0.dirForce ? 1 : 0 };
       api('PATCH', base(), rp2).then(function (r) { P.settings = r.settings; render(); toast('Valeurs d’origine rétablies.'); }).catch(fail); break;
     }
     case 'toggle': { var patch = {}; patch[v] = !P.settings[v]; api('PATCH', base(), patch).then(function (r) { P.settings = r.settings; render(); }).catch(fail); break; }

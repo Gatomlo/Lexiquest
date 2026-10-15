@@ -40,7 +40,7 @@ function applyState(st, stats) {
   S.st = st; if (stats) { S.stats = stats; }
   ['cards', 'duel', 'scramble', 'forge'].forEach(function (g) { GAMES[g].g = st.rules.gems[g]; });
   ROT.max = st.rules.rot.max; ROT.need = st.rules.rot.need; BOSS_PEN.care = st.rules.pen.care; BOSS_PEN.joy = st.rules.pen.joy;
-  S.gemDir = st.rules.gems.dir;
+  S.gemDir = st.rules.gems.dir; S.dirForce = !!st.rules.dirForce; if (S.dirForce) { S.dir = 'auto'; }
   S.points = st.gems; S.rot = st.rotation; S.active = st.pet.id; S.name = st.me.name; S.set = st.settings; S.equip = st.inv.equip;
   S.owned = {}; st.pet.owned.forEach(function (o) { S.owned[o.id] = true; });
   S.inv = {}; st.inv.owned.forEach(function (id) { S.inv[id] = true; });
@@ -167,6 +167,7 @@ function viewSaving() {
 
 /* ---------- séance ---------- */
 function launch(extra) {
+  if (S.dirForce) { S.dir = 'auto'; }
   var body = Object.assign({ lang: S.plang, scope: S.scope, listIds: S.scope === 'one' ? [S.one] : S.scope === 'pick' ? S.pick.slice() : [], game: S.game, dir: S.dir }, extra || {});
   api('POST', 'sessions', body).then(function (r) { begin(r, body, false); }).catch(function (e) { if (e.offline) { S.offline = true; startLocal(body); } else { fail(e); } });
 }
@@ -369,8 +370,8 @@ function viewPlay(){
   h+='</div>';
   var fixed=S.game==='scramble'||S.game==='forge'||S.game==='boss';
   var adv=dirAdvice(L,S.scope==='one'?[S.one]:S.scope==='pick'?S.pick:null),dn=function(d){return d==='toFr'?R2.tag+' → français':'français → '+R2.tag;},pickDir=fixed?'toTarget':S.dir==='auto'?adv.dir:S.dir,gain=adv.deficit&&pickDir===(adv.dir)&&S.gemDir>0;
-  h+='<div class="step"><i>4</i>Dans quel sens ?</div><div class="seg" style="display:flex"><button style="flex:1" data-act="dir" data-v="auto" aria-pressed="'+(S.dir==='auto'&&!fixed)+'"'+(fixed?' disabled':'')+'>Auto</button><button style="flex:1" data-act="dir" data-v="toFr" aria-pressed="'+(S.dir==='toFr'&&!fixed)+'"'+(fixed?' disabled':'')+'>'+R2.tag+' → FR</button><button style="flex:1" data-act="dir" data-v="toTarget" aria-pressed="'+(S.dir==='toTarget'||fixed)+'">FR → '+R2.tag+'</button></div>';
-  h+='<p class="muted" style="font-size:13px;margin-top:6px">'+(fixed?'Ce jeu se joue toujours en français → '+R2.tag+'.':S.dir==='auto'?'Auto : le sens le moins travaillé ces 30 jours, ici '+dn(adv.dir)+'.':'')+(gain?' <b>+'+S.gemDir+' gemme par bon mot</b> dans ce sens.':'')+'</p>';
+  h+='<div class="step"><i>4</i>Dans quel sens ?</div><div class="seg" style="display:flex"><button style="flex:1" data-act="dir" data-v="auto" aria-pressed="'+(S.dir==='auto'&&!fixed)+'"'+(fixed?' disabled':'')+'>Auto</button><button style="flex:1" data-act="dir" data-v="toFr" aria-pressed="'+(S.dir==='toFr'&&!fixed)+'"'+(fixed||S.dirForce?' disabled':'')+'>'+R2.tag+' → FR</button><button style="flex:1" data-act="dir" data-v="toTarget" aria-pressed="'+(S.dir==='toTarget'||(fixed&&!S.dirForce))+'"'+(S.dirForce&&!fixed?' disabled':'')+'>FR → '+R2.tag+'</button></div>';
+  h+='<p class="muted" style="font-size:13px;margin-top:6px">'+(fixed?'Ce jeu se joue toujours en français → '+R2.tag+'.':S.dir==='auto'?(S.dirForce?'Sens imposé par ton parent : le moins travaillé ces 30 jours, ici ':'Auto : le sens le moins travaillé ces 30 jours, ici ')+dn(adv.dir)+'.':'')+(gain?' <b>+'+S.gemDir+' gemme par bon mot</b> dans ce sens.':'')+'</p>';
   var BS2=bossStatus(),nq=Math.min(GAMES[S.game].q,pool.length),locked=(S.rot[S.game]&&S.rot[S.game].locked)||(S.game==='boss'&&!BS2.won&&BS2.ban===L);
   h+='<div class="chunk summary">'+ic('clock')+'<span>≈ 5 min · '+nq+' mots · '+esc(scopeLabel(S.scope,S.one,S.pick,L))+'</span></div>';
   h+='<button class="btn wide" data-act="launch"'+(pool.length<2||locked?' disabled':'')+'>'+ic('play','currentColor')+' Lancer la séance</button>';

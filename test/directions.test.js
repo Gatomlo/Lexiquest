@@ -69,3 +69,19 @@ test('rejouer la sélection : les mots les moins travaillés dans le sens choisi
   const fresh = b.session.words.filter((w) => !seen.has(w.id)).length;
   assert.equal(fresh, 8 - seen.size, 'tous les mots jamais vus dans ce sens sont repris d’abord');
 });
+
+test('sens imposé par le parent : le choix de l’élève est ignoré (jeux à choix de sens)', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll(); await E.addLists();
+  await play(E.student, { ...base, game: 'cards', dir: 'toFr' });
+  let r = await play(E.student, { ...base, game: 'duel', dir: 'toFr' });
+  assert.equal(r.session.dir, 'toFr', 'libre par défaut');
+  await E.parent.req('PATCH', `/api/admin/students/${E.studentId}`, { dirForce: true });
+  assert.equal((await E.student.get('/api/state')).json.rules.dirForce, true);
+  r = await play(E.student, { ...base, game: 'cards', dir: 'toFr' });
+  assert.equal(r.session.dir, 'toTarget', 'langue → français déjà en avance : imposé français → langue');
+  assert.equal(r.session.dirBonus, 1);
+  await E.parent.req('PATCH', `/api/admin/students/${E.studentId}`, { dirForce: false });
+  r = await play(E.student, { ...base, game: 'duel', dir: 'toFr' });
+  assert.equal(r.session.dir, 'toFr');
+});

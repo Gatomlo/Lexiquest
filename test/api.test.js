@@ -497,7 +497,7 @@ test('règles réglables par le parent : rotation, gemmes par jeu, pertes du Gar
   assert.equal((await E.student.req('PATCH', base, { rotMax: 2 })).status, 403, 'réservé au parent');
   await E.parent.req('PATCH', base, { rotMax: 2, rotNeed: 1, gemDuel: 3, penCare: 10, penJoy: 0 });
   const st = (await E.student.get('/api/state')).json;
-  assert.deepEqual(st.rules, { rot: { max: 2, need: 1 }, pen: { care: 10, joy: 0 }, gems: { cards: 1, duel: 3, scramble: 3, forge: 4, dir: 1 } });
+  assert.deepEqual(st.rules, { rot: { max: 2, need: 1 }, pen: { care: 10, joy: 0 }, dirForce: false, gems: { cards: 1, duel: 3, scramble: 3, forge: 4, dir: 1 } });
   // gemmes : un Duel à 3 par bon mot (8 mots nl → 14 questions ? la liste en compte 8) ; combo +1 dès la 4e bonne réponse
   const r = await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'duel', dir: 'toFr' });
   assert.equal(r.end.json.points, 8 * 3 + 5);
@@ -516,7 +516,7 @@ test('règles réglables par le parent : rotation, gemmes par jeu, pertes du Gar
   assert.equal(Math.round(a.care), 90); assert.equal(Math.round(a.joy), 99, 'seulement la baisse horaire, pas de perte du Gardien');
   // retour aux valeurs d'origine
   const d = (await E.student.get('/api/config')).json.rulesDefault;
-  assert.deepEqual(d, { rot: { max: 3, need: 2 }, pen: { care: 40, joy: 20 }, gems: { cards: 1, duel: 2, scramble: 3, forge: 4, dir: 1 } });
+  assert.deepEqual(d, { rot: { max: 3, need: 2 }, pen: { care: 40, joy: 20 }, dirForce: false, gems: { cards: 1, duel: 2, scramble: 3, forge: 4, dir: 1 } });
 });
 
 test('modifier une liste : mots conservés gardent leur historique, ajouts et retraits, droits', async (t) => {
