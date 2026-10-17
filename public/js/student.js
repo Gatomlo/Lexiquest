@@ -282,7 +282,7 @@ function save() {
   var s = S.sess; s.saving = true; s.err = null;
   if (s.offline) { saveOffline(); return; }
   flush().then(function () { return api('POST', 'sessions/' + s.id + '/end', { activeSec: Math.round(s.activeMs / 1000) }); }).then(function (R) {
-    s.saving = false; s.total_pts = R.gems; s.b = R.bonus; s.pts = R.points; s.first = R.first; s.rotInfo = R.rotation; s.bonusBoss = R.bonusBoss; s.activeSec = R.activeSec; s.res = R;
+    s.saving = false; s.total_pts = R.gems; s.b = R.bonus; s.pts = R.points; s.first = R.first; s.rotInfo = R.rotation; s.grew = R.grew; s.bonusBoss = R.bonusBoss; s.activeSec = R.activeSec; s.res = R;
     S.bestCombo = Math.max(S.bestCombo || 0, s.maxCombo);
     return refresh().then(function () { trySync(); });
   }).then(function () {
@@ -323,7 +323,7 @@ function hud(){
 function petCard(full){
   var n=petNow(),P=PETS[S.active];
   return '<div class="chunk petcard l'+n.lvl+decorCls()+'">'+critterS(S.active,n.lvl,full?150:120,stage(),S.munch?'happy':null)
-   +'<div class="petname">'+P.n+'<span class="muted" style="font:700 13px Nunito;margin-left:8px">'+P.k+' · '+['bébé','jeune','adulte'][stage()]+'</span></div>'
+   +'<div class="petname">'+P.n+'<span class="muted" style="font:700 13px Nunito;margin-left:8px">'+P.k+' · '+['bébé','enfant','ado','adulte'][stage()]+'</span></div>'
    +'<div class="bubble">'+esc(petMsg(n))+'</div>'+bars(n)+evtLine(S.st.pet)
    +(full?'':'<button class="btn sm alt" data-act="tab" data-v="pet" style="margin-top:6px">'+ic('heart')+(n.ko?' Le relever':' Prendre soin')+'</button>')+'</div>';
 }
@@ -543,6 +543,7 @@ function viewRecap(){
     +(b.boss?'<div class="row"><span>Gardien vaincu</span><b>+'+b.boss+'</b></div>':'')
     +(b.daily?'<div class="row"><span>Bon du jour</span><b>+'+b.daily+'</b></div>':'')
     +'<div class="row"><span>Solde</span><b>'+S.points+' gemmes</b></div></div>';
+  if(s.grew){h+='<div class="alert" style="max-width:420px;width:100%;background:var(--grass-soft)">'+ic('heart')+'<span><b>'+PETS[s.grew.species].n+' a grandi : il est '+(s.grew.stage===3?'adulte':'maintenant '+s.grew.name)+' !</b>'+(s.grew.gems?' +'+s.grew.gems+' gemmes offertes.':'')+'</span></div>';}
   var ri=s.rotInfo||{locked:false,unlocked:[]};
   if(ri.locked){h+='<div class="alert bad" style="max-width:420px;width:100%">'+ic('lock','none')+'<span><b>'+GAMES[s.ep].n+' est verrouillé</b> après '+ROT.max+' séances : joue '+ROT.need+' autres jeux différents pour le retrouver.</span></div>';}
   if(ri.unlocked.length){h+='<div class="alert" style="max-width:420px;width:100%;background:var(--grass-soft)">'+ic('check')+'<span>Retrouvé : <b>'+ri.unlocked.map(function(g){return GAMES[g].n;}).join(', ')+'</b>.</span></div>';}

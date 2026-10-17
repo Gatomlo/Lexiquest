@@ -46,19 +46,19 @@ function itemSvg(id){
   return s+'</svg>';
 }
 
-/* créatures : 5 espèces, 3 stades, 4 niveaux de forme + à terre */
+/* créatures : 5 espèces, 4 stades (bébé, enfant, ado, adulte), 4 niveaux de forme + à terre */
 function critter(kind,lvl,size,stg,react,acc){
   size=size||110;stg=stg==null?1:stg;acc=acc||null;
   var ko=lvl===4;if(ko){lvl=3;react=null;}
   var eff=lvl;if(react==='happy'||react==='wow'){eff=0;}else if(react==='sad'){eff=2;}
-  var E='var(--edge)',R=[22,26,29][stg],cy=60,i,sd,k;
+  var E='var(--edge)',R=[21,25,28,30][stg],cy=60,i,sd,k;
   var P={phenix:{b:'#FFA63D',be:'#FFE2A0',a:'#FF6150',a2:'#FFC62E'},dragon:{b:'#4CC38A',be:'#D6F5E3',a:'#2E8F63',a2:'#FFE08A'},licorne:{b:'#FFFFFF',be:'#F4E4FF',a:'#C28BFF',a2:'#FFC62E'},griffon:{b:'#E2A658',be:'#FFF1CF',a:'#B9772E',a2:'#FFFFFF'},kraken:{b:'#8F72E8',be:'#D9CCFF',a:'#5B3FC0',a2:'#FF8FB1'},renard:{b:'#F28A3A',be:'#FFF1DC',a:'#7A3E1B',a2:'#FFFFFF'},hibou:{b:'#A8754F',be:'#F3E2C4',a:'#6B4630',a2:'#FFC62E'}}[kind];
   var s='<svg class="pet l'+lvl+(ko?' ko':'')+'" width="'+size+'" height="'+size+'" viewBox="0 0 100 100" aria-hidden="true">';
   s+='<ellipse cx="50" cy="95" rx="'+(R+8)+'" ry="4.5" fill="rgba(0,0,0,.2)"/>';
   var sw='stroke="'+E+'" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"';
   /* derrière le corps */
   if(kind==='phenix'){
-    var tail=[2,3,5][stg];for(i=0;i<tail;i++){var a=tail>1?-34+i*(68/(tail-1)):0;s+='<ellipse cx="50" cy="'+(cy+R+9)+'" rx="5.5" ry="15" fill="'+(i%2?P.a:P.a2)+'" '+sw+' transform="rotate('+a+' 50 '+(cy+R-2)+')"/>';}
+    var tail=[2,3,4,5][stg];for(i=0;i<tail;i++){var a=tail>1?-34+i*(68/(tail-1)):0;s+='<ellipse cx="50" cy="'+(cy+R+9)+'" rx="5.5" ry="15" fill="'+(i%2?P.a:P.a2)+'" '+sw+' transform="rotate('+a+' 50 '+(cy+R-2)+')"/>';}
     [-1,1].forEach(function(d){for(var j=0;j<=stg;j++){var x=50+d*(R+3+j*3),y=cy+3+j*5;s+='<ellipse cx="'+x+'" cy="'+y+'" rx="7" ry="13" fill="'+(j%2?P.a2:P.b)+'" '+sw+' transform="rotate('+(d*(18+j*12))+' '+x+' '+y+')"/>';}});
   }else if(kind==='dragon'){
     [-1,1].forEach(function(d){var bx=50+d*(R-3),by=cy;s+='<path d="M'+bx+' '+by+' L'+(bx+d*(26+stg*4))+' '+(by-26-stg*3)+' L'+(bx+d*18)+' '+(by-4)+' L'+(bx+d*(30+stg*3))+' '+(by+2)+' L'+(bx+d*13)+' '+(by+12)+'z" fill="'+P.a+'" '+sw+'/>';});

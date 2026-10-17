@@ -211,7 +211,8 @@ La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans 
 - Cinq états : **radieux** (moyenne 65 et plus), **content** (45 à 64), **fatigué** (25 à 44), **décrépit** (moins de 25), **à terre** (vie à 0, prioritaire).
 - Rendu : radieux = couleurs vives, animé ; fatigué = désaturé, paupières lourdes ; décrépit = gris, poussière, toiles d'araignée, yeux ternes ; à terre = entièrement gris, penché, immobile, « zzz ».
 - Le compagnon exprime son besoin le plus urgent dans une bulle.
-- Stades de croissance selon les jours de présence : bébé (0 à 6), jeune (7 à 20), adulte (21 et plus).
+- **Croissance** : quatre stades, **par compagnon** (un nouveau compagnon repart bébé). Seuls comptent les **jours de présence** : jours où une séance est terminée alors que ce compagnon est actif et debout (pas à terre). Aucune condition de réussite. Bébé (0 à 6 jours), enfant (7 à 20), ado (21 à 45), adulte (46 et plus). Pas de régression : un compagnon négligé garde son stade, son compteur ne fait que s'arrêter.
+- **Conséquences** : baisse des jauges ×1 (bébé, enfant), ×0,9 (ado), ×0,8 (adulte) ; gemmes offertes une fois au passage : 30 (enfant), 60 (ado), 100 (adulte). Le passage s'annonce au récapitulatif de séance ; le dessin grandit à chaque stade.
 - Il ne meurt jamais définitivement ; la potion de résurrection le relève. Le parent voit son état et le dernier événement.
 
 ## 7. Régularité

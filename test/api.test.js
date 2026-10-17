@@ -636,3 +636,32 @@ test('réveil affamé : l’énergie est divisée par deux à 8 h, sans baisse h
   assert.equal(Math.round(run(12).food), 99, 'à 7 h : rien n’a baissé pendant le sommeil');
   assert.equal(Math.round(run(13).food), 50, 'à 8 h : moitié');
 });
+
+test('croissance : stades par compagnon, présence seule, gemmes au passage', async (t) => {
+  const E = await setup(); t.after(E.close); t.after(() => clock.reset());
+  await E.loginAll(); await E.addLists();
+  const pet = async () => (await E.student.get('/api/state')).json.pet;
+  assert.equal((await pet()).stage, 0);
+  const ins = E.db.prepare('INSERT INTO pet_days (user_id, species, day) VALUES (?,?,?)');
+  for (let d = 1; d <= 6; d++) { ins.run(E.studentId, 'phenix', d); }
+  assert.equal((await pet()).stage, 0);
+  assert.equal((await pet()).next, 1);
+  // la 7e journée de présence fait passer à « enfant » et offre 30 gemmes
+  const before = (await E.student.get('/api/wallet')).json.gems;
+  const r = await play(E.student, { lang: 'nl', scope: 'all', listIds: [], game: 'cards' });
+  assert.equal(r.end.status, 200, r.end.text);
+  assert.equal(r.end.json.grew.stage, 1); assert.equal(r.end.json.grew.gems, 30);
+  assert.equal((await E.student.get('/api/wallet')).json.gems, before + r.end.json.gems + 30);
+  assert.equal((await pet()).stage, 1);
+  // une deuxième séance le même jour ne compte pas deux fois
+  const r2 = await play(E.student, { lang: 'en', scope: 'all', listIds: [], game: 'forge' });
+  assert.equal(r2.end.json.grew, null);
+  assert.equal((await pet()).stageDays, 7);
+  // un compagnon adopté repart bébé
+  E.db.prepare('INSERT INTO user_pets (user_id, species, food, care, joy, anchor_hour, active, adopted_at) VALUES (?,?,?,?,?,?,0,?)').run(E.studentId, 'dragon', 70, 70, 70, 0, 0);
+  assert.equal((await E.student.post('/api/pets/dragon/activate', {})).status, 200);
+  assert.equal((await pet()).stage, 0);
+  // seuils
+  const P = require('../lib/progress');
+  assert.deepEqual([0, 6, 7, 20, 21, 45, 46, 200].map(P.stageOf), [0, 0, 1, 1, 2, 2, 3, 3]);
+});
