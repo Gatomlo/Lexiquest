@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aperçu décors — avant / après</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:16px;background:#f4f1ea;color:#222}
+h1{font-size:18px}h2{font-size:15px;margin:22px 0 8px}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+figure{margin:0}figcaption{font-size:12px;font-weight:700;margin-bottom:4px}
+.card{width:300px;height:200px;border-radius:18px;border:1px solid #0002;display:flex;align-items:flex-end;justify-content:center;padding-bottom:18px;box-sizing:border-box;--surface:#fff}
+.pet{width:70px;height:70px;border-radius:50%;background:#FF9418;border:3px solid #333;position:relative}
+.pet:before,.pet:after{content:"";position:absolute;top:24px;width:9px;height:9px;border-radius:50%;background:#333}
+.pet:before{left:18px}.pet:after{right:18px}
+
+/* ===== AVANT (actuel) ===== */
+.old-foret{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 62%,#2F8F5B),color-mix(in srgb,var(--surface) 55%,#A3D977))}
+.old-plage{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 55%,#8FD0FF) 0 58%,color-mix(in srgb,var(--surface) 45%,#FFD98A) 58%)}
+
+/* ===== APRÈS (proposition) : scènes SVG en couches, toujours en CSS ===== */
+.new-foret{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 200' preserveAspectRatio='xMidYMax slice'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%231E3F5A'/%3E%3Cstop offset='.55' stop-color='%232F8F7B'/%3E%3Cstop offset='1' stop-color='%23A3D977'/%3E%3C/linearGradient%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23FFF6B0' stop-opacity='.9'/%3E%3Cstop offset='1' stop-color='%23FFF6B0' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='300' height='200' fill='url(%23s)'/%3E%3Ccircle cx='235' cy='42' r='40' fill='url(%23g)'/%3E%3Ccircle cx='235' cy='42' r='13' fill='%23FFF6C8'/%3E%3Cpath d='M200 0 L240 200 L270 200 L250 0Z' fill='%23FFF6B0' opacity='.12'/%3E%3Cg fill='%2315473E' opacity='.75'%3E%3Cpath d='M-10 150 L20 60 L50 150Z M30 150 L65 40 L100 150Z M120 150 L150 70 L180 150Z M215 150 L250 55 L285 150Z'/%3E%3C/g%3E%3Cg fill='%230E3A2E'%3E%3Cpath d='M-20 200 L10 80 L40 200Z M5 200 L35 100 L65 200Z M245 200 L280 70 L320 200Z M270 200 L300 110 L330 200Z'/%3E%3Crect x='8' y='150' width='6' height='50'/%3E%3Crect x='276' y='150' width='7' height='50'/%3E%3C/g%3E%3Cpath d='M0 172 Q75 160 150 170 T300 166 V200 H0Z' fill='%234E9B4E'/%3E%3Cpath d='M0 186 Q90 178 170 186 T300 182 V200 H0Z' fill='%23356F3A'/%3E%3Cg%3E%3Crect x='56' y='170' width='4' height='10' fill='%23F2E6D0'/%3E%3Cpath d='M48 171 Q58 156 68 171Z' fill='%23FF6B8A'/%3E%3Ccircle cx='54' cy='168' r='1.6' fill='%23fff'/%3E%3Ccircle cx='62' cy='166' r='1.6' fill='%23fff'/%3E%3Crect x='222' y='174' width='3' height='8' fill='%23F2E6D0'/%3E%3Cpath d='M216 175 Q223.5 164 231 175Z' fill='%23C28BFF'/%3E%3C/g%3E%3Cg fill='%23FFF27A'%3E%3Ccircle cx='85' cy='110' r='2.2'/%3E%3Ccircle cx='125' cy='128' r='1.8'/%3E%3Ccircle cx='190' cy='105' r='2.2'/%3E%3Ccircle cx='170' cy='140' r='1.6'/%3E%3Ccircle cx='40' cy='130' r='1.8'/%3E%3Ccircle cx='262' cy='135' r='2'/%3E%3C/g%3E%3Cg fill='%23FFF27A' opacity='.35'%3E%3Ccircle cx='85' cy='110' r='6'/%3E%3Ccircle cx='190' cy='105' r='6'/%3E%3Ccircle cx='262' cy='135' r='5'/%3E%3C/g%3E%3C/svg%3E") center bottom/cover no-repeat}
+
+.new-plage{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 200' preserveAspectRatio='xMidYMax slice'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2377C4F2'/%3E%3Cstop offset='1' stop-color='%23FFE9B8'/%3E%3C/linearGradient%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23FFE08A' stop-opacity='.8'/%3E%3Cstop offset='1' stop-color='%23FFE08A' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='300' height='200' fill='url(%23s)'/%3E%3Ccircle cx='60' cy='45' r='36' fill='url(%23g)'/%3E%3Ccircle cx='60' cy='45' r='15' fill='%23FFD84D'/%3E%3Cg fill='%23fff' opacity='.9'%3E%3Cellipse cx='165' cy='38' rx='24' ry='7'/%3E%3Cellipse cx='181' cy='32' rx='14' ry='7'/%3E%3Cellipse cx='250' cy='64' rx='20' ry='6'/%3E%3C/g%3E%3Cpath d='M0 108 H300 V138 H0Z' fill='%232E9BD6'/%3E%3Cpath d='M0 108 H300 V114 H0Z' fill='%2364BDE8'/%3E%3Cpath d='M0 128 Q40 120 80 128 T160 128 T240 128 T320 128 V150 H0Z' fill='%23fff' opacity='.55'/%3E%3Cpath d='M0 148 Q50 138 100 148 T200 148 T300 148 V200 H0Z' fill='%23F6D58E'/%3E%3Cpath d='M0 156 Q50 148 100 156 T200 156 T300 156' fill='none' stroke='%23fff' stroke-width='3' opacity='.8'/%3E%3Cpath d='M0 168 Q80 158 160 168 T300 166 V200 H0Z' fill='%23EFC77A'/%3E%3Cg%3E%3Cpath d='M255 190 Q250 140 262 96' fill='none' stroke='%238B5A2B' stroke-width='6' stroke-linecap='round'/%3E%3Cg fill='%232F8F4B'%3E%3Cpath d='M262 96 Q235 80 214 98 Q240 90 262 100Z'/%3E%3Cpath d='M262 96 Q290 78 310 100 Q284 92 262 100Z'/%3E%3Cpath d='M262 96 Q248 68 226 66 Q246 78 262 100Z'/%3E%3Cpath d='M262 96 Q276 66 298 64 Q278 78 262 100Z'/%3E%3C/g%3E%3Ccircle cx='260' cy='102' r='4' fill='%236B3E1A'/%3E%3C/g%3E%3Cg%3E%3Cpath d='M30 182 Q40 170 50 182Z' fill='%23FF8FB1'/%3E%3Cpath d='M34 182 L40 174 L46 182' fill='none' stroke='%23fff' stroke-width='1' opacity='.7'/%3E%3Cg transform='translate(215 178)'%3E%3Cpath d='M0 0 L8 -9 L16 0Z' fill='%23FF6150'/%3E%3Cpath d='M0 0 H16 L8 6Z' fill='%23FFD84D'/%3E%3C/g%3E%3Ccircle cx='105' cy='186' r='3' fill='%23fff' opacity='.9'/%3E%3C/g%3E%3Cpath d='M120 90 q4-4 8 0 q4-4 8 0' fill='none' stroke='%23333' stroke-width='1.2'/%3E%3Cpath d='M150 74 q3-3 6 0 q3-3 6 0' fill='none' stroke='%23333' stroke-width='1.2'/%3E%3C/svg%3E") center bottom/cover no-repeat}
+</style>
+<h1>Décors : avant / après (aperçu, rien n’est encore modifié dans l’app)</h1>
+
+<h2>1. Forêt enchantée (150 gemmes)</h2>
+<div class="row">
+<figure><figcaption>Avant</figcaption><div class="card old-foret"><div class="pet"></div></div></figure>
+<figure><figcaption>Après</figcaption><div class="card new-foret"><div class="pet"></div></div></figure>
+</div>
+
+<h2>2. Plage (220 gemmes)</h2>
+<div class="row">
+<figure><figcaption>Avant</figcaption><div class="card old-plage"><div class="pet"></div></div></figure>
+<figure><figcaption>Après</figcaption><div class="card new-plage"><div class="pet"></div></div></figure>
+</div>
