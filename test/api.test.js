@@ -665,3 +665,29 @@ test('croissance : stades par compagnon, présence seule, gemmes au passage', as
   const P = require('../lib/progress');
   assert.deepEqual([0, 6, 7, 20, 21, 45, 46, 200].map(P.stageOf), [0, 0, 1, 1, 2, 2, 3, 3]);
 });
+
+test('articles exclusifs : achat réservé au compagnon adopté, visibles sur lui seul', async (t) => {
+  const E = await setup(); t.after(E.close);
+  await E.loginAll();
+  E.db.prepare('INSERT INTO gem_events (user_id, delta, reason, at) VALUES (?,?,?,?)').run(E.studentId, 2000, 'test', Date.now());
+  const inv = async () => (await E.student.get('/api/state')).json.inv;
+  // dragon pas adopté : refusé
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'crocs' })).status, 409);
+  // exclusif du compagnon actif : acheté et porté
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'braises' })).status, 200);
+  assert.equal((await inv()).equip.acc, 'braises');
+  // adopter le dragon, l'activer : l'accessoire du phénix disparaît, ne peut pas être porté
+  assert.equal((await E.student.post('/api/pets/dragon/adopt', {})).status, 200);
+  assert.equal((await E.student.post('/api/pets/dragon/activate', {})).status, 200);
+  assert.equal((await inv()).equip.acc, null);
+  assert.equal((await E.student.post('/api/shop/equip', { item: 'braises' })).status, 409);
+  // achat d'un exclusif du dragon actif, puis retour au phénix
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'antre' })).status, 200);
+  assert.equal((await inv()).equip.decor, 'antre');
+  assert.equal((await E.student.post('/api/pets/phenix/activate', {})).status, 200);
+  const i = await inv();
+  assert.equal(i.equip.decor, null); assert.equal(i.equip.acc, 'braises');
+  // un exclusif acheté pour un compagnon au repos ne déséquilibre pas l'équipement du compagnon actif
+  assert.equal((await E.student.post('/api/shop/buy', { item: 'crocs' })).status, 200);
+  assert.equal((await inv()).equip.acc, 'braises');
+});

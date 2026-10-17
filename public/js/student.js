@@ -394,11 +394,11 @@ function viewPet(){
   });
   [['acc','Accessoires'],['decor','Décors']].forEach(function(g){
     h+='<h2 class="sec">'+g[1]+' <span class="muted" style="font:700 12px Nunito">· à toi pour toujours</span></h2><div class="items">';
-    DURABLE.filter(function(d){return d.cat===g[0];}).forEach(function(d){
+    DURABLE.filter(function(d){return d.cat===g[0]&&(!d.pet||d.pet===S.active);}).forEach(function(d){
       var own=!!S.inv[d.id],on=S.equip[d.cat]===d.id;
       var pv=d.cat==='acc'?critterS(S.active,0,42,1,null,d.id):'<span class="swatch d-'+d.id+'"></span>';
       h+='<button class="item'+(on?' on':'')+'" data-act="dur" data-id="'+d.id+'"'+(!own&&S.points<d.price?' disabled':'')+'>'+pv+d.n
-        +'<small>'+(on?'Porté · retirer':own?'À toi · porter':(d.cat==='acc'?'pour tous tes compagnons':'fond de ton compagnon'))+'</small>'
+        +'<small>'+(on?'Porté · retirer':own?'À toi · porter':(d.pet?'exclusif à '+PETS[d.pet].n:d.cat==='acc'?'pour tous tes compagnons':'fond de ton compagnon'))+'</small>'
         +(own?'<span class="price">'+ic('check')+'</span>':'<span class="price">'+ic('gem','var(--sky)')+d.price+'</span>')+'</button>';
     });
     h+='</div>';
