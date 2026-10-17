@@ -171,6 +171,18 @@ Une séance moyenne (75 % de réussite du premier coup, +5 de fin compris) rappo
 | Jungle | 280 | Feuillage vert |
 | Espace | 520 | Étoiles, planètes |
 
+**Articles exclusifs** : chaque compagnon a un accessoire et un décor qui n'existent que pour lui. Ils s'achètent dès que le compagnon est adopté (même au repos), mais ne se portent et ne se voient que sur lui ; ils n'apparaissent dans la boutique que pour le compagnon actif. Acheté pour un compagnon au repos, un exclusif ne remplace pas ce que porte le compagnon actif.
+
+| Compagnon | Accessoire (gemmes) | Décor (gemmes) |
+| --- | --- | --- |
+| Lexi, phénix | Aigrette de braises (200) | Nid de braises (300) |
+| Pyro, dragonnet | Collier de crocs (180) | Antre au trésor (360) |
+| Étoile, licorne | Guirlande d'étoiles (220) | Arc-en-ciel (380) |
+| Griff, griffon | Casque d'aviateur (240) | Aire sur la falaise (340) |
+| Glouglou, kraken | Médaillon d'ancre (200) | Épave engloutie (400) |
+| Roussette, renardeau | Foulard d'aventurier (160) | Clairière au clair de lune (320) |
+| Hulotte, chouette | Toque de savant (260) | Bibliothèque magique (420) |
+
 Purement décoratifs : aucun effet sur les jauges.
 
 **Compagnons** : Lexi le phénix (offert), Pyro le dragonnet (400), Étoile la licorne (700), Griff le griffon (1 000), Glouglou le bébé kraken (1 500), Roussette le renardeau (1 200), Hulotte la chouette (1 800).
@@ -211,7 +223,8 @@ La vie n'a pas de baisse propre ; elle perd en plus 40 pour chaque semaine sans 
 - Cinq états : **radieux** (moyenne 65 et plus), **content** (45 à 64), **fatigué** (25 à 44), **décrépit** (moins de 25), **à terre** (vie à 0, prioritaire).
 - Rendu : radieux = couleurs vives, animé ; fatigué = désaturé, paupières lourdes ; décrépit = gris, poussière, toiles d'araignée, yeux ternes ; à terre = entièrement gris, penché, immobile, « zzz ».
 - Le compagnon exprime son besoin le plus urgent dans une bulle.
-- Stades de croissance selon les jours de présence : bébé (0 à 6), jeune (7 à 20), adulte (21 et plus).
+- **Croissance** : quatre stades, **par compagnon** (un nouveau compagnon repart bébé). Seuls comptent les **jours de présence** : jours où une séance est terminée alors que ce compagnon est actif et debout (pas à terre). Aucune condition de réussite. Bébé (0 à 6 jours), enfant (7 à 20), ado (21 à 45), adulte (46 et plus). Pas de régression : un compagnon négligé garde son stade, son compteur ne fait que s'arrêter.
+- **Conséquences** : baisse des jauges ×1 (bébé, enfant), ×0,9 (ado), ×0,8 (adulte) ; gemmes offertes une fois au passage : 30 (enfant), 60 (ado), 100 (adulte). Le passage s'annonce au récapitulatif de séance ; le dessin grandit à chaque stade.
 - Il ne meurt jamais définitivement ; la potion de résurrection le relève. Le parent voit son état et le dernier événement.
 
 ## 7. Régularité
