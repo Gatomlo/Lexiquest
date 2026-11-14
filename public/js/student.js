@@ -56,6 +56,18 @@ function syncBanner() {
   if (!S.offline && !n) { return ''; }
   return '<div class="alert" style="margin-bottom:12px">' + ic(S.offline ? 'alert' : 'clock') + '<span>' + (S.offline ? '<b>Hors-ligne.</b> Tu peux jouer : tes séances seront envoyées au retour du réseau.' : 'Envoi de tes séances…') + (n ? ' ' + n + ' séance' + (n > 1 ? 's' : '') + ' en attente.' : '') + '</span></div>';
 }
+/** invite à activer les rappels à chaque connexion, tant qu'ils ne sont pas actifs (« Plus tard » : jusqu'à la prochaine ouverture) */
+function notifBanner() {
+  var i = Notif.info;
+  if (!i || S.notifLater || S.offline || !notifSupported()) { return ''; }
+  if (i.remind && i.devices && Notification.permission === 'granted') { return ''; }
+  var needInstall = isIOS() && !isStandalone();
+  return '<div class="alert" style="margin-bottom:12px;flex-wrap:wrap">' + ic('clock') + '<span style="flex:1;min-width:0">'
+    + (needInstall ? '<b>Rappels :</b> sur iPhone, touche Partager puis « Sur l’écran d’accueil », ouvre l’app depuis l’icône, puis active-les dans Réglages.'
+      : '<b>Active les rappels</b> pour ne pas oublier ta séance et savoir quand ton compagnon a besoin de toi.')
+    + '</span>' + (needInstall ? '' : '<button class="btn sm" data-act="notif-enable">Activer</button> ')
+    + '<button class="btn sm alt" data-act="notif-later">Plus tard</button></div>';
+}
 var syncing = false;
 /** envoie les séances jouées hors-ligne, de la plus ancienne à la plus récente */
 function trySync() {
@@ -583,7 +595,7 @@ function viewHome(){
   var next=VOUCH.filter(function(v){return v.d>st;})[0];
   var h='<div class="ad-head"><div><small>'+dayLabel(now)+'</small><h1>'+hello+', '+esc(S.name)+'</h1></div>'
     +'<div class="ad-chips"><span class="ad-chip">'+ic('flame','var(--coral)')+'<span class="tnum">'+st+'</span></span><span class="ad-chip">'+ic('gem','var(--sky)')+'<span class="tnum">'+S.points+'</span></span></div></div>';
-  h+=syncBanner();
+  h+=syncBanner()+notifBanner();
   h+='<div class="ad-hero'+decorCls()+'">'+critterS(S.active,n.lvl,124,stage(),S.munch?'happy':null)+'<div class="name">'+P.n+'</div><div class="ad-state">'+P.k+' · '+STATE_N[n.lvl]+'</div><div class="sub">'+esc(petMsg(n))+'</div>'
     +'<div class="ad-gauges">'+GAUGES.map(function(k){return '<div class="ad-g"><div class="lab"><span>'+STATN[k]+'</span><span class="tnum">'+Math.round(n[k])+'</span></div><div class="tr"><i style="width:'+Math.round(n[k])+'%;background:'+col(n[k])+'"></i></div></div>';}).join('')+'</div>'+evtLine(S.st.pet)
     +'<button class="ad-link" data-act="tab" data-v="pet">'+(n.ko?'Le relever':'Prendre soin')+'</button></div>';
@@ -664,10 +676,11 @@ document.getElementById('app').addEventListener('click', function (e) {
   if (pf) { setPref(pf.dataset.pref, pf.dataset.v); applyTheme(); render(); return; }
   var t = e.target.closest('[data-act]'); if (!t) { return; }
   var a = t.dataset.act, v = t.dataset.v, s = S.sess;
+  if (a === 'notif-later') { S.notifLater = true; render(); return; }
   if (a.indexOf('notif-') === 0) { handleNotif(a, t).then(function () { return loadNotif(); }).then(render).catch(function (e) { toast(e.message); }); return; }
   switch (a) {
     case 'noinvite': S.invite = null; history.replaceState(null, '', location.pathname + location.search); S.enter = true; render(); break;
-    case 'logout': api('POST', 'auth/logout', {}).then(function () { Offline.clearCache(); S.st = null; S.sess = null; S.tab = 'home'; S.enter = true; render(); }).catch(fail); break;
+    case 'logout': api('POST', 'auth/logout', {}).then(function () { Offline.clearCache(); S.notifLater = false; S.st = null; S.sess = null; S.tab = 'home'; S.enter = true; render(); }).catch(fail); break;
     case 'tab': go(v); break;
     case 'lang': S.lang = v; render(); break;
     case 'openlist': S.sub = { t: 'list', id: t.dataset.id }; S.enter = true; render(); break;
@@ -773,7 +786,7 @@ document.getElementById('app').addEventListener('submit', function (e) {
     e.preventDefault();
     var f = e.target;
     api('POST', 'auth/login', { username: f.username.value, password: f.password.value, remember: f.remember.checked })
-      .then(function (r) { if (r.me.role === 'parent') { location.href = 'parent'; return new Promise(function () { /* redirection en cours */ }); } S.loginErr = ''; S.tab = 'home'; S.enter = true; return refresh(); }).then(function () { render(); loadNotif().then(render); trySync(); })
+      .then(function (r) { if (r.me.role === 'parent') { location.href = 'parent'; return new Promise(function () { /* redirection en cours */ }); } S.loginErr = ''; S.notifLater = false; S.tab = 'home'; S.enter = true; return refresh(); }).then(function () { render(); loadNotif().then(render); trySync(); })
       .catch(function (err) { S.loginErr = err.message; render(); });
     return;
   }

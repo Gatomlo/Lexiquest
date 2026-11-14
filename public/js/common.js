@@ -158,6 +158,7 @@ function disablePush() {
 /** réagit aux boutons data-act="notif-…" ; renvoie une promesse, ou null si l'action n'est pas la sienne */
 function handleNotif(act, el) {
   if (act === 'notif-install') { if (!installPrompt) { return Promise.resolve(); } installPrompt.prompt(); return installPrompt.userChoice.then(function () { installPrompt = null; }); }
+  if (act === 'notif-enable') { return enablePush(); }
   if (act === 'notif-toggle') { return Notif.info && Notif.info.remind ? disablePush() : enablePush(); }
   if (act === 'notif-test') { return api('POST', 'push/test', {}); }
   if (act === 'notif-time') { return api('PUT', 'reminder', { remindAt: el.value }).then(function (i) { Notif.info = i; }); }
