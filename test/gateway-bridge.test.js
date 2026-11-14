@@ -62,3 +62,10 @@ test('connexion locale normale inchangee (mot de passe), meme avec une identite 
   assert.equal(me.status, 200);
   assert.equal(me.json.me.role, 'parent');
 });
+
+test('crochet gatewayAccounts : parents seulement, sans aucun secret', async (t) => {
+  const { E } = await boot(t);
+  const list = createApp(E.db).gatewayAccounts();
+  assert.deepStrictEqual(list.map((a) => a.key), ['papa'], 'le parent, jamais un eleve');
+  assert.doesNotMatch(JSON.stringify(list), /hash|passw|token|secret|scrypt|bcrypt/i);
+});

@@ -72,6 +72,9 @@ function createApp(db) {
     console.error(err);
     res.status(500).json({ error: 'Erreur interne.' });
   });
+  // Comptes parents pour l'administration de node-gateway (lecture seule, facultatif : jamais les eleves).
+  app.gatewayAccounts = () => db.prepare("SELECT username, display FROM users WHERE role = 'parent' AND active = 1 ORDER BY username").all()
+    .map((u) => ({ key: u.username, login: u.username, name: u.display || u.username, detail: 'parent' }));
   return app;
 }
 
