@@ -52,3 +52,5 @@ Node ≥ 22.5, `node:sqlite`, front vanilla sans build — comme Fée Lezcomptes
 - Garder cahier des charges et maquette cohérents : toute décision de jeu (barème, jeux, états du compagnon) se change aux deux endroits.
 
 - Connexion centralisée (node-gateway) : `lib/gateway-bridge.js` (copie de `node-gateway/docs/gateway-bridge.js`) + `lib/gateway-login.js` (monté dans `app.js` après les sessions). Si la passerelle fournit `req.gateway` (droit sur cet outil), ouvre une session pour le compte **parent** de même identifiant (jamais un élève, aucun compte créé). Cette session ne vaut que tant que la passerelle se porte garante du même compte (contrôle à chaque requête, 2 h). Connexion locale normale inchangée. Test : `test/gateway-bridge.test.js`.
+
+- Sécurité (branche `claude/security-fixes`) : dépendances de développement à jour (Express est fourni par la passerelle en production).
