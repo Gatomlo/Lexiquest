@@ -50,3 +50,5 @@ Node ≥ 22.5, `node:sqlite`, front vanilla sans build — comme Fée Lezcomptes
 ## Méthode de travail
 - Répondre en français, **concis** (réponses courtes), sauf demande explicite de détail, d’analyse ou de réponse complète. Lire des extraits ciblés plutôt que `maquette/index.html` en entier (≈ 1000 lignes).
 - Garder cahier des charges et maquette cohérents : toute décision de jeu (barème, jeux, états du compagnon) se change aux deux endroits.
+
+- Connexion centralisée (node-gateway) : `lib/gateway-bridge.js` (copie de `node-gateway/docs/gateway-bridge.js`) + `lib/gateway-login.js` (monté dans `app.js` après les sessions). Si la passerelle fournit `req.gateway` (droit sur cet outil), ouvre une session pour le compte **parent** de même identifiant (jamais un élève, aucun compte créé). Cette session ne vaut que tant que la passerelle se porte garante du même compte (contrôle à chaque requête, 2 h). Connexion locale normale inchangée. Test : `test/gateway-bridge.test.js`.

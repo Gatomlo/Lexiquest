@@ -31,6 +31,8 @@ function createApp(db) {
   const secret = process.env.SESSION_SECRET || Kv.secret(db, 'sessionSecret'); // tiré au hasard à la première utilisation, gardé dans la base
   /* sessions : cookie signé, limité au chemin de montage (/lexiquest derrière la passerelle) */
   app.use(require('./lib/session').sessions(db, secret));
+  /* connexion centralisee de node-gateway : ouvre une session « parent » si la passerelle se porte garante (voir lib/gateway-login.js) */
+  app.use(require('./lib/gateway-login')(db));
 
   app.use((req, res, next) => {
     res.set({
