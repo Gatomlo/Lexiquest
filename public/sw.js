@@ -41,6 +41,15 @@ self.addEventListener('push', (e) => {
     body: d.body || '', icon: 'icons/icon-192.png', badge: 'icons/badge-96.png', tag: d.tag || 'lexiquest', data: { url: d.url || './' },
   }));
 });
+/* le navigateur renouvelle parfois l'abonnement : on le réinscrit tout de suite, sans attendre la prochaine ouverture */
+self.addEventListener('pushsubscriptionchange', (e) => {
+  e.waitUntil((async () => {
+    const old = e.oldSubscription, key = old && old.options && old.options.applicationServerKey;
+    const sub = e.newSubscription || (key ? await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }) : null);
+    if (!sub) { return; }
+    await fetch('api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription: sub.toJSON() }) });
+  })().catch(() => { /* resyncPush reprendra à l'ouverture */ }));
+});
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const target = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;

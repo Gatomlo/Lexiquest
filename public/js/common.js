@@ -137,7 +137,25 @@ function isStandalone() { return (window.matchMedia && window.matchMedia('(displ
 function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
 function notifSupported() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
 var Notif = { info: null, busy: false };
-function loadNotif() { return api('GET', 'reminder').then(function (i) { Notif.info = i; }).catch(function () { /* hors-ligne */ }); }
+function loadNotif() { return api('GET', 'reminder').then(function (i) { Notif.info = i; return resyncPush(); }).catch(function () { /* hors-ligne */ }); }
+/** garde les rappels actifs après une mise à jour ou une base vide : si le navigateur est encore abonné mais que le serveur ne connaît plus
+    d'appareil pour cette personne, on réinscrit l'abonnement (clé VAPID changée : on se réabonne) et on réactive le rappel */
+function resyncPush() {
+  var i = Notif.info;
+  if (!i || i.devices || !notifSupported() || Notification.permission !== 'granted') { return Promise.resolve(); }
+  return navigator.serviceWorker.ready.then(function (reg) {
+    return Promise.all([reg.pushManager.getSubscription(), api('GET', 'push/key')]).then(function (r) {
+      var sub = r[0], key = urlB64(r[1].key);
+      if (!sub) { return null; }
+      var cur = sub.options && sub.options.applicationServerKey ? new Uint8Array(sub.options.applicationServerKey) : null;
+      var same = cur && cur.length === key.length && cur.every(function (b, n) { return b === key[n]; });
+      return same ? sub : sub.unsubscribe().then(function () { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }); });
+    });
+  }).then(function (sub) {
+    if (!sub) { return; }
+    return api('POST', 'push/subscribe', { subscription: sub.toJSON() }).then(function () { return api('PUT', 'reminder', { remind: true }); }).then(function (n) { Notif.info = n; });
+  }).catch(function () { /* au prochain chargement */ });
+}
 function urlB64(s) { var p = '='.repeat((4 - s.length % 4) % 4), b = (s + p).replace(/-/g, '+').replace(/_/g, '/'), r = atob(b), o = new Uint8Array(r.length); for (var i = 0; i < r.length; i++) { o[i] = r.charCodeAt(i); } return o; }
 function enablePush() {
   return Notification.requestPermission().then(function (p) {
